@@ -179,7 +179,8 @@ La barre affichée dépend de l’état et du rôle. Chaque barre fait 39 caract
 | Enchères, à son tour | 1-4 CHOIX F3 TCHAT F7 QUIT F8 AIDE |
 | Jeu, à son tour | 1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE |
 | Pas son tour | F3 TCHAT F7 QUIT F8 AIDE |
-| Chef, fin de manche | F3 TCHAT F5 SUITE F7 QUIT F8 AIDE |
+| Chef, partie lancée | F4 RAZ s'ajoute ; F3 TCHAT devient F3 MSG quand la ligne dépasserait 39 caractères (ex. 1-8 CARTE F3 MSG F4 RAZ F7 QUIT F8 AIDE) |
+| Chef, fin de manche | F3 MSG F4 RAZ F5 SUITE F7 QUIT F8 AIDE |
 | Autre joueur, fin de manche | F3 TCHAT F7 QUIT F8 AIDE |
 | Chef, fin de partie | F5 NOUVELLE PARTIE F7 QUIT |
 | Autre joueur, fin de partie | F7 QUIT |

@@ -53,11 +53,19 @@ static void barre_table(void)
         if (suis_chef()) {
             s = "F1 PARAM F2 GO F3 TCHAT F7 QUIT F8 AIDE";
         }
+    } else if (suis_chef()) {
+        /* Partie lancée : le chef a F4 RAZ ; TCHAT devient MSG faute de place. */
+        if (etat == E_COURS && tour == moi) {
+            s = atout < 0 ? "1-4 CHOIX F3 MSG F4 RAZ F7 QUIT F8 AIDE"
+                          : "1-8 CARTE F3 MSG F4 RAZ F7 QUIT F8 AIDE";
+        } else if (etat == E_FIN_MANCHE) {
+            s = "F3 MSG F4 RAZ F5 SUITE F7 QUIT F8 AIDE";
+        } else {
+            s = "F3 TCHAT F4 RAZ F7 QUIT F8 AIDE";
+        }
     } else if (etat == E_COURS && tour == moi) {
         s = atout < 0 ? "1-4 CHOIX F3 TCHAT F7 QUIT F8 AIDE"
                       : "1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE";
-    } else if (etat == E_FIN_MANCHE && suis_chef()) {
-        s = "F3 TCHAT F5 SUITE F7 QUIT F8 AIDE";
     }
     barre(s);
 }
