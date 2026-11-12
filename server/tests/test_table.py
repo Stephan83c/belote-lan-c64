@@ -753,7 +753,7 @@ def test_join_en_cours_de_partie_prend_une_place_bot():
     assert "SIEGE 1 H B" in a.lignes
 
 
-# ---- RAZ (console du serveur) -------------------------------------------
+# ---- RAZ (console du serveur ou chef) -------------------------------------
 
 
 def test_raz_efface_la_partie_et_arrete_les_bots():
@@ -811,14 +811,28 @@ def test_raz_table_vide_le_prochain_arrivant_trouve_une_table_neuve():
 
 
 @dans_boucle
-def test_raz_n_est_pas_une_commande_du_protocole():
+def test_raz_par_le_chef():
     t = table_ne_jouant_pas()
     a = rejoindre(t, "A")
+    b = rejoindre(t, "B")
     t.recevoir(a, "LANCER")
     a.vider()
-    t.recevoir(a, "RAZ")
-    assert a.lignes == ["ERR INCONNU"]
+    b.vider()
+    t.recevoir(b, "RAZ")
+    assert b.lignes == ["ERR CHEF SEUL"]
     assert t.etat == EN_COURS
+    t.recevoir(a, "RAZ")
+    assert a.lignes == ["INFO PARTIE EFFACEE", "SCORE 0 0", "ETAT ATTENTE"]
+    assert t.etat == ATTENTE
+
+
+@dans_boucle
+def test_raz_par_le_chef_sans_partie():
+    t = table_ne_jouant_pas()
+    a = rejoindre(t, "A")
+    a.vider()
+    t.recevoir(a, "RAZ")
+    assert a.lignes == ["ERR PAS LANCEE"]
 
 
 # ---- Connexion fantôme d'un C64 redémarré ---------------------------------

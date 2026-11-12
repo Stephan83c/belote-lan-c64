@@ -126,6 +126,11 @@ class Table:
             self._cmd_param(client, place, reste)
         elif mot == "REJOUER":
             self._cmd_rejouer(client, place)
+        elif mot == "RAZ":
+            if place != self.chef:
+                client.envoyer("ERR CHEF SEUL")
+            elif not self.raz():
+                client.envoyer("ERR PAS LANCEE")
         elif mot == "PASSE":
             self._action(client, lambda d: d.passer(place))
         elif mot == "ENCH":
@@ -336,7 +341,7 @@ class Table:
             client.envoyer("ERR DEJA LANCEE")
 
     def raz(self) -> bool:
-        """Commande console : efface la partie, retour en ATTENTE.
+        """Console du serveur ou commande RAZ du chef : efface la partie, retour en ATTENTE.
 
         Les humains connectés et les paramètres sont conservés. Renvoie False
         s'il n'y avait aucune partie à effacer.

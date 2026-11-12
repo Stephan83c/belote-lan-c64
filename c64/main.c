@@ -23,6 +23,7 @@
 #define K_F5     135
 #define K_F7     136
 #define K_F2     137
+#define K_F4     138
 #define K_F8     140
 
 #define PEEK(a) (*(volatile unsigned char *)(a))
@@ -352,6 +353,14 @@ static unsigned char touche(void)
         ferme();
         return 0;
     }
+    if (raz_conf) {                 /* F4 : O confirme, toute autre touche annule */
+        if (c == 'O') {
+            envoyer("RAZ");
+        }
+        raz_conf = 0;
+        sale |= D_BARRE;
+        return 1;
+    }
     if (param) {
         touche_param(c);
         return 1;
@@ -390,6 +399,13 @@ static unsigned char touche(void)
             sale |= D_SAISIE | D_BARRE;
         }
         break;
+    case K_F4:
+        if (suis_chef() && v == V_TABLE && etat != E_ATTENTE && etat != E_AUCUN) {
+            raz_conf = 1;
+            tchat = 0;
+            sale |= D_BARRE | D_SAISIE;
+        }
+        break;
     case K_F5:
         if (suis_chef() && (etat == E_FIN_MANCHE || etat == E_FIN_PARTIE)) {
             envoyer("REJOUER");
@@ -413,7 +429,7 @@ static unsigned char touche(void)
 
 static void partie(void)
 {
-    regles = param = tchat = 0;
+    regles = param = tchat = raz_conf = 0;
     vue_forcer();
     for (;;) {
         reseau();
@@ -427,6 +443,10 @@ static void partie(void)
         /* Les réglages se ferment si la table n'est plus en attente ou change de chef. */
         if (param && (etat != E_ATTENTE || chef != moi)) {
             param = 0;
+        }
+        if (raz_conf && (etat == E_ATTENTE || chef != moi)) {
+            raz_conf = 0;
+            sale |= D_BARRE;
         }
         dessiner();
     }

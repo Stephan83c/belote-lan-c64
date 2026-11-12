@@ -15,6 +15,7 @@ que la spec laisse ouvert.
     ENCH 1 / PASSE         à son TOUR, pendant les enchères (couleur 1 = coeur)
     COUP 14                à son TOUR, pendant le jeu (carte 14 = roi de coeur)
     REJOUER                chef : à ETAT FIN MANCHE ou FIN PARTIE
+    RAZ                    chef : efface la partie en cours (comme RAZ en console)
     TCHAT BONJOUR          à tout moment après JOIN
     LEAVE                  quitter
 
@@ -28,7 +29,7 @@ Carte = couleur × 8 + rang.
 
 ## Console du serveur
 
-Dans le terminal de `make server` (ce n'est pas une commande du protocole) :
+Dans le terminal de `make server` (le chef peut aussi envoyer `RAZ`, voir plus bas) :
 
     RAZ                    efface la partie en cours et revient en ATTENTE
 
@@ -43,7 +44,7 @@ Erreurs ajoutées au format `ERR TEXTE` :
 |---|---|
 | `ERR INCONNU` | Mot-clé inconnu. |
 | `ERR PARAM` | PARAM mal formé ou hors plage. |
-| `ERR PAS LANCEE` | REJOUER en ATTENTE. |
+| `ERR PAS LANCEE` | REJOUER ou RAZ en ATTENTE. |
 
 Autres cas :
 

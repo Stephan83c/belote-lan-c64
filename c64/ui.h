@@ -4,6 +4,7 @@
 
 enum { V_TABLE, V_REGLES, V_PARAM, V_FIN };
 
+extern unsigned char raz_conf;      /* F4 : confirmation O/N de l'effacement */
 extern unsigned char regles;        /* F8 : règles affichées */
 extern unsigned char param;         /* F1 : réglages ouverts */
 extern unsigned char param_sel;     /* 0 cible, 1 inactivité */

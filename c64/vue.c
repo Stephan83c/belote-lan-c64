@@ -6,7 +6,7 @@
 #include "jeu.h"
 #include "ui.h"
 
-unsigned char regles, param, param_sel, tchat, tchat_n;
+unsigned char raz_conf, regles, param, param_sel, tchat, tchat_n;
 unsigned param_cible, param_inactif;
 char tchat_txt[TCHAT_MAX + 1];
 
@@ -45,7 +45,9 @@ static void barre(const char *s)
 static void barre_table(void)
 {
     const char *s = "F3 TCHAT F7 QUIT F8 AIDE";
-    if (tchat) {
+    if (raz_conf) {
+        s = "EFFACER LA PARTIE ? O OUI, AUTRE NON";
+    } else if (tchat) {
         s = "RETURN ENVOYER  DEL EFFACER  F3 ANNULER";
     } else if (etat == E_ATTENTE || etat == E_AUCUN) {
         if (suis_chef()) {
@@ -248,6 +250,8 @@ static const char *const texte_regles[] = {
     "LE PRENEUR DOIT FAIRE PLUS QUE LA",
     "DEFENSE, SINON IL EST DEDANS : 162 A",
     "LA DEFENSE. CAPOT : 252.",
+    "",
+    "CHEF : F4 EFFACE LA PARTIE EN COURS.",
 };
 
 static void vue_regles(void)

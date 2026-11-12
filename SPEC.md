@@ -392,6 +392,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 | COUP C *(v3)* | Touche 1–8 | Jouer la carte de code C (le client traduit le numéro affiché en code). Valide seulement à son tour. |
 | TCHAT TXT | F3, saisie, RETURN | Message public, tronqué à 30 caractères par le client et le serveur. |
 | REJOUER | F5 | Chef seulement : manche suivante en FIN MANCHE, nouvelle partie en FIN PARTIE. |
+| RAZ | F4 puis O | Chef seulement, partie lancée : efface la partie (scores, réserve, places réservées) et revient en ATTENTE ; les clients reçoivent INFO PARTIE EFFACEE, SCORE 0 0, ETAT ATTENTE. Sinon ERR CHEF SEUL ou ERR PAS LANCEE. |
 | LEAVE | F7 | Quitter ; la place est transférée à un bot. |
 
 ### 7.4 Séquences
