@@ -430,17 +430,17 @@ chef-> srv : REJOUER
 
 ### 8.1 Grille écran de référence *(v4)*
 
-Grille de 40 colonnes (0–39) et 25 lignes (L0–L24). Le tapis central est supprimé : la carte jouée par chaque joueur s’affiche sous son nom, et le nombre de cartes en main des autres joueurs est indiqué entre parenthèses. Les noms, points et cartes sont des exemples.
+Grille de 40 colonnes (0–39) et 25 lignes (L0–L24). Le tapis central est supprimé : la carte jouée par chaque joueur s’affiche sous son nom. Un bot est nommé par sa position suivie de « (BOT) », sur la table comme dans le journal. Les noms, points et cartes sont des exemples.
 
 ```
     0         1         2         3
     0123456789012345678901234567890123456789
 L0  BELOTE   ATOUT:♥   NOUS:0000   EUX:0000
 L1  ----------------------------------------
-L2                 *NORD (6)
+L2                 *NORD (BOT)
 L3                  [D ]
 L4                  [♥ ]
-L5    OUEST (6)                EST (5)
+L5    OUEST (BOT)              EST (BOT)
 L6      [R ]                    [10]
 L7      [♣ ]                    [♦ ]
 L8                  [A ]
@@ -462,7 +462,7 @@ L23   1    2    3    4    5    6
 L24 1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE
 ```
 
-**Zone de jeu (L2–L10)** : nom de chaque joueur à sa position relative (NORD = partenaire, EST = à droite, OUEST = à gauche, SUD = soi), précédé de * pour le joueur dont c’est le tour. Sous chaque nom, la carte qu’il a jouée dans le pli en cours, ou rien. Les cartes d’un pli terminé restent affichées jusqu’à la première carte du pli suivant. Les mains adverses ne sont pas dessinées : seul leur nombre de cartes est affiché.
+**Zone de jeu (L2–L10)** : nom de chaque joueur à sa position relative (NORD = partenaire, EST = à droite, OUEST = à gauche, SUD = soi), précédé de * pour le joueur dont c’est le tour. Sous chaque nom, la carte qu’il a jouée dans le pli en cours, ou rien. Les cartes d’un pli terminé restent affichées jusqu’à la première carte du pli suivant. Les mains adverses ne sont pas dessinées. Les humains sont désignés par leur nom (suivi de « (CHEF) » en attente), les bots par leur position et « (BOT) ».
 
 **Journal (L12–L17)** : six lignes pour les enchères, belote-rebelote, plis, tchat et INFO, 30 caractères maximum par message ; les nouveaux événements remplacent les plus anciens. **L18** sert à la saisie du tchat.
 

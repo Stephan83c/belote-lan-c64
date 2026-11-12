@@ -87,13 +87,16 @@ static void zone_table(void)
     for (p = 0; p < 4; ++p) {
         r = REL(p);
         t[0] = (etat == E_COURS && tour == (signed char)p) ? '*' : ' ';
-        strcpy(t + 1, noms[p][0] ? noms[p] : "-");
-        if (etat == E_ATTENTE || etat == E_AUCUN) {
-            if (chef == (signed char)p) {
+        /* Les bots s'appellent tous BOT : on les nomme par leur position,
+         * comme dans le journal. */
+        if (!humain[p] && noms[p][0]) {
+            strcpy(t + 1, positions[r]);
+            strcat(t, " (BOT)");
+        } else {
+            strcpy(t + 1, noms[p][0] ? noms[p] : "-");
+            if ((etat == E_ATTENTE || etat == E_AUCUN) && chef == (signed char)p) {
                 strcat(t, " (CHEF)");
             }
-        } else if (r != 0) {
-            sprintf(t + strlen(t), " (%u)", nbcartes[p]);
         }
         ecrire(nom_x[r], nom_y[r], t, coul_place[p], FOND_VERT);
         carte(carte_x[r], carte_y[r], pli[p]);

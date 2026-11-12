@@ -27,6 +27,8 @@ extern unsigned scores[2];
 extern signed char donneur, tour, preneur, atout, retournee, gagnant;
 /* Carte retournée qui vient d'être prise : affichée jusqu'à la première carte jouée. */
 extern signed char prise;
+/* Noms des places relatives : SUD (soi), EST, NORD (partenaire), OUEST. */
+extern const char *const positions[4];
 extern unsigned char tour_ench;
 extern signed char main_c[8];
 extern unsigned char nmain;

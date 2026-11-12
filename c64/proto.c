@@ -25,7 +25,7 @@ char erreur[41];
 struct entree journal[JOURNAL_N];
 
 const unsigned char coul_place[4] = { BLANC, JAUNE, CYAN, ORANGE };
-static const char *const positions[4] = { "SUD", "EST", "NORD", "OUEST" };
+const char *const positions[4] = { "SUD", "EST", "NORD", "OUEST" };
 
 static char *reste;   /* paramètres non encore lus de la ligne en cours */
 
