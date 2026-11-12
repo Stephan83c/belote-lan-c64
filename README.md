@@ -32,7 +32,7 @@ Ouvrez `config.mk` et mettez les adresses de votre réseau :
 
 | Variable | Rôle | Défaut |
 |---|---|---|
-| `SERVEUR_IP` | IP du PC qui fait tourner le serveur ; pré-remplie sur le C64 | `192.168.1.55` |
+| `SERVEUR_IP` | IP (ou nom) du serveur, pré-remplie sur le C64 | `51.38.50.79` |
 | `SERVEUR_PORT` | Port TCP du serveur, côté PC et côté C64 | `6464` |
 | `ULTIMATE` | IP du C64 Ultimate, pour envoyer le programme (`make deploy`) | `192.168.1.27` |
 
