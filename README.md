@@ -21,6 +21,20 @@ son C64. Les places libres sont tenues par des bots. Un serveur Python sur le PC
   port TCP 6464. On peut jouer ou déboguer avec `nc` (voir [protocol.md](protocol.md)).
 - **Spécification complète** (règles, protocole, écran) : [SPEC.md](SPEC.md).
 
+## Jouer tout de suite
+
+Téléchargez **`belote_lan.prg`** dans les [Releases](https://github.com/Stephan83c/belote-lan-c64/releases).
+Il se connecte par défaut au serveur public `51.38.50.79:6464` (adresse modifiable sur l'écran de
+connexion). Il faut un C64 Ultimate (ou Ultimate 64 / Ultimate-II+) dont la **Command Interface** est
+activée dans les réglages, et branché sur un réseau qui a accès à Internet.
+
+Pour le lancer :
+
+- copiez le fichier sur la clé USB ou la carte SD de l'Ultimate, puis lancez-le depuis son menu
+  de fichiers ;
+- ou envoyez-le depuis un PC du même réseau, si l'API REST de l'Ultimate est activée :
+  `curl -X POST --data-binary @belote_lan.prg http://<ip-de-l-ultimate>/v1/runners:run_prg`.
+
 ## Démarrer
 
 Il faut un C64 Ultimate (ou un Ultimate 64 / Ultimate-II+) avec l'API REST et la Command Interface
