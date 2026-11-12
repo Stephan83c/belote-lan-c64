@@ -27,6 +27,8 @@ NOM_BOT = "BOT"
 NOM_VALIDE = re.compile(r"[A-Z0-9]{1,5}")
 TCHAT_MAX = 30
 DELAI_BOT = 1.0
+# Après une prise, le premier bot attend plus longtemps : le temps de voir la carte prise.
+FACTEUR_PAUSE_PRISE = 3
 
 
 class Client(Protocol):
@@ -53,6 +55,7 @@ class Table:
     def __init__(self, rng: random.Random | None = None, delai_bot: float = DELAI_BOT):
         self.rng = rng or random.Random()
         self.delai_bot = delai_bot
+        self._pause_prise = False
         self.sieges = [Siege() for _ in range(4)]
         self.chef = -1
         self.etat = ATTENTE
@@ -387,6 +390,9 @@ class Table:
                 self._envoyer_main(evt[1])
             elif nom == "FIN":
                 self._fin_manche()
+            elif nom == "PREND":
+                self._diffuser(" ".join(map(str, evt)))
+                self._pause_prise = True
             elif nom == "REDONNE":
                 self._diffuser("REDONNE")
                 self.donneur = (self.donneur + 1) % 4
@@ -426,6 +432,7 @@ class Table:
         self._planifier_bot(immediat)
 
     def _planifier_bot(self, immediat: bool) -> None:
+        pause, self._pause_prise = self._pause_prise, False
         if self._minuteur_bot is not None:
             self._minuteur_bot.cancel()
             self._minuteur_bot = None
@@ -435,6 +442,8 @@ class Table:
         if self.sieges[self.donne.joueur].humain is not None:
             return
         delai = 0 if immediat else self.delai_bot
+        if pause:
+            delai = self.delai_bot * FACTEUR_PAUSE_PRISE
         self._minuteur_bot = asyncio.get_running_loop().call_later(delai, self._action_bot)
 
     def _action_bot(self) -> None:

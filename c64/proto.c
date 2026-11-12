@@ -13,6 +13,7 @@ unsigned char etat = E_AUCUN;
 unsigned cible = 1000, inactif = 3;
 unsigned scores[2];
 signed char donneur = -1, tour = -1, preneur = -1, atout = -1, retournee = -1, gagnant = -1;
+signed char prise = -1;
 unsigned char tour_ench = 1;
 signed char main_c[8];
 unsigned char nmain;
@@ -53,7 +54,7 @@ static signed char place(void)
 
 static void manche_raz(void)
 {
-    retournee = atout = preneur = tour = -1;
+    retournee = atout = preneur = tour = prise = -1;
     tour_ench = 1;
     pli[0] = pli[1] = pli[2] = pli[3] = -1;
     pli_fini = 0;
@@ -139,6 +140,7 @@ void traiter_ligne(char *ligne)
     } else if (!strcmp(mot, "JOUE")) {
         p = place();
         n = nombre();
+        prise = -1;
         if (p >= 0) {
             if (pli_fini) {
                 pli[0] = pli[1] = pli[2] = pli[3] = -1;
@@ -189,6 +191,7 @@ void traiter_ligne(char *ligne)
         preneur = place();
         n = nombre();
         atout = (signed char)(n & 3);
+        prise = retournee;
         retournee = -1;
         strcpy(tampon, "PREND A ");
         i = strlen(tampon);
@@ -219,6 +222,7 @@ void traiter_ligne(char *ligne)
             pli[i] = (signed char)nombre();
         }
         pli_fini = 0;
+        prise = -1;
         sale |= D_TABLE;
     } else if (!strcmp(mot, "SIEGE")) {
         /* SIEGE P T NOM */

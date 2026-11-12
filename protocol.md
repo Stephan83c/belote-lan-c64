@@ -58,6 +58,8 @@ Autres cas :
 - À la reconnexion pendant les enchères, `ENCHERES T` suit `RETOURNE`, pour que le client sache
   quel tour afficher.
 - La main vide en fin de manche s'écrit `MAIN` sans paramètre.
+- Après `PREND`, si le premier à jouer est un bot, il attend trois fois son délai habituel
+  (3 s par défaut) : le temps de voir la carte prise.
 - PETSCII : tout ce que le serveur envoie (majuscules, chiffres, espace, `-`) a le même code en
   ASCII et en PETSCII majuscules/graphiques. En réception, les majuscules PETSCII du mode
   minuscules ($C1-$DA) valent A-Z, sauf si l'octet suivant est $80-$BF (caractère UTF-8 envoyé

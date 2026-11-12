@@ -531,6 +531,31 @@ def test_delai_du_bot_respecte():
     asyncio.run(corps())
 
 
+def test_pause_apres_une_prise(monkeypatch):
+    """Après une prise, le premier bot attend FACTEUR_PAUSE_PRISE délais, puis on
+    revient au délai normal."""
+    import belote.table as module
+
+    async def corps():
+        t = Table(rng=random.Random(1), delai_bot=10)
+        a = rejoindre(t, "A")
+        t.recevoir(a, "LANCER")
+        d = t.donne
+        assert t.sieges[d.joueur].humain is None
+        monkeypatch.setattr(module, "choisir_enchere", lambda main, tour, c: c)
+        boucle = asyncio.get_running_loop()
+        t._action_bot()                        # le premier à parler prend
+        assert d.phase is Phase.JEU
+        assert t.sieges[d.joueur].humain is None  # et entame
+        assert 29 < t._minuteur_bot.when() - boucle.time() <= 30
+        t._action_bot()                        # première carte
+        if t.sieges[d.joueur].humain is None:
+            assert 9 < t._minuteur_bot.when() - boucle.time() <= 10
+        if t._minuteur_bot:
+            t._minuteur_bot.cancel()
+    asyncio.run(corps())
+
+
 def test_deconnexion_pendant_son_tour_le_bot_joue_immediatement():
     async def corps():
         t = Table(rng=random.Random(1), delai_bot=3600)

@@ -101,6 +101,9 @@ static void zone_table(void)
     if (etat == E_COURS && retournee >= 0) {
         ecrire(15, 5, "RETOURNEE", GRIS_CLAIR, FOND_VERT);
         carte(18, 6, retournee);
+    } else if (etat == E_COURS && prise >= 0) {
+        ecrire(17, 5, "PRISE", GRIS_CLAIR, FOND_VERT);
+        carte(18, 6, prise);
     }
 }
 

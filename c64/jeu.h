@@ -25,6 +25,8 @@ extern unsigned char etat;
 extern unsigned cible, inactif;
 extern unsigned scores[2];
 extern signed char donneur, tour, preneur, atout, retournee, gagnant;
+/* Carte retournée qui vient d'être prise : affichée jusqu'à la première carte jouée. */
+extern signed char prise;
 extern unsigned char tour_ench;
 extern signed char main_c[8];
 extern unsigned char nmain;
