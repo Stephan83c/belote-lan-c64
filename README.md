@@ -24,7 +24,8 @@ son C64. Les places libres sont tenues par des bots. Un serveur Python sur le PC
 ## Démarrer
 
 Il faut un C64 Ultimate (ou un Ultimate 64 / Ultimate-II+) avec l'API REST et la Command Interface
-activées, cc65, Python 3.13 et, en option, VICE.
+activées, cc65, Python 3 (écrit et testé en 3.13, sans dépendance hors bibliothèque standard) et, en
+option, VICE. Le serveur seul (par exemple sur un VPS) ne demande que Python, git et make.
 
 ### 1. Régler les adresses : `config.mk`
 

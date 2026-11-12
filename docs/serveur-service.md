@@ -69,13 +69,58 @@ Sur le C64, connectez-vous comme d'habitude à `SERVEUR_IP:SERVEUR_PORT`.
 Après un `git pull` qui modifie le serveur : `make test`, puis `systemctl --user restart belote`.
 Un redémarrage efface la partie en cours.
 
-## 6. Bon à savoir
+## 6. Sur un VPS Fedora (serveur sur Internet)
+
+Pour jouer depuis plusieurs maisons, le serveur peut tourner sur un VPS. Les C64 l'appellent alors à
+son adresse publique (`SERVEUR_IP` dans `config.mk`). Sur le VPS, il n'y a besoin ni de cc65 ni de
+VICE.
+
+```sh
+sudo dnf install -y git make python3
+git clone https://github.com/Stephan83c/belote-lan-c64.git ~/c64-online
+cd ~/c64-online
+make test PYTHON=python3          # crée le venv avec le Python de Fedora et lance les tests
+```
+
+Installez ensuite le service comme aux étapes 2 à 4. L'étape 3 (`enable-linger`) est
+**indispensable** sur un VPS : personne n'y garde de session ouverte.
+
+**Pare-feu** : Fedora utilise firewalld, pas ufw :
+
+```sh
+sudo firewall-cmd --permanent --add-port=6464/tcp
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-ports      # doit afficher 6464/tcp
+```
+
+Si l'hébergeur a aussi un pare-feu dans son interface web (OVH : *Network Firewall*), ouvrez-y le
+port TCP 6464 également.
+
+**Vérifier depuis chez vous** : `nc -vz 51.38.50.79 6464` doit répondre *succeeded* (ou *open*).
+
+**Exposé sur Internet**, le serveur accepte n'importe qui :
+
+- il n'y a pas de mot de passe, et quiconque connaît l'adresse et le port peut rejoindre la table ;
+- un joueur est reconnu à son nom : choisir le nom d'un absent permet de reprendre sa place ;
+- le protocole n'est pas chiffré (c'est du texte simple, comme sur le réseau local).
+
+C'est sans enjeu pour une partie de belote entre amis. Pour limiter les visiteurs, vous pouvez
+utiliser un autre port que 6464 (dans `config.mk` et dans le service), ou n'ouvrir le pare-feu
+qu'aux adresses de vos joueurs :
+
+```sh
+sudo firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=<ip publique d un joueur> port port=6464 protocol=tcp accept'
+```
+
+(dans ce cas, n'utilisez pas `--add-port` ci-dessus).
+
+## 7. Bon à savoir
 
 - **Pas de console** : en service, le serveur ne lit pas le clavier, donc la commande `RAZ` du
   terminal n'existe pas. Le chef efface la partie depuis son C64 avec **F4** puis **O**.
-- **Pare-feu** : le port doit rester ouvert aux C64 du réseau local, par exemple
-  `sudo ufw allow from 192.168.1.0/24 to any port 6464 proto tcp`. N'ouvrez pas ce port sur
-  Internet : le serveur n'a aucune authentification.
+- **Pare-feu (réseau local, Debian/Ubuntu)** : le port doit être ouvert aux C64, par exemple
+  `sudo ufw allow from 192.168.1.0/24 to any port 6464 proto tcp`. Pour Fedora et un serveur sur
+  Internet, voir la partie 6.
 - **Modifier le service** : éditez `~/.config/systemd/user/belote.service`, puis
   `systemctl --user daemon-reload` et `systemctl --user restart belote`.
 - **Désinstaller** :

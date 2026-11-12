@@ -1,4 +1,6 @@
 VENV := server/.venv
+# Python du serveur (bibliothèque standard seulement) : python3 suffit, ex. sur Fedora.
+PYTHON ?= python3.13
 
 # Adresses du réseau local : voir config.mk.
 include config.mk
@@ -58,5 +60,5 @@ clean:
 	rm -rf build
 
 $(VENV)/bin/pytest:
-	python3.13 -m venv $(VENV)
+	$(PYTHON) -m venv $(VENV)
 	$(VENV)/bin/pip install -q -r server/requirements-dev.txt
