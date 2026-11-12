@@ -1,8 +1,10 @@
 VENV := server/.venv
 
+# Adresses du réseau local : voir config.mk.
+include config.mk
+
 # Client C64 (cc65). Adresse pré-remplie dans le champ SERVEUR (SPEC 2.1).
-SERVEUR_DEFAUT ?= 192.168.1.55:6464
-ULTIMATE ?= 192.168.1.27
+SERVEUR_DEFAUT := $(SERVEUR_IP):$(SERVEUR_PORT)
 PRG := build/belote_lan.prg
 SOURCES := $(sort $(wildcard c64/*.c) c64/titre_img.c)
 ENTETES := $(wildcard c64/*.h)
@@ -13,7 +15,7 @@ CFLAGS := -t c64 -O -Or -DSERVEUR_DEFAUT='"$(SERVEUR_DEFAUT)"' -Wl -D,__HIMEM__=
 
 all: $(PRG)
 
-$(PRG): $(SOURCES) $(ENTETES) Makefile
+$(PRG): $(SOURCES) $(ENTETES) Makefile config.mk
 	@mkdir -p build
 	cl65 $(CFLAGS) -m build/belote_lan.map -o $@ $(SOURCES)
 	@rm -f c64/*.o
@@ -50,7 +52,7 @@ test: $(VENV)/bin/pytest
 	cd server && .venv/bin/pytest -q
 
 server: $(VENV)/bin/pytest
-	cd server && .venv/bin/python -m belote
+	cd server && .venv/bin/python -m belote --port $(SERVEUR_PORT)
 
 clean:
 	rm -rf build

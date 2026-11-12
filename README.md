@@ -26,16 +26,33 @@ son C64. Les places libres sont tenues par des bots. Un serveur Python sur le PC
 Il faut un C64 Ultimate (ou un Ultimate 64 / Ultimate-II+) avec l'API REST et la Command Interface
 activées, cc65, Python 3.13 et, en option, VICE.
 
+### 1. Régler les adresses : `config.mk`
+
+Ouvrez `config.mk` et mettez les adresses de votre réseau :
+
+| Variable | Rôle | Défaut |
+|---|---|---|
+| `SERVEUR_IP` | IP du PC qui fait tourner le serveur ; pré-remplie sur le C64 | `192.168.1.55` |
+| `SERVEUR_PORT` | Port TCP du serveur, côté PC et côté C64 | `6464` |
+| `ULTIMATE` | IP du C64 Ultimate, pour envoyer le programme (`make deploy`) | `192.168.1.27` |
+
+L'IP du PC s'obtient avec `ip addr` (Linux) ou `ipconfig` (Windows). Celle de l'Ultimate se lit dans les
+réglages réseau de son menu. Chaque valeur peut aussi être donnée ponctuellement sur
+la ligne de commande, sans modifier le fichier : `make deploy ULTIMATE=192.168.0.64`.
+
+### 2. Lancer
+
 ```sh
-make server                          # serveur sur le port 6464 (crée le venv au besoin)
-make deploy ULTIMATE=192.168.1.27    # tests, compilation, envoi et lancement sur le C64
+make server    # serveur sur SERVEUR_PORT (crée le venv au besoin)
+make deploy    # tests, compilation, envoi et lancement sur l'Ultimate
 ```
 
-Sur le C64 : une touche passe l'écran titre. Saisissez ensuite l'adresse du serveur
-(`IP:6464`, pré-remplie par `SERVEUR_DEFAUT` à la compilation) et un nom de 5 caractères.
-Le premier arrivé devient le chef.
+Sur le C64 : une touche passe l'écran titre. Le champ SERVEUR contient déjà `SERVEUR_IP:SERVEUR_PORT`
+et reste modifiable (RETURN pour passer au nom). Entrez ensuite un nom de 5 caractères. Le premier
+arrivé devient le chef. Pour les autres C64, il suffit d'envoyer le même programme
+(`make deploy ULTIMATE=<ip de l'autre C64>`) ou de le copier sur leur carte.
 
-Le port 6464 doit être ouvert sur le PC, par exemple
+Le port doit être ouvert sur le PC, par exemple
 `sudo ufw allow from 192.168.1.0/24 to any port 6464 proto tcp`.
 
 ## Touches

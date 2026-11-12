@@ -12,6 +12,7 @@ La spécification complète du jeu est dans SPEC.md : elle fait foi (règles, pr
 - Émulateur pour tests rapides : VICE (x64sc)
 
 ## Commandes
+- `config.mk` : SERVEUR_IP, SERVEUR_PORT, ULTIMATE (surchargeables : `make deploy ULTIMATE=...`)
 - `make` : compile c64/ vers build/belote_lan.prg
 - `make deploy` : pytest, tape F7 sur le C64 (le client quitte la table et ferme son
   socket), puis envoie et lance le PRG sur l'Ultimate
