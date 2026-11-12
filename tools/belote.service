@@ -1,0 +1,22 @@
+# Service systemd *utilisateur* du serveur BELOTE LAN C64.
+# Installation et explications : docs/serveur-service.md
+#
+# %h est le dossier personnel : adaptez le chemin si le dépôt n'est pas
+# dans ~/c64-online, et le port s'il diffère de SERVEUR_PORT (config.mk).
+
+[Unit]
+Description=Serveur BELOTE LAN C64 (belote en reseau pour C64 Ultimate)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/c64-online/server
+ExecStart=%h/c64-online/server/.venv/bin/python -m belote --port 6464
+Restart=on-failure
+RestartSec=5
+# Pas de console sous systemd : le chef efface la partie avec F4 sur son C64.
+StandardInput=null
+
+[Install]
+WantedBy=default.target

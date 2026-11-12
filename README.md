@@ -55,6 +55,9 @@ arrivé devient le chef. Pour les autres C64, il suffit d'envoyer le même progr
 Le port doit être ouvert sur le PC, par exemple
 `sudo ufw allow from 192.168.1.0/24 to any port 6464 proto tcp`.
 
+Pour que le serveur démarre tout seul avec le PC, installez-le en service systemd : voir
+[docs/serveur-service.md](docs/serveur-service.md).
+
 ## Touches
 
 | Touche | Action |
