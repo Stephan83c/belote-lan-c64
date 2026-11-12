@@ -42,30 +42,49 @@ unsigned char uci_present(void)
     return UCI_CMD == 0xC9;
 }
 
-static void attendre_repos(void)
+unsigned char uci_bloquee;
+
+/* Horloge du KERNAL (60 Hz), 16 bits de poids faible. */
+static unsigned jiffies(void)
 {
-    unsigned t = 0;
+    unsigned char b, h;
+    do {
+        b = *(volatile unsigned char *)0xA2;
+        h = *(volatile unsigned char *)0xA1;
+    } while (b != *(volatile unsigned char *)0xA2);
+    return (h << 8) | b;
+}
+
+/* Attend l'état repos ; renvoie 0 si l'interface reste occupée 2 s. */
+static unsigned char attendre_repos(void)
+{
+    unsigned debut = jiffies();
     unsigned char e;
     while ((e = UCI_CTRL & ST_ETAT) != 0) {
         if (e & 0x20) {            /* données d'une commande précédente : acquitter */
             UCI_CTRL = CT_ACC;
         }
-        if (++t == 0) {            /* bloquée : abandon */
+        if (jiffies() - debut > 120) {
             UCI_CTRL = CT_ABORT;
-            t = 0;
+            uci_bloquee = 1;
+            return 0;
         }
     }
+    return 1;
 }
 
 /* Envoie cmd[0..n-1] et lit la réponse dans rep / uci_statut.
  * Renvoie 1 si le statut commence par « 00 ». */
-static unsigned char executer(unsigned char n)
+static unsigned char executer(unsigned char n, unsigned limite)
 {
     unsigned char i, s, ns = 0;
+    unsigned debut;
 
     rep_n = 0;
     uci_statut[0] = 0;
-    attendre_repos();
+    if (!attendre_repos()) {
+        return 0;
+    }
     for (i = 0; i < n; ++i) {
         UCI_CMD = cmd[i];
     }
@@ -74,9 +93,15 @@ static unsigned char executer(unsigned char n)
         UCI_CTRL = CT_CLR_ERR;
         return 0;
     }
+    debut = jiffies();
     for (;;) {
         /* attendre la fin du traitement (état 10 ou 11) */
         while (((s = UCI_CTRL) & 0x20) == 0) {
+            if (jiffies() - debut > limite) {
+                UCI_CTRL = CT_ABORT;
+                uci_bloquee = 1;
+                return 0;
+            }
         }
         while (UCI_CTRL & ST_DATA_AV) {
             i = UCI_RESP;
@@ -117,13 +142,13 @@ int net_ouvrir(const char *hote, unsigned port)
     cmd[3] = port >> 8;
     memcpy(cmd + 4, hote, n);
     cmd[4 + n] = 0;
-    if (!executer(5 + n) || rep_n < 1) {
+    if (!executer(5 + n, 30 * 60) || rep_n < 1) {
         return -1;
     }
     return rep[0];
 }
 
-unsigned char net_lire(unsigned char sock, char *dst, unsigned char max)
+int net_lire(unsigned char sock, char *dst, unsigned char max)
 {
     unsigned lu;
     cmd[0] = CIBLE_RESEAU;
@@ -131,17 +156,22 @@ unsigned char net_lire(unsigned char sock, char *dst, unsigned char max)
     cmd[2] = sock;
     cmd[3] = max;
     cmd[4] = 0;
-    executer(5);
-    if (rep_n < 2) {
-        return 0;
+    if (!executer(5, 3 * 60) && uci_bloquee) {
+        return -1;
     }
-    /* 2 octets de longueur (petit-boutiste, négative si rien) puis les données */
-    lu = rep[0] | (rep[1] << 8);
-    if (lu == 0 || lu > max || lu > rep_n - 2) {
+    /* 2 octets de longueur (petit-boutiste, -1 si rien) puis les données.
+     * Sans données, le statut dit pourquoi : « 02,NO DATA: 11 » (EAGAIN) sur
+     * une connexion vivante ; « CONNECTION CLOSED BY HOST » puis « NO DATA: 9 »
+     * (EBADF) quand le serveur a fermé, l'Ultimate libérant alors le socket. */
+    lu = rep_n >= 2 ? (rep[0] | (rep[1] << 8)) : 0xFFFF;
+    if (lu == 0 || lu == 0xFFFF) {
+        return strstr(uci_statut, ": 11") ? 0 : -1;
+    }
+    if (lu > max || lu > rep_n - 2) {
         return 0;
     }
     memcpy(dst, rep + 2, lu);
-    return (unsigned char)lu;
+    return lu;
 }
 
 unsigned char net_ecrire(unsigned char sock, const char *src, unsigned char n)
@@ -153,7 +183,7 @@ unsigned char net_ecrire(unsigned char sock, const char *src, unsigned char n)
     cmd[1] = NET_ECRIRE;
     cmd[2] = sock;
     memcpy(cmd + 3, src, n);
-    return executer(3 + n);
+    return executer(3 + n, 3 * 60);
 }
 
 void net_fermer(unsigned char sock)
@@ -161,5 +191,5 @@ void net_fermer(unsigned char sock)
     cmd[0] = CIBLE_RESEAU;
     cmd[1] = NET_FERMER;
     cmd[2] = sock;
-    executer(3);
+    executer(3, 3 * 60);
 }

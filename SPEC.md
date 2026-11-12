@@ -1,4 +1,4 @@
-# Belote en réseau sur C64 (C / cc65) + tchat
+# BELOTE LAN C64 — belote en réseau sur C64 (C / cc65) + tchat
 
 **Spécification consolidée — version 4**
 
@@ -96,7 +96,7 @@ Le projet est un jeu de belote à quatre places, en réseau, avec un client Comm
 Au démarrage, le client affiche l’écran de connexion. Le champ SERVEUR est pré-rempli avec l’adresse par défaut (définie dans le Makefile) ; le joueur peut la modifier (DEL pour effacer) puis valide par RETURN. Format : hôte ou IP, suivi éventuellement de :port (6464 si absent), 31 caractères maximum. Le C64 Ultimate résout lui-même le nom d’hôte. En cas d’échec, le message « CONNEXION IMPOSSIBLE » s’affiche et le champ est proposé de nouveau.
 
 ```
-L0  BELOTE C64
+L0  BELOTE LAN C64
 L1  ----------------------------------------
 L3  SERVEUR : BOOMBASS.NET:6464
 L5  NOM     : JEAN_
@@ -124,7 +124,7 @@ Ensuite, le client demande un nom de 5 caractères maximum (A–Z, 0–9) puis r
 Le score cible est 1000 par défaut et peut être modifié par le chef dans les paramètres serveur. Le score affiché est cumulé d’une manche à l’autre. **La première équipe qui atteint ou dépasse la cible gagne la partie** *(v4)*. Le contrôle se fait à la fin de chaque manche, après le comptage complet (jamais au milieu d’une manche, car les points ne sont connus qu’à la fin : dedans, capot, réserve). Si les deux équipes atteignent la cible dans la même manche, la plus haute l’emporte ; en cas d’égalité parfaite, une manche supplémentaire est jouée et le donneur tourne. Des points encore en réserve (litige) à la fin de la partie sont perdus.
 
 ```
-L0  BELOTE        PARTIE TERMINEE
+L0  BELOTE LAN C64         PARTIE TERMINEE
 L1  ----------------------------------------
 L2
 L3

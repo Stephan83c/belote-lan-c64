@@ -1,4 +1,4 @@
-# Projet : jeu online C64
+# Projet : BELOTE LAN C64 (jeu de belote en réseau pour C64)
 
 La spécification complète du jeu est dans SPEC.md : elle fait foi (règles, protocole, écran).
 
@@ -13,11 +13,28 @@ La spécification complète du jeu est dans SPEC.md : elle fait foi (règles, pr
 
 ## Commandes
 - `make` : compile c64/ vers build/belote_lan.prg
-- `make deploy` : envoie et lance le PRG sur l'Ultimate
+- `make deploy` : pytest, tape F7 sur le C64 (le client quitte la table et ferme son
+  socket), puis envoie et lance le PRG sur l'Ultimate
   (curl -X POST --data-binary @build/belote_lan.prg http://192.168.1.27/v1/runners:run_prg)
 - `make server` : lance le serveur Python
+- `make vice` : le vrai client dans VICE (écran de connexion seulement : VICE n'émule pas
+  la Command Interface)
+- `make vice-demo SCENARIO=1..4` : client avec réseau simulé (c64/vice/faux_uci.c) ;
+  `make demo` compile sans lancer VICE
 
 ## Règles
 - Réseau côté C64 via l'Ultimate Command Interface ($DF1C-$DF1F), cible réseau.
 - Protocole texte ASCII, une ligne par message terminée par LF (64 octets max), documenté dans SPEC.md section 7 et protocol.md : il doit rester débogable avec nc.
 - Toujours tester le serveur avec pytest avant de déployer.
+
+## Pièges de l'Ultimate (constatés)
+- Lecture réseau sans données : longueur -1 et statut « 02,NO DATA: 11 » (EAGAIN). Après
+  fermeture par le serveur : « CONNECTION CLOSED BY HOST » puis « NO DATA: 9 » (EBADF),
+  l'Ultimate ayant libéré le socket. Ne plus jamais écrire ni fermer ce numéro ensuite : il
+  peut être réutilisé par l'Ultimate, et y toucher bloque la Command Interface (état $15).
+- Une fois bloquée ($DF1C reste à $15), ni reset, ni PUT /v1/machine:reboot, ni abort par
+  writemem ne la relancent : il faut couper l'alimentation de l'Ultimate.
+- Un reset du C64 laisse ouverts ses sockets dans l'Ultimate : quitter avec F7 avant (make
+  deploy le fait). Le serveur reprend la place d'un JOIN même nom + même IP (SPEC 4.3).
+- L'API REST lit l'écran : GET /v1/machine:readmem?address=C000&length=1000 (écran en $C000,
+  codes écran ECM) ; on tape au clavier en écrivant le tampon $0277 et son compteur $C6.

@@ -65,10 +65,21 @@ static void envoyer(const char *s)
 /* Lit ce qui est arrivé et traite chaque ligne complète. */
 static void reseau(void)
 {
-    unsigned char n, i, c, tours;
+    unsigned char i, c, tours;
+    int n;
 
+    if (sock < 0) {
+        return;
+    }
     for (tours = 0; tours < 4; ++tours) {
         n = net_lire(sock, rx, sizeof(rx));
+        if (n < 0) {
+            /* L'Ultimate a déjà libéré ce socket et peut réutiliser son numéro
+             * pour lui-même : ne plus jamais l'écrire ni le fermer. */
+            sock = -1;
+            perdu = 1;
+            return;
+        }
         if (!n) {
             return;
         }
@@ -149,7 +160,7 @@ static void connexion(void)
     char *dp;
 
     ecran_effacer();
-    ecrire(0, 0, "BELOTE C64", BLANC, FOND_VERT);
+    ecrire(0, 0, "BELOTE LAN C64", BLANC, FOND_VERT);
     ligne_tirets(1);
     ecrire(0, 3, "SERVEUR:", BLANC, FOND_VERT);
     ecrire(0, 5, "NOM    :", BLANC, FOND_VERT);
@@ -176,7 +187,7 @@ static void connexion(void)
             continue;
         }
         if (!uci_present()) {
-            message("COMMAND INTERFACE ABSENTE (MENU F2)");
+            message("COMMAND INTERFACE ABSENTE OU INACTIVE");
             continue;
         }
 
@@ -192,6 +203,12 @@ static void connexion(void)
         }
         message("CONNEXION...");
         sock = net_ouvrir(hote, port);
+        if (uci_bloquee) {
+            message("ULTIMATE BLOQUE : ETEINDRE ET RALLUMER");
+            uci_bloquee = 0;
+            sock = -1;
+            continue;
+        }
         if (sock < 0) {
             message("CONNEXION IMPOSSIBLE");
             champ = 0;
@@ -204,7 +221,8 @@ static void connexion(void)
         strcat(tx, nom);
         envoyer(tx);
         debut = jiffies();
-        while (moi < 0 && !erreur[0] && jiffies() - debut < 5 * 60) {
+        perdu = 0;
+        while (moi < 0 && !erreur[0] && !perdu && jiffies() - debut < 5 * 60) {
             reseau();
         }
         if (moi >= 0) {
@@ -214,9 +232,12 @@ static void connexion(void)
             strcpy(tx, "REFUS : ");
             strcat(tx, erreur);
             message(tx);
+        } else if (perdu) {
+            message("CONNEXION FERMEE PAR LE SERVEUR");
         } else {
             message("LE SERVEUR NE REPOND PAS");
         }
+        perdu = 0;
         ferme();
         champ = 0;
     }
@@ -326,6 +347,11 @@ static unsigned char touche(void)
     if (!c) {
         return 1;
     }
+    if (c == K_F7) {                /* quitter, quel que soit l'écran */
+        envoyer("LEAVE");
+        ferme();
+        return 0;
+    }
     if (param) {
         touche_param(c);
         return 1;
@@ -343,10 +369,6 @@ static unsigned char touche(void)
         return 1;
     }
     switch (c) {
-    case K_F7:
-        envoyer("LEAVE");
-        ferme();
-        return 0;
     case K_F1:
         if (suis_chef() && etat == E_ATTENTE) {
             param = 1;
@@ -395,6 +417,10 @@ static void partie(void)
     vue_forcer();
     for (;;) {
         reseau();
+        if (uci_bloquee) {
+            uci_bloquee = 0;
+            perdu = 1;
+        }
         if (!touche() || perdu) {
             break;
         }

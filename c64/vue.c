@@ -248,7 +248,7 @@ static void vue_regles(void)
     if (sale != D_TOUT) {
         return;
     }
-    ecrire(0, 0, "BELOTE         REGLES DU JEU", BLANC, FOND_VERT);
+    ecrire(0, 0, "BELOTE LAN C64          REGLES DU JEU", BLANC, FOND_VERT);
     ligne_tirets(1);
     for (i = 0; i < sizeof(texte_regles) / sizeof(texte_regles[0]); ++i) {
         ecrire(0, 3 + i, texte_regles[i], BLANC, FOND_VERT);
@@ -258,7 +258,7 @@ static void vue_regles(void)
 
 static void vue_param(void)
 {
-    ecrire(0, 0, "BELOTE         PARAMETRES", BLANC, FOND_VERT);
+    ecrire(0, 0, "BELOTE LAN C64             PARAMETRES", BLANC, FOND_VERT);
     ligne_tirets(1);
     sprintf(t, "%c SCORE CIBLE : %u", param_sel == 0 ? '>' : ' ', param_cible);
     ecrire_n(0, 4, t, 40, param_sel == 0 ? JAUNE : BLANC, FOND_VERT);
@@ -275,7 +275,7 @@ static void vue_fin(void)
     if (sale != D_TOUT) {
         return;
     }
-    ecrire(0, 0, "BELOTE        PARTIE TERMINEE", BLANC, FOND_VERT);
+    ecrire(0, 0, "BELOTE LAN C64         PARTIE TERMINEE", BLANC, FOND_VERT);
     ligne_tirets(1);
     sprintf(t, "NOUS : %4u", nous);
     ecrire(0, 4, t, BLANC, FOND_VERT);

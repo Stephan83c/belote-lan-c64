@@ -195,7 +195,7 @@ void traiter_ligne(char *ligne)
         tampon[i] = SYM(atout);
         tampon[i + 1] = 0;
         journal_place(preneur, tampon);
-        sale |= D_ENTETE | D_TABLE | D_ENCH;
+        sale |= D_ENTETE | D_TABLE | D_ENCH | D_MAIN | D_BARRE;
     } else if (!strcmp(mot, "RETOURNE")) {
         retournee = (signed char)nombre();
         sale |= D_TABLE | D_ENCH;
