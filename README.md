@@ -65,3 +65,8 @@ python3 tools/titre.py       # régénère l'écran titre (Pillow)
 Dans le terminal du serveur, `RAZ` efface la partie en cours. Les particularités de l'Ultimate
 constatées sur le matériel (sockets libérés, Command Interface bloquée) sont notées dans
 [CLAUDE.md](CLAUDE.md).
+
+## Auteurs
+
+Stéphan ([@Stephan83c](https://github.com/Stephan83c)), avec Claude (Anthropic) comme co-auteur :
+conception et code écrits ensemble avec Claude Code.
