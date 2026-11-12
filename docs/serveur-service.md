@@ -51,7 +51,7 @@ sudo loginctl enable-linger $USER
 ```sh
 systemctl --user status belote          # doit indiquer « active (running) »
 journalctl --user -u belote -f          # journal en direct (connexions, erreurs) ; Ctrl+C pour sortir
-printf 'JOIN TEST\n' | nc -q1 localhost 6464   # le serveur répond BIENVENUE TEST ...
+ss -ltn | grep 6464                    # le port est bien en écoute
 ```
 
 Sur le C64, connectez-vous comme d'habitude à `SERVEUR_IP:SERVEUR_PORT`.
