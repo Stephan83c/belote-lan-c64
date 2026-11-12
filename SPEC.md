@@ -98,7 +98,7 @@ Au démarrage, le client affiche l’écran de connexion. Le champ SERVEUR est p
 ```
 L0  BELOTE LAN C64
 L1  ----------------------------------------
-L3  SERVEUR : BOOMBASS.NET:6464
+L3  SERVEUR : 51.38.50.79:6464
 L5  NOM     : JEAN_
 L7  RETURN = VALIDER
 ```
