@@ -116,6 +116,17 @@ sudo firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=<
 
 ## 7. Bon à savoir
 
+- **« Failed to connect to user scope bus … XDG_RUNTIME_DIR not defined »** : la session (souvent
+  ouverte par `su` ou `sudo -u`) n'a pas de gestionnaire systemd utilisateur. Activez le linger
+  (étape 3), puis indiquez-le à la session et recommencez :
+  ```sh
+  sudo loginctl enable-linger $USER
+  export XDG_RUNTIME_DIR=/run/user/$(id -u)
+  systemctl --user daemon-reload
+  ```
+  Le `export` est à refaire dans chaque nouvelle session où l'erreur revient. Le service, lui, n'en
+  a pas besoin.
+
 - **Pas de console** : en service, le serveur ne lit pas le clavier, donc la commande `RAZ` du
   terminal n'existe pas. Le chef efface la partie depuis son C64 avec **F4** puis **O**.
 - **Pare-feu (réseau local, Debian/Ubuntu)** : le port doit être ouvert aux C64, par exemple
