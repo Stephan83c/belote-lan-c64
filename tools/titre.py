@@ -51,6 +51,31 @@ def texte(img, x, y, s, coul, sx=1, sy=2, ombre=None):
                     rect(img, x + (i * 8 + gx) * sx, y + gy * sy, sx, sy, coul)
 
 
+# Mini-police 3x5 pour la ligne d'auteur (la ROM ne fait que du 8x8).
+MINI = {
+    "A": ["010", "101", "111", "101", "101"], "C": ["011", "100", "100", "100", "011"],
+    "E": ["111", "100", "110", "100", "111"], "G": ["011", "100", "101", "101", "011"],
+    "H": ["101", "101", "111", "101", "101"], "I": ["111", "010", "010", "010", "111"],
+    "L": ["100", "100", "100", "100", "111"], "N": ["110", "101", "101", "101", "101"],
+    "P": ["110", "101", "110", "100", "100"], "S": ["011", "100", "010", "001", "110"],
+    "T": ["111", "010", "010", "010", "010"], "V": ["101", "101", "101", "101", "010"],
+    "0": ["010", "101", "101", "101", "010"], "2": ["110", "001", "010", "100", "111"],
+    "3": ["110", "001", "010", "001", "110"], "6": ["011", "100", "110", "101", "010"],
+    "(": ["001", "010", "010", "010", "001"], ")": ["100", "010", "010", "010", "100"],
+    "-": ["000", "000", "111", "000", "000"], " ": ["000"] * 5,
+}
+
+
+def mini(img, y, s, coul, sy=2):
+    """Ligne centrée en mini-police : 4 pixels larges par caractère."""
+    x0 = (W - len(s) * 4 + 1) // 2
+    for i, c in enumerate(s):
+        for gy, ligne in enumerate(MINI[c]):
+            for gx, b in enumerate(ligne):
+                if b == "1":
+                    rect(img, x0 + i * 4 + gx, y + gy * sy, 1, sy, coul)
+
+
 def rect(img, x, y, w, h, c):
     for yy in range(y, y + h):
         for xx in range(x, x + w):
@@ -124,21 +149,19 @@ def image():
             img[y][x] = VERT_CLAIR
 
     # titre
-    texte(img, (W - 6 * 16) // 2, 4, "BELOTE", JAUNE, sx=2, sy=3, ombre=NOIR)
-    texte(img, (W - 7 * 8) // 2, 32, "LAN C64", BLANC, sx=1, sy=2, ombre=NOIR)
+    texte(img, (W - 6 * 16) // 2, 8, "BELOTE", JAUNE, sx=2, sy=3, ombre=NOIR)
+    texte(img, (W - 7 * 8) // 2, 37, "LAN C64", BLANC, sx=1, sy=2, ombre=NOIR)
 
     # éventail : valet de trèfle, as de pique, puis la belote (dame et roi de coeur)
     main = [("V", "trefle"), ("A", "pique"), ("D", "coeur"), ("R", "coeur")]
-    pas, cw, ch = 20, 28, 68
+    pas, cw, ch = 20, 28, 72
     x0 = (W - (cw + pas * (len(main) - 1))) // 2
     for i, (r, c) in enumerate(main):
         dy = abs(i * 2 - 3) * 3      # éventail : les cartes du bord plus bas
-        carte(img, x0 + i * pas, 56 + dy, r, c, w=cw, h=ch)
+        carte(img, x0 + i * pas, 66 + dy, r, c, w=cw, h=ch)
 
-    # auteur et licence
-    for y, s in ((140, "(C) 2026 STEPHAN"), (158, "LICENCE GPL V3")):
-        texte(img, (W - len(s) * 8) // 2, y, s, BLANC, sx=1, sy=2, ombre=NOIR)
-    texte(img, (W - 17 * 8) // 2, 182, "ESPACE POUR JOUER", JAUNE, sx=1, sy=2)
+    texte(img, (W - 17 * 8) // 2, 160, "ESPACE POUR JOUER", JAUNE, sx=1, sy=2)
+    mini(img, 187, "(C) 2026 STEPHAN - LICENCE GPL V3", BLANC)
     return img
 
 
