@@ -93,7 +93,7 @@ Le projet est un jeu de belote à quatre places, en réseau, avec un client Comm
 
 ### 2.1 Connexion et attente *(v4)*
 
-Au démarrage, le client affiche l’écran de connexion. Le champ SERVEUR est pré-rempli avec l’adresse par défaut (définie dans le Makefile) ; le joueur peut la modifier (DEL pour effacer) puis valide par RETURN. Format : hôte ou IP, suivi éventuellement de :port (6464 si absent), 31 caractères maximum. Le C64 Ultimate résout lui-même le nom d’hôte. En cas d’échec, le message « CONNEXION IMPOSSIBLE » s’affiche et le champ est proposé de nouveau.
+Au démarrage, le client affiche l’écran de connexion. Le champ SERVEUR est pré-rempli avec l’adresse par défaut (SERVEUR_IP et SERVEUR_PORT dans config.mk) ; le joueur peut la modifier (DEL pour effacer) puis valide par RETURN. Format : hôte ou IP, suivi éventuellement de :port (6464 si absent), 31 caractères maximum. Le C64 Ultimate résout lui-même le nom d’hôte. En cas d’échec, le message « CONNEXION IMPOSSIBLE » s’affiche et le champ est proposé de nouveau.
 
 ```
 L0  BELOTE LAN C64
