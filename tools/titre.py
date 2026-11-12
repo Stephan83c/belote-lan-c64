@@ -124,18 +124,21 @@ def image():
             img[y][x] = VERT_CLAIR
 
     # titre
-    texte(img, (W - 6 * 16) // 2, 10, "BELOTE", JAUNE, sx=2, sy=3, ombre=NOIR)
-    texte(img, (W - 7 * 8) // 2, 40, "LAN C64", BLANC, sx=1, sy=2, ombre=NOIR)
+    texte(img, (W - 6 * 16) // 2, 4, "BELOTE", JAUNE, sx=2, sy=3, ombre=NOIR)
+    texte(img, (W - 7 * 8) // 2, 32, "LAN C64", BLANC, sx=1, sy=2, ombre=NOIR)
 
     # éventail : valet de trèfle, as de pique, puis la belote (dame et roi de coeur)
     main = [("V", "trefle"), ("A", "pique"), ("D", "coeur"), ("R", "coeur")]
-    pas, cw, ch = 20, 28, 72
+    pas, cw, ch = 20, 28, 68
     x0 = (W - (cw + pas * (len(main) - 1))) // 2
     for i, (r, c) in enumerate(main):
         dy = abs(i * 2 - 3) * 3      # éventail : les cartes du bord plus bas
-        carte(img, x0 + i * pas, 76 + dy, r, c, w=cw, h=ch)
+        carte(img, x0 + i * pas, 56 + dy, r, c, w=cw, h=ch)
 
-    texte(img, (W - 17 * 8) // 2, 176, "ESPACE POUR JOUER", GRIS_CLAIR, sx=1, sy=2)
+    # auteur et licence
+    for y, s in ((140, "(C) 2026 STEPHAN"), (158, "LICENCE GPL V3")):
+        texte(img, (W - len(s) * 8) // 2, y, s, BLANC, sx=1, sy=2, ombre=NOIR)
+    texte(img, (W - 17 * 8) // 2, 182, "ESPACE POUR JOUER", JAUNE, sx=1, sy=2)
     return img
 
 
