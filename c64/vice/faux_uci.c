@@ -2,7 +2,8 @@
  * Remplace uci.c : le client « reçoit » un scénario écrit d'avance, puis plus
  * rien ; ce qu'il envoie est ignoré. make vice-demo SCENARIO=1, 2 ou 3 :
  * 1 table d'attente et tchat, 2 partie reprise en cours de manche, 3 fin de partie,
- * 4 le serveur ferme la connexion : bordure rouge si le client touche encore au socket. */
+ * 4 le serveur ferme la connexion : bordure rouge si le client touche encore au socket,
+ * 5 second tour d'enchères, à notre tour. */
 #include "../ascii.h"
 #include <string.h>
 #include "../uci.h"
@@ -25,6 +26,12 @@ static const char *const lignes[] = {
 static const char *const lignes[] = {
  "BIENVENUE JEAN 1", "SIEGE 0 H MARC", "SIEGE 1 H JEAN", "SIEGE 2 B BOT", "SIEGE 3 B BOT",
  "CHEF 1", "ETAT EN COURS", "MANCHE 40 122", "SCORE 960 1052", "GAGNANT 1", "ETAT FIN PARTIE", 0 };
+#elif SCENARIO == 5
+static const char *const lignes[] = {
+ "BIENVENUE JEAN 0", "SIEGE 0 H JEAN", "SIEGE 1 B BOT", "SIEGE 2 B BOT", "SIEGE 3 B BOT",
+ "CHEF 0", "ETAT EN COURS", "DONNEUR 3", "MAIN 3 5 6 11 15", "NBCARTES 5 5 5 5",
+ "RETOURNE 20", "ENCHERES 1", "TOUR 0", "PASSE 0", "TOUR 1", "PASSE 1", "TOUR 2",
+ "PASSE 2", "TOUR 3", "PASSE 3", "ENCHERES 2", "TOUR 0", 0 };
 #else
 static const char *const lignes[] = {
  "BIENVENUE JEAN 0", "SIEGE 0 H JEAN", "SIEGE 1 B BOT", "SIEGE 2 B BOT", "SIEGE 3 B BOT",

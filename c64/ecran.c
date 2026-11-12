@@ -15,6 +15,13 @@ static const unsigned char code_sym[4] = { 0, 28, 30, 31 };
 /* Codes écran des symboles dans la ROM majuscules/graphiques */
 static const unsigned char rom_sym[4] = { 65, 83, 88, 90 };
 
+/* Tapis : le caractère # devient un motif de feutre, dessiné en vert clair
+ * sur le fond vert dans toutes les cases vides. */
+#define FEUTRE 35
+static const unsigned char motif_feutre[8] = {
+    0x80, 0x00, 0x08, 0x00, 0x80, 0x00, 0x08, 0x00
+};
+
 static const char *const rangs[8] = { "7 ", "8 ", "9 ", "10", "V ", "D ", "R ", "A " };
 
 static unsigned off[25];
@@ -35,6 +42,7 @@ void ecran_init(void)
     for (i = 0; i < 4; ++i) {
         memcpy(CARS + code_sym[i] * 8, ROM_CAR + rom_sym[i] * 8, 8);
     }
+    memcpy(CARS + FEUTRE * 8, motif_feutre, 8);
     POKE(1, port);
     __asm__("cli");
 
@@ -53,14 +61,15 @@ void ecran_init(void)
 
 void ecran_effacer(void)
 {
-    memset(ECRAN, 32, 1000);
-    memset(COULEUR, BLANC, 1000);
+    memset(ECRAN, FEUTRE, 1000);
+    memset(COULEUR, VERT_CLAIR, 1000);
 }
 
 void effacer(unsigned char x, unsigned char y, unsigned char n)
 {
     unsigned o = off[y] + x;
-    memset(ECRAN + o, 32, n);
+    memset(ECRAN + o, FEUTRE, n);
+    memset(COULEUR + o, VERT_CLAIR, n);
 }
 
 /* Écrit un caractère ASCII (ou un symbole 1-4) en position o. */
@@ -71,7 +80,14 @@ static void car(unsigned o, unsigned char c, unsigned char coul, unsigned char f
         COULEUR[o] = fond == FOND_VERT ? FC(c - 1) : BLANC;
         return;
     }
-    if (c >= 32 && c < 64) {
+    if (c == ' ' && fond == FOND_VERT) {
+        ECRAN[o] = FEUTRE;
+        COULEUR[o] = VERT_CLAIR;
+        return;
+    }
+    if (c == '#') {
+        c = '?';                        /* son caractère dessine le tapis */
+    } else if (c >= 32 && c < 64) {
         /* espace, chiffres, ponctuation : même code */
     } else if ((c >= 65 && c <= 91) || c == 93) {
         c -= 64;                        /* A-Z [ ] */

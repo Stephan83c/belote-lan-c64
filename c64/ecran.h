@@ -4,7 +4,8 @@
  * quatre fonds $D021-$D024, choisi par les bits 6-7 du code écran. On obtient
  * ainsi des cartes rouges ou noires à texte blanc sur un plateau vert. Seuls les
  * 64 premiers caractères existent : les symboles ♠ ♥ ♣ ♦ remplacent @ £ ↑ ←
- * dans un jeu de caractères copié en RAM.
+ * dans un jeu de caractères copié en RAM, et le motif du tapis remplace # :
+ * les cases vides du fond vert sont tissées de points vert clair.
  *
  * Banque VIC 3 : écran en $C000, caractères en $C800 (le programme s'arrête
  * sous $C000, voir __HIMEM__ dans le Makefile).
@@ -22,6 +23,7 @@
 #define ROUGE      2
 #define CYAN       3
 #define VERT       5
+#define VERT_CLAIR 13
 #define JAUNE      7
 #define ORANGE     8
 #define GRIS_FONCE 11

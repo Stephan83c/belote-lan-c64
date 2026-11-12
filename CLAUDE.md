@@ -19,8 +19,10 @@ La spécification complète du jeu est dans SPEC.md : elle fait foi (règles, pr
 - `make server` : lance le serveur Python
 - `make vice` : le vrai client dans VICE (écran de connexion seulement : VICE n'émule pas
   la Command Interface)
-- `make vice-demo SCENARIO=1..4` : client avec réseau simulé (c64/vice/faux_uci.c) ;
+- `make vice-demo SCENARIO=1..5` : client avec réseau simulé (c64/vice/faux_uci.c) ;
   `make demo` compile sans lancer VICE
+- `python3 tools/titre.py [apercu.png]` : régénère l'écran titre (c64/titre_img.c, versionné ;
+  demande Pillow et la ROM caractères de VICE)
 
 ## Règles
 - Réseau côté C64 via l'Ultimate Command Interface ($DF1C-$DF1F), cible réseau.

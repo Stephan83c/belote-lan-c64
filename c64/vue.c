@@ -165,6 +165,8 @@ static void zone_encheres(void)
             }
             ecrire(x, 19, "[4 PASSE]", JAUNE, FOND_VERT);
         }
+        /* Le journal ne montre pas toujours les passes du 1er tour. */
+        ecrire(32, 19, tour_ench == 1 ? "1ER TOUR" : " 2E TOUR", BLANC, FOND_VERT);
     } else if (etat == E_COURS && atout >= 0 && tour == moi) {
         ecrire(0, 19, "A VOUS DE JOUER : 1-8", JAUNE, FOND_VERT);
     } else if (etat == E_FIN_MANCHE) {

@@ -4,7 +4,7 @@ VENV := server/.venv
 SERVEUR_DEFAUT ?= 192.168.1.55:6464
 ULTIMATE ?= 192.168.1.27
 PRG := build/belote_lan.prg
-SOURCES := $(wildcard c64/*.c)
+SOURCES := $(sort $(wildcard c64/*.c) c64/titre_img.c)
 ENTETES := $(wildcard c64/*.h)
 # Le programme s'arrête sous $C000 : écran et caractères vivent en $C000-$CFFF.
 CFLAGS := -t c64 -O -Or -DSERVEUR_DEFAUT='"$(SERVEUR_DEFAUT)"' -Wl -D,__HIMEM__=0xC000
@@ -26,6 +26,10 @@ deploy: $(PRG) test
 	  curl -s -m 3 -o /dev/null -X PUT "http://$(ULTIMATE)/v1/machine:writemem?address=00C6&data=01" && sleep 1
 	curl -sS -X POST --data-binary @$(PRG) http://$(ULTIMATE)/v1/runners:run_prg
 
+# Image de l'écran titre (Pillow) ; le .c généré est versionné.
+c64/titre_img.c: tools/titre.py
+	python3 tools/titre.py
+
 vice: $(PRG)
 	x64sc -autostart $(PRG)
 
@@ -40,7 +44,7 @@ demo: $(SOURCES) $(ENTETES) c64/vice/faux_uci.c Makefile
 	@rm -f c64/*.o c64/vice/*.o
 
 vice-demo: demo
-	x64sc -autostart $(DEMO) -keybuf '\x0djean\x0d'
+	x64sc -autostart $(DEMO) -keybuf ' \x0djean\x0d'
 
 test: $(VENV)/bin/pytest
 	cd server && .venv/bin/pytest -q

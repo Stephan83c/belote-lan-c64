@@ -15,5 +15,7 @@ extern unsigned char tchat_n;
 unsigned char vue_courante(void);
 void dessiner(void);
 void vue_forcer(void);
+/* Écran titre, jusqu'à une touche. */
+void titre(void);
 
 #endif

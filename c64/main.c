@@ -307,7 +307,7 @@ static void touche_tchat(unsigned char c)
             tchat_txt[--tchat_n] = 0;
         }
     } else if (tchat_n < TCHAT_MAX &&
-               ((c >= 32 && c < 64) || (c >= 'A' && c <= '[') || c == ']')) {
+               ((c >= 32 && c < 64 && c != '#') || (c >= 'A' && c <= '[') || c == ']')) {
         tchat_txt[tchat_n++] = c;
         tchat_txt[tchat_n] = 0;
     }
@@ -436,6 +436,7 @@ static void partie(void)
 int main(void)
 {
     ecran_init();
+    titre();
     strcpy(serveur, SERVEUR_DEFAUT);
     for (;;) {
         connexion();
