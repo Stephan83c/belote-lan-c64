@@ -70,3 +70,8 @@ constatées sur le matériel (sockets libérés, Command Interface bloquée) son
 
 Stéphan ([@Stephan83c](https://github.com/Stephan83c)), avec Claude (Anthropic) comme co-auteur :
 conception et code écrits ensemble avec Claude Code.
+
+## Licence
+
+Logiciel libre sous licence MIT : voir [LICENSE](LICENSE). Vous pouvez l'utiliser, le modifier et le
+redistribuer librement, en gardant la mention de copyright.
