@@ -52,6 +52,8 @@ static signed char place(void)
     return (p >= 0 && p <= 3) ? (signed char)p : -1;
 }
 
+static const char *const nom_rang[8] = { "7", "8", "9", "10", "V", "D", "R", "A" };
+
 static void manche_raz(void)
 {
     retournee = atout = preneur = tour = prise = -1;
@@ -193,10 +195,23 @@ void traiter_ligne(char *ligne)
         atout = (signed char)(n & 3);
         prise = retournee;
         retournee = -1;
+        /* « PREND A V♠ », et l'atout s'il est choisi au second tour :
+         * « PREND A V♠ ATOUT ♥ » (le preneur ramasse toujours la retournée). */
         strcpy(tampon, "PREND A ");
         i = strlen(tampon);
-        tampon[i] = SYM(atout);
-        tampon[i + 1] = 0;
+        if (prise >= 0) {
+            strcpy(tampon + i, nom_rang[prise & 7]);
+            i = strlen(tampon);
+            tampon[i++] = SYM(prise >> 3);
+            if ((prise >> 3) != atout) {
+                strcpy(tampon + i, " ATOUT ");
+                i += 7;
+                tampon[i++] = SYM(atout);
+            }
+        } else {
+            tampon[i++] = SYM(atout);
+        }
+        tampon[i] = 0;
         journal_place(preneur, tampon);
         sale |= D_ENTETE | D_TABLE | D_ENCH | D_MAIN | D_BARRE;
     } else if (!strcmp(mot, "RETOURNE")) {
