@@ -85,8 +85,7 @@ constatées sur le matériel (sockets libérés, Command Interface bloquée) son
 
 ## Auteurs
 
-Stéphan ([@Stephan83c](https://github.com/Stephan83c)), avec Claude (Anthropic) comme co-auteur :
-conception et code écrits ensemble avec Claude Code.
+Stéphan ([@Stephan83c](https://github.com/Stephan83c)), avec l'aide de Claude (Anthropic).
 
 ## Licence
 
