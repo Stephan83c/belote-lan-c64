@@ -217,6 +217,8 @@ L’ordre de parcours des places est P0 → P1 → P2 → P3 → P0, soit SUD �
 
 - À la reconnexion, l’utilisateur retrouve sa place et la main encore tenue par le bot si cette place est toujours disponible. Si elle est occupée par un autre humain, une place bot libre est attribuée ; s’il n’y en a aucune, la reconnexion est refusée.
 
+- Connexion fantôme : un C64 redémarré (reset, nouveau programme) n’envoie pas LEAVE et son ancienne connexion TCP peut rester ouverte. Un JOIN portant le nom d’un humain encore assis, depuis la même adresse IP, reprend sa place : l’ancienne connexion est fermée, le client reçoit BIENVENUE et l’état complet, les autres joueurs un INFO NOM RECONNECTE. Depuis une autre adresse, la règle des doublons s’applique.
+
 - Déconnexion explicite ou perte de connexion pendant le tour : le bot joue immédiatement, sans attendre les 3 minutes. Il conserve la main en cours ; une reprise ultérieure récupère l’état actualisé (voir 7.4).
 
 ### 4.4 Stratégie des bots

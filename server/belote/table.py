@@ -33,6 +33,9 @@ class Client(Protocol):
     def envoyer(self, ligne: str) -> None: ...
     def fermer(self) -> None: ...
 
+    # Facultatif : adresse IP du client, pour reconnaître un C64 redémarré.
+    # adresse: str | None
+
 
 @dataclass
 class Siege:
@@ -167,6 +170,11 @@ class Table:
             client.envoyer("ERR NOM")
             return
 
+        reprise = self._place_fantome(client, nom)
+        if reprise is not None:
+            self._reprendre(client, reprise)
+            return
+
         libres = [p for p, s in enumerate(self.sieges) if s.humain is None]
         if not libres:
             client.envoyer("ERR TABLE PLEINE")
@@ -199,6 +207,33 @@ class Table:
                 if self.chef != ancien_chef:
                     autre.humain.envoyer(f"CHEF {self.chef}")
         self._apres_changement()
+
+    def _place_fantome(self, client: Client, nom: str) -> int | None:
+        """Place tenue sous ce nom par une connexion de la même adresse IP.
+
+        Un C64 redémarré (reset, make deploy) n'envoie pas LEAVE : sa vieille
+        connexion TCP reste ouverte et garderait la place jusqu'à l'inactivité.
+        """
+        adresse = getattr(client, "adresse", None)
+        if adresse is None:
+            return None
+        for place, siege in enumerate(self.sieges):
+            ancien = siege.humain
+            if ancien is not None and siege.nom == nom and getattr(ancien, "adresse", None) == adresse:
+                return place
+        return None
+
+    def _reprendre(self, client: Client, place: int) -> None:
+        siege = self.sieges[place]
+        ancien = siege.humain
+        siege.humain = client
+        siege.actif_a = time.monotonic()
+        ancien.fermer()  # sa déconnexion ne trouvera plus de place : sans effet
+        client.envoyer(f"BIENVENUE {siege.nom} {place}")
+        self._envoyer_etat(client, place)
+        for p, autre in self._humains():
+            if p != place:
+                autre.humain.envoyer(f"INFO {siege.nom} RECONNECTE")
 
     def _envoyer_etat(self, client: Client, place: int) -> None:
         for p in range(4):

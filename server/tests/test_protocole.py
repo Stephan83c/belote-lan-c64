@@ -9,6 +9,12 @@ def test_majuscules_et_caracteres_interdits():
     assert nettoyer("é".encode()) == "??"
 
 
+def test_majuscules_petscii_converties():
+    # "JOIN Jean" tapé en mode minuscules sur C64 : J majuscule = $CA
+    assert nettoyer(bytes([0xCA, 0x4F, 0x49, 0x4E, 0x20, 0xCA, 0x45, 0x41, 0x4E])) == "JOIN JEAN"
+    assert nettoyer(bytes([0xC0, 0xDB])) == "??"
+
+
 def test_ascii_32_a_95_conserve():
     plage = bytes(range(32, 96))
     assert nettoyer(plage) == plage.decode("ascii")

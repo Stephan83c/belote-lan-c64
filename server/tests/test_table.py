@@ -794,3 +794,53 @@ def test_raz_n_est_pas_une_commande_du_protocole():
     t.recevoir(a, "RAZ")
     assert a.lignes == ["ERR INCONNU"]
     assert t.etat == EN_COURS
+
+
+# ---- Connexion fantôme d'un C64 redémarré ---------------------------------
+
+
+def rejoindre_depuis(table, nom, adresse):
+    client = FauxClient()
+    client.adresse = adresse
+    table.recevoir(client, f"JOIN {nom}")
+    return client
+
+
+@dans_boucle
+def test_meme_nom_meme_adresse_reprend_la_place_en_cours_de_partie():
+    t = table_ne_jouant_pas()
+    a = rejoindre_depuis(t, "A", "192.168.1.27")
+    b = rejoindre_depuis(t, "B", "192.168.1.30")
+    t.recevoir(a, "LANCER")
+    b.vider()
+
+    a2 = rejoindre_depuis(t, "A", "192.168.1.27")
+    assert a.ferme
+    assert a2.lignes[0] == "BIENVENUE A 0"
+    assert "MAIN " + " ".join(map(str, t.donne.mains[0])) in a2.lignes
+    assert t.sieges[0].humain is a2 and t.chef == 0
+    assert b.lignes == ["INFO A RECONNECTE"]
+
+    # La fermeture de l'ancienne connexion ne libère pas la place reprise.
+    t.deconnexion(a)
+    assert t.sieges[0].humain is a2
+    t.recevoir(a2, "TCHAT ME REVOILA")
+    assert b.dernier("TCHAT") == "TCHAT A ME REVOILA"
+
+
+@dans_boucle
+def test_meme_nom_autre_adresse_garde_le_suffixe():
+    t = table_ne_jouant_pas()
+    a = rejoindre_depuis(t, "JEAN", "192.168.1.27")
+    autre = rejoindre_depuis(t, "JEAN", "192.168.1.30")
+    assert not a.ferme
+    assert "BIENVENUE JEA2 1" in autre.lignes
+
+
+@dans_boucle
+def test_meme_adresse_autre_nom_prend_une_nouvelle_place():
+    t = table_ne_jouant_pas()
+    a = rejoindre_depuis(t, "A", "192.168.1.27")
+    b = rejoindre_depuis(t, "B", "192.168.1.27")
+    assert not a.ferme
+    assert "BIENVENUE B 1" in b.lignes

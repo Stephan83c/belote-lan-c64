@@ -142,3 +142,22 @@ def test_commande_console():
         assert commande_console(table, "") is None
         assert "inconnue" in commande_console(table, "XYZ")
     asyncio.run(corps())
+
+
+def test_c64_redemarre_reprend_sa_place_sur_vraie_socket():
+    async def principal():
+        table, srv, port = await serveur(delai=3600)
+        async with srv:
+            ancien = await connecter(port)
+            await ancien.envoyer("JOIN JEAN")
+            await ancien.lire_jusqu_a("PARAM INACTIF 3")
+            # Reset du C64 : pas de LEAVE, la vieille socket reste ouverte.
+            nouveau = await connecter(port)
+            await nouveau.envoyer("JOIN JEAN")
+            assert await nouveau.lire() == "BIENVENUE JEAN 0"
+            # Le serveur ferme l'ancienne connexion.
+            assert await asyncio.wait_for(ancien.reader.read(), 5) == b""
+            await asyncio.sleep(0.05)
+            assert table.sieges[0].humain is not None and table.chef == 0
+            nouveau.writer.close()
+    asyncio.run(principal())

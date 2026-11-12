@@ -58,6 +58,11 @@ Autres cas :
 - À la reconnexion pendant les enchères, `ENCHERES T` suit `RETOURNE`, pour que le client sache
   quel tour afficher.
 - La main vide en fin de manche s'écrit `MAIN` sans paramètre.
+- PETSCII : tout ce que le serveur envoie (majuscules, chiffres, espace, `-`) a le même code en
+  ASCII et en PETSCII majuscules/graphiques. En réception, les majuscules PETSCII du mode
+  minuscules ($C1-$DA) valent A-Z, sauf si l'octet suivant est $80-$BF (caractère UTF-8 envoyé
+  par nc, qui reste `?`). Le terminateur reste LF : un client C64 ne doit pas finir ses lignes
+  par le seul CR du PETSCII.
 
 ## Décisions d'interprétation des règles
 
@@ -71,6 +76,10 @@ Autres cas :
   comme activité.
 - **Reconnexion (4.3)** : le serveur reconnaît un joueur à son nom, sans authentification. Un
   nouveau venu évite les places réservées tant qu'il en reste une autre.
+- **Connexion fantôme (4.3)** : un JOIN au nom d'un humain encore assis, venant de la même
+  adresse IP, remplace sa connexion (C64 redémarré sans LEAVE). Les autres reçoivent
+  `INFO NOM RECONNECTE`. Contrepartie : deux joueurs derrière la même IP (NAT) qui choisissent
+  le même nom ne sont plus départagés par un suffixe, le second prend la place du premier.
 - **Table vide (4.2)** : sans humain, les bots s'arrêtent et la partie reste en suspens ; le
   prochain arrivant la reprend et devient chef.
 - **Doublons de nom (4.3)** : suffixes essayés de 2 à 9, puis 1, pour respecter l'exemple

@@ -7,11 +7,18 @@ TROP_LONG = object()  # marqueur renvoyé par Cadreur pour une ligne refusée
 
 
 def nettoyer(brut: bytes) -> str:
-    """Majuscules ; tout octet hors ASCII 32-95 devient « ? »."""
+    """Majuscules ; tout octet hors ASCII 32-95 devient « ? ».
+
+    Les majuscules PETSCII du mode minuscules ($C1-$DA) valent A-Z, pour un
+    client C64 qui n'aurait pas converti son texte en ASCII. Suivi d'un octet
+    $80-$BF, un tel octet ouvre un caractère UTF-8 (é = $C3 $A9) : « ? ».
+    """
     sortie = []
-    for octet in brut:
+    for i, octet in enumerate(brut):
         if 97 <= octet <= 122:
             octet -= 32
+        elif 0xC1 <= octet <= 0xDA and not (i + 1 < len(brut) and 0x80 <= brut[i + 1] <= 0xBF):
+            octet -= 0x80
         sortie.append(chr(octet) if 32 <= octet <= 95 else "?")
     return "".join(sortie)
 

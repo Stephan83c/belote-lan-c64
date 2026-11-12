@@ -1,0 +1,49 @@
+/* Écran 40x25 en mode couleur étendue (ECM), écrit directement en mémoire.
+ *
+ * ECM : chaque case a sa couleur de texte (RAM couleur $D800) et l'un des
+ * quatre fonds $D021-$D024, choisi par les bits 6-7 du code écran. On obtient
+ * ainsi des cartes rouges ou noires à texte blanc sur un plateau vert. Seuls les
+ * 64 premiers caractères existent : les symboles ♠ ♥ ♣ ♦ remplacent @ £ ↑ ←
+ * dans un jeu de caractères copié en RAM.
+ *
+ * Banque VIC 3 : écran en $C000, caractères en $C800 (le programme s'arrête
+ * sous $C000, voir __HIMEM__ dans le Makefile).
+ */
+#ifndef ECRAN_H
+#define ECRAN_H
+
+#define FOND_VERT  0x00
+#define FOND_ROUGE 0x40
+#define FOND_NOIR  0x80
+#define FOND_GRIS  0xC0
+
+#define NOIR       0
+#define BLANC      1
+#define ROUGE      2
+#define CYAN       3
+#define VERT       5
+#define JAUNE      7
+#define ORANGE     8
+#define GRIS_FONCE 11
+#define GRIS_CLAIR 15
+
+/* Dans les chaînes affichées, les octets 1 à 4 dessinent ♠ ♥ ♣ ♦ (couleur 0-3 + 1)
+ * dans la couleur de la carte. */
+#define SYM(c) ((char)((c) + 1))
+
+void ecran_init(void);
+void ecran_effacer(void);
+void effacer(unsigned char x, unsigned char y, unsigned char n);
+void ecrire(unsigned char x, unsigned char y, const char *s, unsigned char coul, unsigned char fond);
+/* Écrit au plus n caractères et complète par des espaces. */
+void ecrire_n(unsigned char x, unsigned char y, const char *s, unsigned char n,
+              unsigned char coul, unsigned char fond);
+void ligne_tirets(unsigned char y);
+void carte(unsigned char x, unsigned char y, signed char c);
+/* Case de curseur (fond gris). */
+void curseur(unsigned char x, unsigned char y);
+
+/* Couleur C64 d'une couleur de carte : noir pour ♠ ♣, rouge pour ♥ ♦. */
+#define FC(c) (((c) & 1) ? ROUGE : NOIR)
+
+#endif

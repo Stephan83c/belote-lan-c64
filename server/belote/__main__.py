@@ -19,6 +19,8 @@ TAMPON_ENVOI_MAX = 64 * 1024
 class ConnexionTCP:
     def __init__(self, writer: asyncio.StreamWriter):
         self.writer = writer
+        pair = writer.get_extra_info("peername")
+        self.adresse = pair[0] if pair else None
 
     def envoyer(self, ligne: str) -> None:
         if self.writer.is_closing():
