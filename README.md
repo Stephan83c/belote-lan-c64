@@ -73,5 +73,8 @@ conception et code écrits ensemble avec Claude Code.
 
 ## Licence
 
-Logiciel libre sous licence MIT : voir [LICENSE](LICENSE). Vous pouvez l'utiliser, le modifier et le
-redistribuer librement, en gardant la mention de copyright.
+Copyright (C) 2026 Stéphan (@Stephan83c).
+
+Logiciel libre sous licence **GNU GPL version 3 ou ultérieure** : voir [LICENSE](LICENSE).
+Vous pouvez l'utiliser, l'étudier, le modifier et le redistribuer. Toute version modifiée que vous
+distribuez doit rester sous GPL, avec son code source.
