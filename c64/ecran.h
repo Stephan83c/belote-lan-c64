@@ -2,7 +2,7 @@
  *
  * ECM : chaque case a sa couleur de texte (RAM couleur $D800) et l'un des
  * quatre fonds $D021-$D024, choisi par les bits 6-7 du code écran. On obtient
- * ainsi des cartes rouges ou noires à texte blanc sur un plateau vert. Seuls les
+ * ainsi des cartes blanches, rang et symbole rouges ou noirs, sur un plateau vert. Seuls les
  * 64 premiers caractères existent : les symboles ♠ ♥ ♣ ♦ remplacent @ £ ↑ ←
  * dans un jeu de caractères copié en RAM, et le motif du tapis remplace # :
  * les cases vides du fond vert sont tissées de points vert clair.
@@ -14,7 +14,7 @@
 #define ECRAN_H
 
 #define FOND_VERT  0x00
-#define FOND_ROUGE 0x40
+#define FOND_BLANC 0x40
 #define FOND_NOIR  0x80
 #define FOND_GRIS  0xC0
 

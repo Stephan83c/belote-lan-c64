@@ -477,9 +477,9 @@ L24 1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE
 | Zone / élément | Valeur retenue | Rendu |
 |---|---|---|
 | Plateau et bordure | Vert C64 = 5 | Fond vert. |
-| Cartes rouges | Rouge C64 = 2 | Cœurs et carreaux ; texte blanc. |
-| Cartes noires | Noir C64 = 0 | Piques et trèfles ; texte blanc. |
-| Affichage en inverse | Espace inversé code 160 | Espaces inversés pour les aplats / boîtes de cartes. |
+| Cartes | Fond blanc (ECM, $D022 = 1) | Rang et symbole dans la couleur de la carte. |
+| Cœurs et carreaux | Rouge C64 = 2 | Rang et symbole rouges sur la carte blanche. |
+| Piques et trèfles | Noir C64 = 0 | Rang et symbole noirs sur la carte blanche. |
 | RAM couleur | Adresse $D800 | Attributs couleur des cellules écran. |
 
 Codes de couleur par couleur de carte : FC(0)=0, FC(1)=2, FC(2)=0, FC(3)=2.
@@ -533,8 +533,8 @@ REM Equipes : E0 = P0+P2 ; E1 = P1+P3
 
 ```
 REM Couleur plateau/bordure : 5 (vert)
-REM Couleurs cartes : rouge=2, noir=0 ; texte blanc
-REM Espace inverse : code 160 ; RAM couleur : $D800
+REM Cartes : fond blanc, rang et symbole rouge=2 ou noir=0
+REM Mode couleur etendue (ECM) ; RAM couleur : $D800
 REM FC(0)=0 pique ; FC(1)=2 coeur ; FC(2)=0 trefle ; FC(3)=2 carreau
 ```
 
@@ -578,7 +578,7 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | Contrat | Preneur : strictement plus que la défense, belote comprise. Dedans : 162 à la défense, la belote reste à l’équipe qui l’a annoncée. Litige : points du preneur en réserve. Capot : 252. Points bruts. | Retenu *(v3)* ; capot *(v4)* |
 | Présence | Pas de spectateurs. Inactivité 3 min par défaut (F1 : 1 à 10 min) : bot. Retour possible sur sa place si libre. Déconnexion pendant son tour : le bot joue immédiatement. | Retenu |
 | Tchat | Public ; nom 5 caractères ; message 30 caractères ; boucle non bloquante ; couleur de nom par place, deux nuances par équipe (cyan et bleu, orange et rouge) ; bots BOT1 à BOT4. | Retenu ; couleurs et noms des bots (client v1.3) |
-| Graphisme | Plateau/bordure vert 5 ; cartes rouge 2 / noir 0, texte blanc ; espaces inversés 160 ; RAM couleur $D800. | Retenu |
+| Graphisme | Plateau/bordure vert 5 ; cartes blanches, rang et symbole rouge 2 / noir 0 ; RAM couleur $D800. | Retenu ; cartes blanches (client v1.3) |
 | Sons | Musique sur l’écran titre ; bruitages carte posée, pli, tchat ; jingles victoire et défaite. Côté client seulement (section 8.3). | Retenu |
 | Écran | Grille 40 × 25 (L0–L24), sans tapis central : carte jouée sous le nom de chaque joueur, nombre de cartes adverses ; journal 6 lignes ; barre de touches ≤ 39 caractères en L24 ; * devant le joueur au tour. | Retenu ; sans tapis *(v4)* |
 | Serveur | Python asyncio sur Linux (VPS en production), port 6464 ; adresse saisie sur le C64 ; distribue, valide, compte, joue les bots (délai 1 s) ; 4 humains max. | Retenu ; adresse *(v4)* |
@@ -612,3 +612,4 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 12 *(v4)* | Règles officielles de la belote classique : sens du jeu, obligations, capot, belote comprise dans le contrat ; seule la belote est annoncée (automatiquement) ; la première équipe à 1000 gagne ; adresse saisie sur le C64, bots à 1 s, couleurs du tchat, paramètres F1. Tapis central supprimé. | Version 4 (7 novembre 2026). |
 | 13 | Sons sur le SID : musique de l’écran titre, bruitages (carte, pli, tchat), jingles de fin de partie. Aucun changement de protocole. | Client v1.2 (13 novembre 2026). |
 | 14 | Bots nommés BOT1 à BOT4 par place réelle (et non plus par position relative, qui différait d’un écran à l’autre) ; couleurs des noms par équipe : cyan et bleu, orange et rouge. | Client v1.3. |
+| 15 | Cartes blanches, rang et symbole dans la couleur de la carte (rouge ou noir), au lieu de cartes rouges ou noires à texte blanc. | Client v1.3. |

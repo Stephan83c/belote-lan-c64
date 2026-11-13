@@ -52,7 +52,7 @@ void ecran_init(void)
     POKE(0xD018, 0x02);                 /* écran +$0000, caractères +$0800 */
     POKE(0xD020, VERT);
     POKE(0xD021, VERT);
-    POKE(0xD022, ROUGE);
+    POKE(0xD022, BLANC);                /* fond des cartes */
     POKE(0xD023, NOIR);
     POKE(0xD024, GRIS_FONCE);
     ecran_effacer();
@@ -77,7 +77,7 @@ static void car(unsigned o, unsigned char c, unsigned char coul, unsigned char f
 {
     if (c >= 1 && c <= 4) {
         ECRAN[o] = code_sym[c - 1] | fond;
-        COULEUR[o] = fond == FOND_VERT ? FC(c - 1) : BLANC;
+        COULEUR[o] = (fond == FOND_VERT || fond == FOND_BLANC) ? FC(c - 1) : BLANC;
         return;
     }
     if (c == ' ' && fond == FOND_VERT) {
@@ -127,7 +127,7 @@ void carte(unsigned char x, unsigned char y, signed char c)
 {
     char haut[5] = "    ";
     char bas[5] = "    ";
-    unsigned char fond, coul;
+    unsigned char coul;
 
     if (c < 0) {
         effacer(x, y, 4);
@@ -135,12 +135,11 @@ void carte(unsigned char x, unsigned char y, signed char c)
         return;
     }
     coul = c >> 3;
-    fond = (coul & 1) ? FOND_ROUGE : FOND_NOIR;
     haut[1] = rangs[c & 7][0];
     haut[2] = rangs[c & 7][1];
     bas[1] = SYM(coul);
-    ecrire(x, y, haut, BLANC, fond);
-    ecrire(x, y + 1, bas, BLANC, fond);
+    ecrire(x, y, haut, FC(coul), FOND_BLANC);
+    ecrire(x, y + 1, bas, FC(coul), FOND_BLANC);
 }
 
 void curseur(unsigned char x, unsigned char y)

@@ -12,7 +12,7 @@ son C64. Les places libres sont tenues par des bots. Un serveur Python sur le PC
 ## Ce qu'il y a dedans
 
 - **Client C64** (`c64/`, C avec cc65) : l'écran est en mode couleur étendue (ECM), avec des cartes
-  rouges et noires sur un tapis de feutre vert. Le réseau passe par la
+  blanches (rang et symbole rouges ou noirs) sur un tapis de feutre vert. Le réseau passe par la
   *Ultimate Command Interface* ($DF1C-$DF1F). Un écran titre en bitmap multicolore est généré par
   `tools/titre.py`. Musique sur l'écran titre et bruitages en partie (carte posée, pli, tchat,
   victoire, défaite), joués sur le SID ; ils sont écrits dans `tools/musique.py`.
