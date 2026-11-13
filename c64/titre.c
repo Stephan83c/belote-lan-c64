@@ -6,6 +6,7 @@
 #include <cbm.h>
 #include <string.h>
 #include "ecran.h"
+#include "son.h"
 #include "ui.h"
 
 #define POKE(a, v) (*(volatile unsigned char *)(a) = (v))
@@ -25,8 +26,10 @@ void titre(void)
     POKE(0xD016, PEEK(0xD016) | 0x10);              /* multicolore */
     POKE(0xD011, (PEEK(0xD011) & 0xBF) | 0x30);     /* bitmap, écran allumé */
 
+    son_musique(AIR_TITRE);
     while (!cbm_k_getin()) {
     }
+    son_stop();
 
     POKE(0xD011, PEEK(0xD011) & 0xEF);
     POKE(0xD016, PEEK(0xD016) & 0xEF);

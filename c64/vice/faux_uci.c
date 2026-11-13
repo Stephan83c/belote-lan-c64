@@ -3,7 +3,8 @@
  * rien ; ce qu'il envoie est ignoré. make vice-demo SCENARIO=1, 2 ou 3 :
  * 1 table d'attente et tchat, 2 partie reprise en cours de manche, 3 fin de partie,
  * 4 le serveur ferme la connexion : bordure rouge si le client touche encore au socket,
- * 5 second tour d'enchères, à notre tour. */
+ * 5 second tour d'enchères, à notre tour,
+ * 6 sons : un pli joué, un tchat, la fin de partie (une ligne toutes les 30/60 s). */
 #include "../ascii.h"
 #include <string.h>
 #include "../uci.h"
@@ -32,6 +33,14 @@ static const char *const lignes[] = {
  "CHEF 0", "ETAT EN COURS", "DONNEUR 3", "MAIN 3 5 6 11 15", "NBCARTES 5 5 5 5",
  "RETOURNE 20", "ENCHERES 1", "TOUR 0", "PASSE 0", "TOUR 1", "PASSE 1", "TOUR 2",
  "PASSE 2", "TOUR 3", "PASSE 3", "ENCHERES 2", "TOUR 0", 0 };
+#elif SCENARIO == 6
+static const char *const lignes[] = {
+ "BIENVENUE JEAN 0", "SIEGE 0 H JEAN", "SIEGE 1 B BOT", "SIEGE 2 H LEA", "SIEGE 3 B BOT",
+ "CHEF 0", "ETAT EN COURS", "SCORE 900 700", "DONNEUR 3", "MAIN 3 5 6 11 15",
+ "NBCARTES 5 5 5 5", "PREND 0 1", "JOUE 0 3", "JOUE 1 9", "JOUE 2 12", "JOUE 3 2",
+ "PLI 0", "TCHAT LEA BIEN JOUE", "MANCHE 120 42", "SCORE 1020 742", "GAGNANT 0",
+ "ETAT FIN PARTIE", 0 };
+#define RYTHME 30
 #else
 static const char *const lignes[] = {
  "BIENVENUE JEAN 0", "SIEGE 0 H JEAN", "SIEGE 1 B BOT", "SIEGE 2 B BOT", "SIEGE 3 B BOT",
@@ -48,6 +57,17 @@ int net_lire(unsigned char s, char *dst, unsigned char max)
     unsigned char n;
     (void)s; (void)max;
     if (fermee) { FAUTE(); return -1; }
+#ifdef RYTHME
+    /* après BIENVENUE et la table, une ligne toutes les RYTHME/60 s */
+    if (i > 11) {
+        static unsigned char prochain;
+        unsigned char t = *(volatile unsigned char *)0xA2;
+        if ((unsigned char)(t - prochain) >= 0x80) {
+            return 0;
+        }
+        prochain = t + RYTHME;
+    }
+#endif
     if (!lignes[i]) {
 #ifdef FERMER_APRES
         fermee = 1;

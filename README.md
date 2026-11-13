@@ -14,7 +14,8 @@ son C64. Les places libres sont tenues par des bots. Un serveur Python sur le PC
 - **Client C64** (`c64/`, C avec cc65) : l'écran est en mode couleur étendue (ECM), avec des cartes
   rouges et noires sur un tapis de feutre vert. Le réseau passe par la
   *Ultimate Command Interface* ($DF1C-$DF1F). Un écran titre en bitmap multicolore est généré par
-  `tools/titre.py`.
+  `tools/titre.py`. Musique sur l'écran titre et bruitages en partie (carte posée, pli, tchat,
+  victoire, défaite), joués sur le SID ; ils sont écrits dans `tools/musique.py`.
 - **Serveur** (`server/`, Python 3.13 asyncio) : il applique les règles de la belote classique, gère
   les bots, la reconnexion, l'inactivité et le tchat.
 - **Protocole** : texte ASCII, une ligne par message terminée par LF (64 octets au maximum), sur le
@@ -93,8 +94,9 @@ Pour que le serveur démarre tout seul avec le PC, installez-le en service syste
 make                         # build/belote_lan.prg
 make test                    # tests du serveur (pytest)
 make vice                    # écran de connexion dans VICE (VICE n'émule pas la Command Interface)
-make vice-demo SCENARIO=1..5 # client avec un réseau simulé, pour voir les écrans de jeu
+make vice-demo SCENARIO=1..6 # client avec un réseau simulé (6 : écouter les sons)
 python3 tools/titre.py       # régénère l'écran titre (Pillow)
+python3 tools/musique.py     # régénère la musique et les bruitages
 ```
 
 Dans le terminal du serveur, `RAZ` efface la partie en cours. Les particularités de l'Ultimate

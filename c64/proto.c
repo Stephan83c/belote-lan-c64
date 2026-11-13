@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "ecran.h"
 #include "jeu.h"
+#include "son.h"
 
 signed char moi = -1;
 char noms[4][NOM_MAX + 1];
@@ -149,6 +150,7 @@ void traiter_ligne(char *ligne)
                 pli_fini = 0;
             }
             pli[p] = (signed char)n;
+            son_effet(FX_CARTE);
             if (nbcartes[p]) {
                 --nbcartes[p];
             }
@@ -163,6 +165,7 @@ void traiter_ligne(char *ligne)
     } else if (!strcmp(mot, "PLI")) {
         p = place();
         pli_fini = 1;
+        son_effet(FX_PLI);
         journal_place(p, "REMPORTE LE PLI");
     } else if (!strcmp(mot, "TCHAT")) {
         /* TCHAT NOM TEXTE */
@@ -179,6 +182,7 @@ void traiter_ligne(char *ligne)
             }
         }
         journal_ajouter(reste, coul, texte, BLANC);
+        son_effet(FX_TCHAT);
     } else if (!strcmp(mot, "INFO")) {
         journal_info(reste);
     } else if (!strcmp(mot, "ERR")) {
@@ -313,6 +317,9 @@ void traiter_ligne(char *ligne)
         journal_info(tampon);
     } else if (!strcmp(mot, "GAGNANT")) {
         gagnant = (signed char)nombre();
+        if (gagnant >= 0 && moi >= 0) {
+            son_musique(gagnant == (moi & 1) ? AIR_VICTOIRE : AIR_DEFAITE);
+        }
         sale = D_TOUT;
     } else if (!strcmp(mot, "REDONNE")) {
         journal_info("TOUT LE MONDE PASSE : ON REDONNE");

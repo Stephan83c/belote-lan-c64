@@ -30,7 +30,7 @@ Matériel réseau C64 : C64 Ultimate (Ultimate Command Interface, TCP)
 
 7. Protocole
 
-8. Interface et couleurs
+8. Interface, couleurs et sons
 
 9. Tchat
 
@@ -428,7 +428,7 @@ chef-> srv : REJOUER
 
 **Reconnexion** — après BIENVENUE, le serveur envoie l’état complet : SIEGE ×4, CHEF, ETAT, PARAM, SCORE, DONNEUR, puis selon la phase RETOURNE ou PREND, MAIN, NBCARTES, PLICOURS et TOUR.
 
-## 8. Interface et couleurs
+## 8. Interface, couleurs et sons
 
 ### 8.1 Grille écran de référence *(v4)*
 
@@ -483,6 +483,21 @@ L24 1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE
 | RAM couleur | Adresse $D800 | Attributs couleur des cellules écran. |
 
 Codes de couleur par couleur de carte : FC(0)=0, FC(1)=2, FC(2)=0, FC(3)=2.
+
+### 8.3 Sons
+
+Le client joue la musique et les bruitages sur le SID, uniquement à partir des messages déjà reçus : le serveur et le protocole n’en savent rien.
+
+| Moment | Déclencheur | Son |
+|---|---|---|
+| Écran titre | affichage de l’image, jusqu’à la touche | Valse musette originale à 3 voix, en boucle. |
+| Carte posée | JOUE (tout joueur) | Claquement court (bruit). |
+| Pli ramassé | PLI | Glissement de cartes, après le claquement de la dernière carte. |
+| Tchat | TCHAT (tout message de joueur) | Deux notes claires. |
+| Partie gagnée | GAGNANT, équipe du joueur | Fanfare montante. |
+| Partie perdue | GAGNANT, équipe adverse | Descente qui finit en mineur. |
+
+Le lecteur (c64/son.s) tourne dans l’interruption du KERNAL, 60 fois par seconde, donc aussi pendant les commandes réseau. Les airs utilisent les voix 1 à 3 et les bruitages la voix 3 : un bruitage demandé pendant qu’un autre joue attend la fin de celui-ci. Notes, durées et enveloppes sont écrites dans tools/musique.py, qui génère c64/son_donnees.s.
 
 ## 9. Tchat
 
@@ -562,6 +577,7 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | Présence | Pas de spectateurs. Inactivité 3 min par défaut (F1 : 1 à 10 min) : bot. Retour possible sur sa place si libre. Déconnexion pendant son tour : le bot joue immédiatement. | Retenu |
 | Tchat | Public ; nom 5 caractères ; message 30 caractères ; boucle non bloquante ; couleur de nom par place (blanc, jaune, cyan, orange). | Retenu ; couleurs *(v4)* |
 | Graphisme | Plateau/bordure vert 5 ; cartes rouge 2 / noir 0, texte blanc ; espaces inversés 160 ; RAM couleur $D800. | Retenu |
+| Sons | Musique sur l’écran titre ; bruitages carte posée, pli, tchat ; jingles victoire et défaite. Côté client seulement (section 8.3). | Retenu |
 | Écran | Grille 40 × 25 (L0–L24), sans tapis central : carte jouée sous le nom de chaque joueur, nombre de cartes adverses ; journal 6 lignes ; barre de touches ≤ 39 caractères en L24 ; * devant le joueur au tour. | Retenu ; sans tapis *(v4)* |
 | Serveur | Python asyncio sur Linux (VPS en production), port 6464 ; adresse saisie sur le C64 ; distribue, valide, compte, joue les bots (délai 1 s) ; 4 humains max. | Retenu ; adresse *(v4)* |
 | Paramètres F1 *(v4)* | Score cible (500–5000, défaut 1000) et délai d’inactivité (1–10 min, défaut 3). | Retenu *(v4)* |
@@ -592,3 +608,4 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 10 | Stack : Python asyncio + client cc65. | Retenu. |
 | 11 *(v3)* | C64 Ultimate choisi ; protocole complété (transport, trames, nouveaux messages, COUP par code) ; écran 25 lignes ; F8 ; vue relative ; donne corrigée ; règles dedans / litige / points bruts. | Version 3 (7 novembre 2026). |
 | 12 *(v4)* | Règles officielles de la belote classique : sens du jeu, obligations, capot, belote comprise dans le contrat ; seule la belote est annoncée (automatiquement) ; la première équipe à 1000 gagne ; adresse saisie sur le C64, bots à 1 s, couleurs du tchat, paramètres F1. Tapis central supprimé. | Version 4 (7 novembre 2026). |
+| 13 | Sons sur le SID : musique de l’écran titre, bruitages (carte, pli, tchat), jingles de fin de partie. Aucun changement de protocole. | Client v1.2 (13 novembre 2026). |

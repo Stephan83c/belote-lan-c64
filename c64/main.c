@@ -5,6 +5,7 @@
 #include <string.h>
 #include "ecran.h"
 #include "jeu.h"
+#include "son.h"
 #include "uci.h"
 #include "ui.h"
 
@@ -456,6 +457,7 @@ static void partie(void)
 int main(void)
 {
     ecran_init();
+    son_init();
     titre();
     strcpy(serveur, SERVEUR_DEFAUT);
     for (;;) {
