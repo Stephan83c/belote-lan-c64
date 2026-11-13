@@ -208,11 +208,13 @@ L’ordre de parcours des places est P0 → P1 → P2 → P3 → P0, soit SUD �
 
 - Après le lancement, le départ de l’ancien chef n’interrompt pas la partie. Le nouveau chef peut demander F5 en fin de manche ; il ne relance pas la partie en cours.
 
-- La limite est de quatre connexions humaines. Une cinquième connexion est refusée (ERR TABLE PLEINE) si aucune place bot n’est disponible. Les bots ne comptent pas comme connexions humaines.
+- La limite est de quatre connexions humaines. Une cinquième connexion (et les suivantes) est refusée par ERR TABLE PLEINE, puis fermée par le serveur ; le C64 affiche « TABLE PLEINE (4 JOUEURS) : PLUS TARD » sur l’écran de connexion. Les bots ne comptent pas comme connexions humaines.
 
 ### 4.3 Pseudos, remplacement et présence
 
 - Nom affiché : 5 caractères maximum, lettres A–Z et chiffres ; pseudo unique parmi les joueurs. En cas de doublon, le dernier caractère est remplacé par un suffixe numérique (ex. JEAN → JEA2), de 1 à 9 ; sinon la connexion est refusée. Le nom final est renvoyé dans BIENVENUE.
+
+- Noms réservés : BOT et BOT suivi de chiffres (BOT1 à BOT4 nomment les bots à l’écran). Le C64 les refuse avant de se connecter ; le serveur répond ERR NOM RESERVE sans fermer la connexion, et un suffixe de doublon ne produit jamais un tel nom. Le C64 affiche « NOM RESERVE AUX BOTS : CHOISIR UN AUTRE » et replace le curseur sur le champ NOM.
 
 - Inactivité (3 minutes par défaut, réglable par le chef avec F1) : la place est prise en charge par un bot. Il n’y a pas de spectateurs ; un utilisateur inactif libéré doit se reconnecter.
 
@@ -378,7 +380,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 | GAGNANT E *(v3)* | Tous | Équipe gagnante de la partie. |
 | TCHAT NOM TXT | Tous | Message public, nom et contenu. |
 | INFO TXT *(v3)* | Client ou tous | Information affichée dans le journal (pseudo modifié, joueur remplacé par un bot, etc.). |
-| ERR TEXTE | Client | ERR CHEF SEUL, ERR TABLE PLEINE, ERR PAS TON TOUR, ERR COUP REFUSE, ERR DEJA LANCEE, ERR NOM, ERR TROP LONG. |
+| ERR TEXTE | Client | ERR CHEF SEUL, ERR TABLE PLEINE, ERR PAS TON TOUR, ERR COUP REFUSE, ERR DEJA LANCEE, ERR NOM, ERR NOM RESERVE, ERR TROP LONG. |
 
 ### 7.3 Client → serveur
 
@@ -613,3 +615,4 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 13 | Sons sur le SID : musique de l’écran titre, bruitages (carte, pli, tchat), jingles de fin de partie. Aucun changement de protocole. | Client v1.2 (13 novembre 2026). |
 | 14 | Bots nommés BOT1 à BOT4 par place réelle (et non plus par position relative, qui différait d’un écran à l’autre) ; couleurs des noms par équipe : cyan et bleu, orange et rouge. | Client v1.3. |
 | 15 | Cartes blanches, rang et symbole dans la couleur de la carte (rouge ou noir), au lieu de cartes rouges ou noires à texte blanc. | Client v1.3. |
+| 16 | Noms BOT et BOT + chiffres refusés aux joueurs (ERR NOM RESERVE) ; messages de refus en clair sur l’écran de connexion (table pleine, nom réservé ou refusé). | Serveur et client v1.4. |

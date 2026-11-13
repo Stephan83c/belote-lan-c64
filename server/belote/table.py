@@ -25,6 +25,8 @@ FIN_PARTIE = "FIN PARTIE"
 
 NOM_BOT = "BOT"
 NOM_VALIDE = re.compile(r"[A-Z0-9]{1,5}")
+# Les clients nomment les bots BOT1 à BOT4 : ces noms (et BOT) sont refusés aux humains.
+NOM_RESERVE = re.compile(r"BOT[0-9]*")
 TCHAT_MAX = 30
 DELAI_BOT = 1.0
 # Après une prise, le premier bot attend plus longtemps : le temps de voir la carte prise.
@@ -169,13 +171,16 @@ class Table:
         # L'exemple de la spec donne JEAN -> JEA2 : le 1 n'est essayé qu'en dernier.
         for suffixe in "234567891":
             candidat = nom[:-1] + suffixe
-            if candidat not in pris:
+            if candidat not in pris and not NOM_RESERVE.fullmatch(candidat):
                 return candidat
         return None
 
     def _cmd_join(self, client: Client, nom: str, place_actuelle: int | None) -> None:
         if place_actuelle is not None or not NOM_VALIDE.fullmatch(nom):
             client.envoyer("ERR NOM")
+            return
+        if NOM_RESERVE.fullmatch(nom):
+            client.envoyer("ERR NOM RESERVE")
             return
 
         reprise = self._place_fantome(client, nom)

@@ -101,8 +101,25 @@ def test_nom_final_court():
 
 
 @dans_boucle
-def test_nom_bot_reserve():
-    assert "BIENVENUE BO2 0" in rejoindre(table_ne_jouant_pas(), "BOT").lignes
+def test_noms_de_bots_refuses():
+    t = table_ne_jouant_pas()
+    for nom in ("BOT", "BOT1", "BOT4", "BOT12"):
+        c = FauxClient()
+        t.recevoir(c, f"JOIN {nom}")
+        assert c.lignes == ["ERR NOM RESERVE"]
+        assert not c.ferme
+    # Le client peut réessayer sur la même connexion avec un autre nom.
+    t.recevoir(c, "JOIN BOTTE")
+    assert "BIENVENUE BOTTE 0" in c.lignes
+    assert "BIENVENUE BOB 1" in rejoindre(t, "BOB").lignes
+
+
+@dans_boucle
+def test_suffixe_ne_donne_pas_un_nom_de_bot():
+    t = table_ne_jouant_pas()
+    rejoindre(t, "BOTA")
+    c = rejoindre(t, "BOTA")
+    assert c.lignes == ["ERR NOM"]  # BOT2 à BOT9 et BOT1 sont réservés
 
 
 @dans_boucle

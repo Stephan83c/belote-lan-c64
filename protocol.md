@@ -45,6 +45,7 @@ Erreurs ajoutées au format `ERR TEXTE` :
 | `ERR INCONNU` | Mot-clé inconnu. |
 | `ERR PARAM` | PARAM mal formé ou hors plage. |
 | `ERR PAS LANCEE` | REJOUER ou RAZ en ATTENTE. |
+| `ERR NOM RESERVE` | JOIN avec BOT ou BOT suivi de chiffres (noms des bots à l'écran). La connexion reste ouverte : le client peut renvoyer JOIN avec un autre nom. |
 
 Autres cas :
 

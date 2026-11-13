@@ -146,6 +146,41 @@ static void message(const char *s)
     ecrire_n(0, 9, s, 40, JAUNE, FOND_VERT);
 }
 
+/* BOT, BOT1... : noms donnés aux bots, refusés aux joueurs (le serveur aussi). */
+static unsigned char nom_de_bot(const char *s)
+{
+    if (strncmp(s, "BOT", 3)) {
+        return 0;
+    }
+    for (s += 3; *s; ++s) {
+        if (*s < '0' || *s > '9') {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/* Message de refus du serveur (ERR ...) en clair ; renvoie le champ à corriger. */
+static unsigned char refus(void)
+{
+    if (!strcmp(erreur, "TABLE PLEINE")) {
+        message("TABLE PLEINE (4 JOUEURS) : PLUS TARD");
+        return 0;
+    }
+    if (!strcmp(erreur, "NOM RESERVE")) {
+        message("NOM RESERVE AUX BOTS : CHOISIR UN AUTRE");
+        return 1;
+    }
+    if (!strcmp(erreur, "NOM")) {
+        message("NOM REFUSE : EN CHOISIR UN AUTRE");
+        return 1;
+    }
+    strcpy(tx, "REFUS : ");
+    strcat(tx, erreur);
+    message(tx);
+    return 0;
+}
+
 static void ferme(void)
 {
     if (sock >= 0) {
@@ -182,6 +217,11 @@ static void connexion(void)
         }
         if (!nom[0]) {
             message("ENTREZ UN NOM (5 LETTRES OU CHIFFRES)");
+            continue;
+        }
+        if (nom_de_bot(nom)) {
+            message("NOM RESERVE AUX BOTS : CHOISIR UN AUTRE");
+            champ = 1;
             continue;
         }
         if (!serveur[0]) {
@@ -230,10 +270,9 @@ static void connexion(void)
         if (moi >= 0) {
             return;
         }
+        champ = 0;
         if (erreur[0]) {
-            strcpy(tx, "REFUS : ");
-            strcat(tx, erreur);
-            message(tx);
+            champ = refus();
         } else if (perdu) {
             message("CONNEXION FERMEE PAR LE SERVEUR");
         } else {
@@ -241,7 +280,6 @@ static void connexion(void)
         }
         perdu = 0;
         ferme();
-        champ = 0;
     }
 }
 
