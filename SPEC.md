@@ -432,29 +432,29 @@ chef-> srv : REJOUER
 
 ### 8.1 Grille écran de référence *(v4)*
 
-Grille de 40 colonnes (0–39) et 25 lignes (L0–L24). Le tapis central est supprimé : la carte jouée par chaque joueur s’affiche sous son nom. Un bot est nommé par sa position suivie de « (BOT) », sur la table comme dans le journal. Les noms, points et cartes sont des exemples.
+Grille de 40 colonnes (0–39) et 25 lignes (L0–L24). Le tapis central est supprimé : la carte jouée par chaque joueur s’affiche sous son nom. Un bot est nommé par sa place réelle, BOT1 à BOT4 (P0 à P3), sur la table comme dans le journal : le même nom sur tous les écrans, quelle que soit la place de chacun. Les noms, points et cartes sont des exemples (le joueur est en P0).
 
 ```
     0         1         2         3
     0123456789012345678901234567890123456789
 L0  BELOTE   ATOUT:♥   NOUS:0000   EUX:0000
 L1  ----------------------------------------
-L2                 *NORD (BOT)
+L2                 *BOT3
 L3                  [D ]
 L4                  [♥ ]
-L5    OUEST (BOT)              EST (BOT)
+L5    BOT4                     BOT2
 L6      [R ]                    [10]
 L7      [♣ ]                    [♦ ]
 L8                  [A ]
 L9                  [♠ ]
-L10                  SUD
+L10                 JEAN
 L11 ----------------------------------------
-L12 NORD : JE PASSE
-L13 EST  : JE PRENDS COEUR
-L14 EST  : BELOTE
-L15 OUEST: BELLE ANNONCE !
-L16 EST  : REBELOTE
-L17 EST  : PLI
+L12 BOT3 : PASSE
+L13 BOT2 : PREND A D♥
+L14 BOT2 : BELOTE
+L15 LEA  : BIEN JOUE !
+L16 BOT2 : REBELOTE
+L17 BOT2 : REMPORTE LE PLI
 L18 VOUS : _
 L19 [1 PRENDRE ♥] [2 PASSE]
 L20 ----------------------------------------
@@ -464,7 +464,7 @@ L23   1    2    3    4    5    6
 L24 1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE
 ```
 
-**Zone de jeu (L2–L10)** : nom de chaque joueur à sa position relative (NORD = partenaire, EST = à droite, OUEST = à gauche, SUD = soi), précédé de * pour le joueur dont c’est le tour. Sous chaque nom, la carte qu’il a jouée dans le pli en cours, ou rien. Les cartes d’un pli terminé restent affichées jusqu’à la première carte du pli suivant. Les mains adverses ne sont pas dessinées. Les humains sont désignés par leur nom (suivi de « (CHEF) » en attente), les bots par leur position et « (BOT) ».
+**Zone de jeu (L2–L10)** : nom de chaque joueur à sa position relative (NORD = partenaire, EST = à droite, OUEST = à gauche, SUD = soi), précédé de * pour le joueur dont c’est le tour. Sous chaque nom, la carte qu’il a jouée dans le pli en cours, ou rien. Les cartes d’un pli terminé restent affichées jusqu’à la première carte du pli suivant. Les mains adverses ne sont pas dessinées. Les humains sont désignés par leur nom (suivi de « (CHEF) » en attente), les bots par BOT1 à BOT4 selon leur place réelle (P0 à P3), identique pour tous les joueurs.
 
 **Journal (L12–L17)** : six lignes pour les enchères, belote-rebelote, plis, tchat et INFO, 30 caractères maximum par message ; les nouveaux événements remplacent les plus anciens. **L18** sert à la saisie du tchat.
 
@@ -509,7 +509,9 @@ Le lecteur (c64/son.s) tourne dans l’interruption du KERNAL, 60 fois par secon
 
 - La saisie du tchat n’interrompt pas la réception réseau : la boucle principale vérifie le clavier de façon non bloquante (kbhit() avant cgetc()) et traite les données réseau en alternance.
 
-- Couleur du nom dans le journal : une couleur fixe par place *(v4)*, lisible sur le fond vert et distincte des couleurs de cartes : P0 blanc (1), P1 jaune (7), P2 cyan (3), P3 orange (8). Le texte du message reste blanc ; INFO et messages du serveur en gris clair (15).
+- Couleur du nom, sur la table et dans le journal : une couleur fixe par place, la même sur tous les écrans, en deux nuances par équipe : P0 cyan (3) et P2 bleu (6) pour l’équipe P0+P2 ; P1 orange (8) et P3 rouge (2) pour l’équipe P1+P3. Le rouge clair (10), trop proche du vert en luminosité, est écarté. Le texte du message reste blanc ; INFO et messages du serveur en gris clair (15).
+
+- Les bots sont nommés BOT1 à BOT4 d’après leur place réelle (P0 à P3) : dans le tchat, « BOT2 » désigne le même bot pour tout le monde.
 
 ## 10. Code existant / à écrire
 
@@ -575,7 +577,7 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | Points | 162 par manche (152 + dix de der), belote-rebelote +20 ; cible 1000 par défaut, paramétrable ; la première équipe à atteindre la cible gagne (contrôle en fin de manche) ; les deux la même manche : la plus haute ; égalité parfaite = nouvelle manche ; réserve non attribuée perdue. | Retenu ; fin *(v4)* |
 | Contrat | Preneur : strictement plus que la défense, belote comprise. Dedans : 162 à la défense, la belote reste à l’équipe qui l’a annoncée. Litige : points du preneur en réserve. Capot : 252. Points bruts. | Retenu *(v3)* ; capot *(v4)* |
 | Présence | Pas de spectateurs. Inactivité 3 min par défaut (F1 : 1 à 10 min) : bot. Retour possible sur sa place si libre. Déconnexion pendant son tour : le bot joue immédiatement. | Retenu |
-| Tchat | Public ; nom 5 caractères ; message 30 caractères ; boucle non bloquante ; couleur de nom par place (blanc, jaune, cyan, orange). | Retenu ; couleurs *(v4)* |
+| Tchat | Public ; nom 5 caractères ; message 30 caractères ; boucle non bloquante ; couleur de nom par place, deux nuances par équipe (cyan et bleu, orange et rouge) ; bots BOT1 à BOT4. | Retenu ; couleurs et noms des bots (client v1.3) |
 | Graphisme | Plateau/bordure vert 5 ; cartes rouge 2 / noir 0, texte blanc ; espaces inversés 160 ; RAM couleur $D800. | Retenu |
 | Sons | Musique sur l’écran titre ; bruitages carte posée, pli, tchat ; jingles victoire et défaite. Côté client seulement (section 8.3). | Retenu |
 | Écran | Grille 40 × 25 (L0–L24), sans tapis central : carte jouée sous le nom de chaque joueur, nombre de cartes adverses ; journal 6 lignes ; barre de touches ≤ 39 caractères en L24 ; * devant le joueur au tour. | Retenu ; sans tapis *(v4)* |
@@ -609,3 +611,4 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 11 *(v3)* | C64 Ultimate choisi ; protocole complété (transport, trames, nouveaux messages, COUP par code) ; écran 25 lignes ; F8 ; vue relative ; donne corrigée ; règles dedans / litige / points bruts. | Version 3 (7 novembre 2026). |
 | 12 *(v4)* | Règles officielles de la belote classique : sens du jeu, obligations, capot, belote comprise dans le contrat ; seule la belote est annoncée (automatiquement) ; la première équipe à 1000 gagne ; adresse saisie sur le C64, bots à 1 s, couleurs du tchat, paramètres F1. Tapis central supprimé. | Version 4 (7 novembre 2026). |
 | 13 | Sons sur le SID : musique de l’écran titre, bruitages (carte, pli, tchat), jingles de fin de partie. Aucun changement de protocole. | Client v1.2 (13 novembre 2026). |
+| 14 | Bots nommés BOT1 à BOT4 par place réelle (et non plus par position relative, qui différait d’un écran à l’autre) ; couleurs des noms par équipe : cyan et bleu, orange et rouge. | Client v1.3. |

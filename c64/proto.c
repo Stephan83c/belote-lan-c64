@@ -25,8 +25,10 @@ unsigned char sale;
 char erreur[41];
 struct entree journal[JOURNAL_N];
 
-const unsigned char coul_place[4] = { BLANC, JAUNE, CYAN, ORANGE };
-const char *const positions[4] = { "SUD", "EST", "NORD", "OUEST" };
+/* Équipe P0+P2 en bleus, P1+P3 en rouges : mêmes couleurs sur tous les écrans. */
+const unsigned char coul_place[4] = { CYAN, ORANGE, BLEU, ROUGE };
+/* Nom d'un bot : sa place réelle, le même sur tous les écrans. */
+const char *const noms_bots[4] = { "BOT1", "BOT2", "BOT3", "BOT4" };
 
 static char *reste;   /* paramètres non encore lus de la ligne en cours */
 
@@ -112,8 +114,8 @@ static void journal_place(signed char p, const char *texte)
     if (p < 0) {
         return;
     }
-    /* Les bots s'appellent tous BOT : on les désigne par leur position. */
-    journal_ajouter(humain[p] ? (const char *)noms[p] : positions[REL(p)], coul_place[p], texte, BLANC);
+    /* Les bots s'appellent tous BOT : on les désigne par leur place. */
+    journal_ajouter(humain[p] ? (const char *)noms[p] : noms_bots[p], coul_place[p], texte, BLANC);
 }
 
 static const char *equipe(int e)

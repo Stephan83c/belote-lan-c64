@@ -24,6 +24,7 @@
 #define CYAN       3
 #define VERT       5
 #define VERT_CLAIR 13
+#define BLEU       6
 #define JAUNE      7
 #define ORANGE     8
 #define GRIS_FONCE 11
