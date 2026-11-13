@@ -12,6 +12,9 @@
 #ifndef SERVEUR_DEFAUT
 #define SERVEUR_DEFAUT "192.168.1.55:6464"
 #endif
+#ifndef VERSION
+#define VERSION "?"
+#endif
 #define PORT_DEFAUT 6464
 #define SERVEUR_MAX 31
 
@@ -197,7 +200,7 @@ static void connexion(void)
     char *dp;
 
     ecran_effacer();
-    ecrire(0, 0, "BELOTE LAN C64", BLANC, FOND_VERT);
+    ecrire(0, 0, "BELOTE LAN C64  V" VERSION, BLANC, FOND_VERT);
     ligne_tirets(1);
     ecrire(0, 3, "SERVEUR:", BLANC, FOND_VERT);
     ecrire(0, 5, "NOM    :", BLANC, FOND_VERT);

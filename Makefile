@@ -7,11 +7,13 @@ include config.mk
 
 # Client C64 (cc65). Adresse pré-remplie dans le champ SERVEUR (SPEC 2.1).
 SERVEUR_DEFAUT := $(SERVEUR_IP):$(SERVEUR_PORT)
+# Version affichée sur l'écran de connexion (celle de la release GitHub).
+VERSION := 1.4
 PRG := build/belote_lan.prg
 SOURCES := $(sort $(wildcard c64/*.c c64/*.s) c64/titre_img.c c64/son_donnees.s)
 ENTETES := $(wildcard c64/*.h)
 # Le programme s'arrête sous $C000 : écran et caractères vivent en $C000-$CFFF.
-CFLAGS := -t c64 -O -Or -DSERVEUR_DEFAUT='"$(SERVEUR_DEFAUT)"' -Wl -D,__HIMEM__=0xC000
+CFLAGS := -t c64 -O -Or -DSERVEUR_DEFAUT='"$(SERVEUR_DEFAUT)"' -DVERSION='"$(VERSION)"' -Wl -D,__HIMEM__=0xC000
 
 .PHONY: all deploy vice demo vice-demo test server clean
 
