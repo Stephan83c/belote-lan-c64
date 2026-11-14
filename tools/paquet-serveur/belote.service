@@ -1,0 +1,22 @@
+# Service systemd *utilisateur* du serveur BELOTE LAN C64 (paquet belote-serveur).
+# Installation : LISEZMOI.md (français) ou README.md (English), section « Service ».
+#
+# %h est le dossier personnel : le paquet est censé être extrait dans ~/belote-serveur.
+# Adaptez le chemin s'il est ailleurs, et le port si vous n'utilisez pas 6464.
+
+[Unit]
+Description=Serveur BELOTE LAN C64 (belote en reseau pour C64 Ultimate)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/belote-serveur
+ExecStart=/usr/bin/python3 -m belote --port 6464
+Restart=on-failure
+RestartSec=5
+# Pas de console sous systemd : le chef efface la partie avec F4 sur son C64.
+StandardInput=null
+
+[Install]
+WantedBy=default.target

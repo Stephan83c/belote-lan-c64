@@ -2,6 +2,9 @@
 
 *English · [Français](serveur-service.md)*
 
+This guide starts from the cloned repository. To install the server alone, without git or make,
+the release's `belote-serveur-vX.Y.tar.gz` package has its own notes (`README.md`).
+
 With `make server`, the server stops when you close the terminal. As a **service**, it starts with
 the PC, restarts if it crashes and runs without an open window. This guide uses a systemd **user
 service**: no root needed to run it, and it runs under your account.

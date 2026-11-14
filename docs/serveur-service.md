@@ -2,6 +2,9 @@
 
 *[English](server-service.md) · Français*
 
+Cette fiche part du dépôt cloné. Pour installer le serveur seul, sans git ni make, le paquet
+`belote-serveur-vX.Y.tar.gz` de la release a ses propres notes (`LISEZMOI.md`).
+
 Avec `make server`, le serveur s'arrête quand on ferme le terminal. En **service**, il démarre tout
 seul avec le PC, redémarre s'il plante et tourne sans fenêtre ouverte. Cette fiche utilise un
 **service utilisateur** systemd : pas besoin d'être root pour le faire tourner, et il s'exécute avec

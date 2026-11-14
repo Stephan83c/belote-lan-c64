@@ -53,6 +53,11 @@ Press a key on the title screen, then **F1** on the connection screen to pick yo
 later or run your own server (below). VICE cannot connect: it does not emulate the Ultimate's
 Command Interface.
 
+**Your own server, without the repository**: the release also holds `belote-serveur-vX.Y.tar.gz`
+(or `.zip`), the server ready to run with Python 3.10 or later, nothing else to install
+(`python3 -m belote --port 6464`). Its setup notes (`README.md`) cover running, checking, the
+systemd service, the firewall and updating.
+
 ## Getting started
 
 You need a C64 Ultimate (or an Ultimate 64 / Ultimate-II+) with the REST API and the Command
@@ -111,6 +116,7 @@ To have the server start with the PC, install it as a systemd service: see
 ```sh
 make                         # build/belote_lan.prg
 make test                    # server tests (pytest)
+make paquet-serveur          # server package for the release (build/belote-serveur-vX.Y.*)
 make vice                    # connection screen in VICE (VICE does not emulate the Command Interface)
 make vice-demo SCENARIO=1..7 # client with a simulated network (6: sounds, sliding cards, trick taken;
                              # 7: end of round and countdown)

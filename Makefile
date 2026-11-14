@@ -19,7 +19,7 @@ ENTETES := $(sort $(wildcard c64/*.h) c64/textes.h)
 # l'image titre en $E000 (voir CLAUDE.md, mémoire du client).
 CFLAGS := -t c64 -O -Or -DSERVEUR_DEFAUT='"$(SERVEUR_DEFAUT)"' -DVERSION='"$(VERSION)"' -DLANGUE_DEFAUT=$(LANGUE) -Wl -D,__HIMEM__=0xC000,-D,__STACKSIZE__=0x600
 
-.PHONY: all deploy vice demo vice-demo test server clean
+.PHONY: all deploy vice demo vice-demo test server paquet-serveur clean
 
 all: $(PRG)
 
@@ -74,6 +74,22 @@ test: $(VENV)/bin/pytest
 
 server: $(VENV)/bin/pytest
 	cd server && .venv/bin/python -m belote --port $(SERVEUR_PORT)
+
+# Paquet du serveur pour la release : build/belote-serveur-vX.Y.tar.gz et .zip, un dossier
+# belote-serveur (serveur, tests, service systemd, notes d'installation FR/EN, protocole, licence).
+PAQUET := build/paquet/belote-serveur
+paquet-serveur: test
+	rm -rf build/paquet
+	mkdir -p $(PAQUET)/belote $(PAQUET)/tests
+	cp server/belote/*.py $(PAQUET)/belote/
+	cp server/tests/*.py $(PAQUET)/tests/
+	cp server/pytest.ini server/requirements-dev.txt LICENSE protocol.md protocol.fr.md $(PAQUET)/
+	cp tools/paquet-serveur/belote.service $(PAQUET)/
+	sed 's/@VERSION@/$(VERSION)/g' tools/paquet-serveur/LISEZMOI.md > $(PAQUET)/LISEZMOI.md
+	sed 's/@VERSION@/$(VERSION)/g' tools/paquet-serveur/README.md > $(PAQUET)/README.md
+	cd build/paquet && tar czf ../belote-serveur-v$(VERSION).tar.gz --owner=0 --group=0 belote-serveur
+	cd build/paquet && rm -f ../belote-serveur-v$(VERSION).zip && zip -qr ../belote-serveur-v$(VERSION).zip belote-serveur
+	@ls -l build/belote-serveur-v$(VERSION).*
 
 clean:
 	rm -rf build

@@ -29,6 +29,8 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
   socket), puis envoie et lance le PRG sur l'Ultimate
   (curl -X POST --data-binary @build/belote_lan.prg http://192.168.1.27/v1/runners:run_prg)
 - `make server` : lance le serveur Python
+- `make paquet-serveur` : pytest puis build/belote-serveur-vX.Y.tar.gz et .zip, à joindre à la
+  release (serveur sans dépendance, service, notes FR/EN de tools/paquet-serveur/)
 - `make vice` : le vrai client dans VICE (écran de connexion seulement : VICE n'émule pas
   la Command Interface)
 - `make vice-demo SCENARIO=1..7` : client avec réseau simulé (c64/vice/faux_uci.c) ;
