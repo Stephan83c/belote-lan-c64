@@ -2,8 +2,12 @@
 
 *[English](README.md) · Français*
 
-Belote en réseau local pour **Commodore 64 Ultimate**. Jusqu'à quatre joueurs humains, chacun sur
-son C64. Les places libres sont tenues par des bots. Un serveur Python sur le PC arbitre la partie.
+Belote en réseau pour **Commodore 64 Ultimate**, à la maison ou par Internet. Jusqu'à quatre joueurs
+humains, chacun sur son C64. Les places libres sont tenues par des bots. Un serveur Python arbitre la
+partie : sur un PC du réseau local, ou le serveur public déjà en ligne.
+
+La belote classique : 32 cartes, deux équipes de deux, l'atout choisi aux enchères sur une carte
+retournée. Les règles sont intégrées (F8 les affiche sur le C64).
 
 ![Écran titre](docs/titre.png)
 
@@ -14,14 +18,15 @@ son C64. Les places libres sont tenues par des bots. Un serveur Python sur le PC
 ## Ce qu'il y a dedans
 
 - **Client C64** (`c64/`, C avec cc65) : l'écran est en mode couleur étendue (ECM), avec des cartes
-  blanches (rang et symbole rouges ou noirs) sur un tapis de feutre vert. Le réseau passe par la
+  blanches aux coins arrondis (rang et symbole rouges ou noirs) sur un tapis de feutre vert ; chaque
+  carte jouée glisse jusqu'au tapis (deux sprites). Le réseau passe par la
   *Ultimate Command Interface* ($DF1C-$DF1F). Un écran titre en bitmap multicolore est généré par
   `tools/titre.py`. Musique sur l'écran titre et bruitages en partie (carte posée, pli, tchat,
   victoire, défaite), joués sur le SID ; ils sont écrits dans `tools/musique.py`. Quatre langues
   (français, anglais, allemand, espagnol), choisies par F1 sur l'écran de connexion ; les textes
   sont dans `tools/textes.py`.
 - **Serveur** (`server/`, Python 3.13 asyncio) : il applique les règles de la belote classique, gère
-  les bots, la reconnexion, l'inactivité et le tchat.
+  les bots (qui se souviennent des cartes jouées), la reconnexion, l'inactivité et le tchat.
 - **Protocole** : texte ASCII, une ligne par message terminée par LF (64 octets au maximum), sur le
   port TCP 6464. On peut jouer ou déboguer avec `nc` (voir [protocol.fr.md](protocol.fr.md)).
 - **Spécification complète** (règles, protocole, écran) : [SPEC.fr.md](SPEC.fr.md).
@@ -39,6 +44,12 @@ Pour le lancer :
   de fichiers ;
 - ou envoyez-le depuis un PC du même réseau, si l'API REST de l'Ultimate est activée :
   `curl -X POST --data-binary @belote_lan.prg http://<ip-de-l-ultimate>/v1/runners:run_prg`.
+
+Appuyez sur une touche à l'écran titre, puis sur **F1** à l'écran de connexion pour choisir la langue.
+
+**Limites** : le serveur public n'a qu'une table de 4 places ; si elle est pleine (« TABLE PLEINE »),
+réessayez plus tard ou lancez votre propre serveur (ci-dessous). VICE ne peut pas se connecter : il
+n'émule pas la Command Interface de l'Ultimate.
 
 ## Démarrer
 
@@ -83,7 +94,7 @@ Pour que le serveur démarre tout seul avec le PC, installez-le en service syste
 | Touche | Action |
 |---|---|
 | 1-4 | Enchères : prendre (à la couleur retournée au 1er tour, à une autre au 2e) ou passer |
-| 1-8 | Jouer la carte affichée sous ce numéro |
+| 1-8 | Jouer la carte affichée au-dessus de ce numéro (au dernier pli, la dernière carte part seule) |
 | F1 | Écran de connexion : changer de langue |
 | F1 | Chef, en attente : réglages (points pour gagner, délai d'inactivité) |
 | F2 | Chef : lancer la partie |
@@ -99,12 +110,16 @@ Pour que le serveur démarre tout seul avec le PC, installez-le en service syste
 make                         # build/belote_lan.prg
 make test                    # tests du serveur (pytest)
 make vice                    # écran de connexion dans VICE (VICE n'émule pas la Command Interface)
-make vice-demo SCENARIO=1..6 # client avec un réseau simulé (6 : écouter les sons)
+make vice-demo SCENARIO=1..6 # client avec un réseau simulé (6 : sons et cartes qui glissent)
 python3 tools/titre.py       # régénère l'écran titre (Pillow)
 python3 tools/musique.py     # régénère la musique et les bruitages
 python3 tools/textes.py      # régénère les textes des 4 langues (vérifie les largeurs)
 make LANGUE=1                # langue au démarrage : 0 FR, 1 EN, 2 DE, 3 ES
 ```
+
+Pour ajouter ou corriger une traduction, modifiez `tools/textes.py` et lancez-le : il refuse un texte
+trop large pour sa place à l'écran, ou un caractère que le C64 ne sait pas afficher en ECM (tout est
+en majuscules, sans accents).
 
 Dans le terminal du serveur, `RAZ` efface la partie en cours. Les particularités de l'Ultimate
 constatées sur le matériel (sockets libérés, Command Interface bloquée) sont notées dans

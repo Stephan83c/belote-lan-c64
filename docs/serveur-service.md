@@ -130,7 +130,7 @@ sudo firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=<
   a pas besoin.
 
 - **Pas de console** : en service, le serveur ne lit pas le clavier, donc la commande `RAZ` du
-  terminal n'existe pas. Le chef efface la partie depuis son C64 avec **F4** puis **O**.
+  terminal n'existe pas. Le chef efface la partie depuis son C64 avec **F4** puis **O** (Y, J ou S dans les autres langues).
 - **Pare-feu (réseau local, Debian/Ubuntu)** : le port doit être ouvert aux C64, par exemple
   `sudo ufw allow from 192.168.1.0/24 to any port 6464 proto tcp`. Pour Fedora et un serveur sur
   Internet, voir la partie 6.
