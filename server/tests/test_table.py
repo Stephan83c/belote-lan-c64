@@ -511,6 +511,22 @@ def test_gagnant_et_nouvelle_partie_scores_et_reserve_remis_a_zero():
 
 
 @dans_boucle
+def test_reconnexion_en_fin_de_partie_renvoie_le_gagnant():
+    t = table_ne_jouant_pas()
+    a = rejoindre(t, "A")
+    b = rejoindre(t, "B")
+    t.recevoir(a, "PARAM CIBLE 500")
+    t.recevoir(a, "LANCER")
+    t.scores = [100, 450]
+    fin_manche(t, lambda r: compter_manche(1, (40, 122), (3, 5), None, r))
+    assert t.etat == FIN_PARTIE
+    t.deconnexion(b)
+    retour = rejoindre(t, "B")
+    assert "ETAT FIN PARTIE" in retour.lignes
+    assert retour.lignes[-1] == "GAGNANT 1"
+
+
+@dans_boucle
 def test_egalite_parfaite_a_la_cible_manche_supplementaire():
     t = table_ne_jouant_pas()
     a = rejoindre(t, "A")

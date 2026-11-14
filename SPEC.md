@@ -438,7 +438,7 @@ srv -> all : MANCHE 72 110 / SCORE 72 110 / ETAT FIN MANCHE
 host-> srv : REJOUER
 ```
 
-**Reconnection** — after BIENVENUE, the server sends the full state: SIEGE ×4, CHEF, ETAT, PARAM, SCORE, DONNEUR, then depending on the phase RETOURNE or PREND, MAIN, NBCARTES, PLICOURS and TOUR.
+**Reconnection** — after BIENVENUE, the server sends the full state: SIEGE ×4, CHEF, ETAT, PARAM, SCORE, DONNEUR, GAGNANT in FIN PARTIE, then depending on the phase RETOURNE or PREND, MAIN, NBCARTES, PLICOURS and TOUR.
 
 ## 8. Interface, colours and sounds
 
@@ -640,3 +640,4 @@ These decisions override contradictory or older wording.
 | 18 | Bots, after a full game on the public server (Stéphan against Claude, 1115 to 687) and an analysis of its log: the 10s the bots gave away were forced moves, not mistakes. Memory of the cards played; lead with the highest card left in a suit (master 10 once the ace has fallen), +1 % points over 40,000 deals simulated against the former strategy. Trumping or winning with a master card rather than the lowest winning card was tried and dropped (−6.8 %). | Server v1.5, fix after the release (14 November 2026): release notes completed, tag unchanged, public server updated. |
 | 19 | Cards with rounded corners (2-pixel arc, preferred to 3 after trying it on the C64); the characters " $ % & become the corners and show as "?" in the chat; tools/textes.py refuses them in translations; documentation screenshots redone (FR and EN). | Client v1.5, update (14 November 2026): release PRG replaced, tag unchanged. |
 | 20 | Sliding card (two sprites) from the hand or the screen edge to the table; table and hand redrawn in place, without flicker; your card starts from the chosen slot; last card played automatically. Tuned by trying it on the C64: the first version flickered (table and hand were cleared then redrawn, twice per card); the card rose in a zigzag (cc65 got a negative difference multiplied by the step wrong); it started from under the table (MAIN arrives with JOUE and had already removed the card: its slot is now remembered as soon as JOUE arrives). Demo 6 matches the server (MAIN after JOUE). No protocol or server change. | Client v1.5, update (14 November 2026): release PRG replaced, tag unchanged. |
+| 21 | Full review of the server: a player reconnecting in FIN PARTIE now receives GAGNANT (their end screen showed the score without the winner). | Server v1.5, fix (14 November 2026). |

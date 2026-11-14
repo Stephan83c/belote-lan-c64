@@ -259,6 +259,11 @@ class Table:
             return
         client.envoyer(f"SCORE {self.scores[0]} {self.scores[1]}")
         client.envoyer(f"DONNEUR {self.donneur}")
+        if self.etat == FIN_PARTIE:
+            # Sinon l'écran de fin d'un joueur revenu n'affiche pas le vainqueur.
+            gagnante = equipe_gagnante(self.scores, self.cible)
+            if gagnante is not None:
+                client.envoyer(f"GAGNANT {gagnante}")
         if self.etat != EN_COURS:
             return
         d = self.donne

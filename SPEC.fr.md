@@ -436,7 +436,7 @@ srv -> tous: MANCHE 72 110 / SCORE 72 110 / ETAT FIN MANCHE
 chef-> srv : REJOUER
 ```
 
-**Reconnexion** — après BIENVENUE, le serveur envoie l’état complet : SIEGE ×4, CHEF, ETAT, PARAM, SCORE, DONNEUR, puis selon la phase RETOURNE ou PREND, MAIN, NBCARTES, PLICOURS et TOUR.
+**Reconnexion** — après BIENVENUE, le serveur envoie l’état complet : SIEGE ×4, CHEF, ETAT, PARAM, SCORE, DONNEUR, GAGNANT en FIN PARTIE, puis selon la phase RETOURNE ou PREND, MAIN, NBCARTES, PLICOURS et TOUR.
 
 ## 8. Interface, couleurs et sons
 
@@ -638,3 +638,4 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 18 | Bots, après une partie complète sur le serveur public (Stéphan contre Claude, 1115 à 687) et l’analyse de son journal : les 10 sacrifiés par les bots étaient des coups forcés, pas des erreurs. Mémoire des cartes jouées ; entame de la plus forte carte restante d’une couleur (10 maître après la chute de l’as), +1 % de points sur 40 000 donnes simulées contre l’ancienne stratégie. Couper ou gagner avec une carte maîtresse plutôt qu’avec la plus petite carte gagnante a été essayé et écarté (−6,8 %). | Serveur v1.5, correction après la release (14 novembre 2026) : notes de la release complétées, tag inchangé, serveur public mis à jour. |
 | 19 | Cartes aux coins arrondis (arc de 2 pixels, préféré à 3 après essai sur le C64) ; les caractères " $ % & deviennent les coins et s’affichent « ? » dans le tchat ; tools/textes.py les refuse dans les traductions ; captures de la documentation refaites (FR et EN). | Client v1.5, mise à jour (14 novembre 2026) : PRG de la release remplacé, tag inchangé. |
 | 20 | Carte qui glisse (deux sprites) de la main ou du bord de l’écran jusqu’au tapis ; table et main redessinées sur place, sans clignotement ; sa carte part de l’emplacement choisi ; dernière carte jouée automatiquement. Mis au point par essais sur le C64 : la première version clignotait (la table et la main étaient effacées puis redessinées, deux fois par carte) ; la carte montait en zigzag (cc65 calculait mal une différence négative multipliée par l’étape) ; elle partait de sous le tapis (la MAIN arrive avec le JOUE et retirait déjà la carte : son emplacement est retenu dès le JOUE). Démo 6 conforme au serveur (MAIN après JOUE). Aucun changement de protocole ni de serveur. | Client v1.5, mise à jour (14 novembre 2026) : PRG de la release remplacé, tag inchangé. |
+| 21 | Relecture complète du serveur : un joueur qui se reconnecte en FIN PARTIE reçoit maintenant GAGNANT (son écran de fin affichait le score sans le vainqueur). | Serveur v1.5, correction (14 novembre 2026). |
