@@ -100,22 +100,21 @@ The project is a four-seat networked belote game, with a Commodore 64 client wri
 At startup, the client shows the connection screen. The SERVER field is pre-filled with the default address (SERVEUR_IP and SERVEUR_PORT in config.mk); the player can change it (DEL to erase) then confirms with RETURN. Format: host or IP, optionally followed by :port (6464 if absent), 31 characters at most. The C64 Ultimate resolves the host name itself. On failure, the message "CANNOT CONNECT" is shown and the field is offered again.
 
 ```
-L0  BELOTE LAN C64                          V1.6
-L1  ----------------------------------------
+L0  BELOTE LAN C64                          V1.7
 L3  SERVER  :51.38.50.79:6464
 L5  NAME    :JEAN_
 L7  (messages: CONNECTING..., CANNOT CONNECT...)
 L11            [A♠] [Q♥]
 L12       [J♣]           [K♥]
 L16  4 SEATS: BOTS FILL THE EMPTY ONES
-L20 ----------------------------------------
+L20 ────────────────────────────────────────
 L22 FRANCAIS  ENGLISH  DEUTSCH  ESPANOL
 L24 RETURN CONFIRM  CRSR FIELD  F1 LANGUAGE
 ```
 
-The screen follows the look of the others: header and dashes, felt, table cards, keys on the bottom bar in light grey, current choice in yellow. The cards are those of the title screen (jack of clubs, ace of spades, then the belote), dealt one at a time from the top with the sliding card and its snap, the first time only; their face cards follow the language.
+The screen follows the look of the others: black bars at the top and bottom, thin yellow line, felt, table cards, keys on the bottom bar in light grey, current choice in yellow. The cards are those of the title screen (jack of clubs, ace of spades, then the belote), dealt one at a time from the top with the sliding card and its snap, the first time only; their face cards follow the language.
 
-**Language**: F1 switches to the next language (French, English, German, Spanish); each name is written in its own language, the current one in yellow, and the screen texts change at once. The choice holds for the whole session; the startup language is set at build time (`make LANGUE=0..3`). Everything is upper case without accents: extended colour mode only has 64 characters (UE for Ü, N for Ñ). Face cards follow the language: V D R (French), J Q K (English, Spanish), B D K (German). The protocol does not change: its keywords stay French and the client translates for display the ERR and INFO messages it recognises (an unknown text is shown as is). The texts live in tools/textes.py, which generates c64/textes.c and checks their widths.
+**Language**: F1 switches to the next language (French, English, German, Spanish); each name is written in its own language, the current one in yellow, and the screen texts change at once. The choice holds for the whole session; the startup language is set at build time (`make LANGUE=0..3`). Everything is upper case without accents: extended colour mode only has 64 characters (UE for Ü, N for Ñ). Face cards follow the language: V D R (French), J Q K (English, Spanish), B D K (German). The protocol does not change: its keywords stay French and the client translates for display the ERR and INFO messages it recognises (an unknown text is shown as is). The texts live in tools/textes.py, which generates c64/textes.c and checks their widths. With the joystick (port 2) *(v1.7)*: right and left change the language (next, previous), up and down move between fields, the button acts as RETURN.
 
 Next, the client asks for a name of up to 6 characters (A–Z, 0–9), then joins the table. The server assigns a seat and confirms it with BIENVENUE. The first human connected becomes the host and first dealer. Bots fill the empty seats but do not play until the host starts the game with F2.
 
@@ -139,7 +138,6 @@ The target score is 1000 by default and can be changed by the host in the server
 
 ```
 L0  BELOTE LAN C64               GAME OVER
-L1  ----------------------------------------
 L2
 L3
 L4  US   : 1040
@@ -155,7 +153,7 @@ L12 F7 = QUIT
 
 ## 3. Keys
 
-On the waiting table, F1 is reserved for the server settings. The game rules are shown with F8. F2 starts the game, F3 opens the chat, F5 moves to the next round straight away at the end of a round, without waiting for the pause to end (cumulative score kept, any player) and F7 quits. On the end-of-game screen, F5 starts a new game and resets the scores. During bidding, 1 to 4 choose an option; during play, 1 to 8 play the numbered cards of the hand; RETURN confirms the name on the connection screen.
+On the waiting table, F1 is reserved for the server settings. The game rules are shown with F8. F2 starts the game, F3 opens the chat, F5 moves to the next round straight away at the end of a round, without waiting for the pause to end (cumulative score kept, any player) and F7 quits. On the end-of-game screen, F5 starts a new game and resets the scores. During bidding, 1 to 4 choose an option; during play, 1 to 8 play the numbered cards of the hand; RETURN confirms the name on the connection screen. Since v1.7, the joystick in port 2 (or the cursor keys and RETURN / SPACE) does everything without the keyboard: see the last two lines of the table.
 
 | Key | C64 code | Action / availability |
 |---|---|---|
@@ -168,8 +166,10 @@ On the waiting table, F1 is reserved for the server settings. The game rules are
 | F7 | 136 | Leave the table. |
 | F8 *(v3)* | 140 | Show / hide the rules (local screen, network reception goes on). HELP does not exist on the C64. |
 | 1 to 4 | Ordinary keys | Bidding choice, only on your bidding turn. |
-| 1 to 8 | Ordinary keys | Play the card with this number, only on your turn. |
-| RETURN | 13 | Confirm the name / join; send the chat message. |
+| 1 to 8 | Ordinary keys | Play the card with this number, only on your turn and if the rules allow it (the card stands out of the hand). |
+| RETURN | 13 | Confirm the name / join; send the chat message. In game *(v1.7)*, like SPACE: play the chosen card, confirm the chosen bid, at the end of a round go to the next one. |
+| CRSR ← → *(v1.7)* | 157, 29 | In game: choose the next playable card, or the next bid. |
+| Joystick, port 2 *(v1.7)* | — | Left / right: like CRSR ← → (on the connection screen: language). Button: like RETURN (title screen: start). Up / down, on the connection screen: change field. |
 
 ### 3.1 F1 settings *(v4)*
 
@@ -184,7 +184,7 @@ Network reception goes on during this screen; new values are broadcast to all wi
 
 ### 3.2 Key bar (L24) *(v3)*
 
-The bar shown depends on the state and the role. Each bar is 39 characters at most, so as never to write the last cell of the screen (risk of scrolling). The texts below are the English ones; every language has its own, checked by tools/textes.py.
+The bar shown depends on the state and the role. Each bar is 39 characters at most. Since v1.7, it is written on a black bar, the keys (F1 to F8, 1-8, 1-4) in yellow and the rest in light grey. The texts below are the English ones; every language has its own, checked by tools/textes.py.
 
 | Situation | Bar shown (≤ 39 chars) |
 |---|---|
@@ -457,8 +457,7 @@ Grid of 40 columns (0–39) and 25 lines (L0–L24). The central mat is removed:
 ```
     0         1         2         3
     0123456789012345678901234567890123456789
-L0  BELOTE   TRUMP:♥   US:0000    THEM:0000
-L1  ----------------------------------------
+L0  BELOTE   TRUMP: ♥    US 0000   THEM 0000
 L2                    BOT3
 L3                    [Q ]
 L4                    [♥ ]
@@ -467,8 +466,8 @@ L6      [K ]                    [10]
 L7      [♣ ]                    [♦ ]
 L8  
 L9  
-L10                  *JEAN
-L11 ----------------------------------------
+L10                   JEAN
+L11 ────────────────────────────────────────
 L12 BOT3 : PASSES
 L13 BOT2 : TAKES Q♥
 L14 BOT2 : BELOTE
@@ -476,10 +475,10 @@ L15 LEA  : WELL PLAYED!
 L16 BOT2 : REBELOTE
 L17 BOT2 : WINS THE TRICK
 L18 YOU  : _
-L19 YOUR TURN: 1-8
-L20 ----------------------------------------
-L21 [J ] [9 ] [Q ] [10] [7 ] [K ]
-L22 [♠ ] [♠ ] [♠ ] [♦ ] [♦ ] [♥ ]
+L19 YOUR TURN: 1-8 OR JOYSTICK
+L20 [J ] [9 ] [Q ] ──────────────────────
+L21 [♠ ] [♠ ] [♠ ] [10] [7 ] [K ]
+L22                [♦ ] [♦ ] [♥ ]
 L23  1    2    3    4    5    6
 L24 1-8 CARD F3 CHAT F7 QUIT F8 HELP
 ```
@@ -490,7 +489,11 @@ L24 1-8 CARD F3 CHAT F7 QUIT F8 HELP
 
 **L19** is the status line. While waiting: "HOST: <NAME>   TARGET: 1000 POINTS". During play, on your turn: "YOUR TURN: 1-8". At the end of a round: "ROUND TO US - NEXT ONE IN 10 S" or "ROUND TO THEM - …", after the team that scored more points, in that team's light colour (light blue or light red), counted down every second (with an older server that does not send SUITE: "ROUND OVER: F5 FOR THE NEXT ONE" for the host, "…: WAITING FOR THE HOST" for the others). During bidding, first round: "[1 TAKE <turned-up suit>] [2 PASS]". Second round: the 3 other suits then PASS (e.g. "[1 ♠] [2 ♣] [3 ♦] [4 PASS]"). On another player's turn: "BIDDING: <NAME> TO PLAY...". On the right of the line, the current bidding round ("ROUND 1" or "ROUND 2"), as the log does not always show the passes of the first round. The player concerned uses keys 1 to 4.
 
-**Hand (L21–L23)**: up to 8 cards numbered 1 to 8, sorted spades-hearts-clubs-diamonds; the numbers are yellow when it is your turn to play a card, dark grey otherwise. L0 shows TRUMP:? until the end of the bidding; US and THEM show the cumulative score on 4 digits at most.
+**Hand (L20–L23)** *(v1.7)*: up to 8 cards numbered 1 to 8, in the server's order (spades, hearts, clubs, diamonds). On your turn, the cards the rules allow stand out of the hand (lines L20–L21, over the line); for this the client applies the server's rules (section 5.3), which remains the judge. The card chosen with the joystick or cursor keys has its number in black on white; the other playable numbers are yellow, the others light grey, and dark grey when it is not your turn. L0, on the black bar: BELOTE in yellow, the trump in its colour (? during bidding), then US and THEM in each team's colour and the cumulative score on 4 digits.
+
+**Bidding with the joystick** *(v1.7)*: on L19, the choices are labels ("1 TAKE ♥", "2 PASS"; in round 2 the three suits and "4 PASS"); the chosen one is on white. The choice goes back to PASS on each bidding turn, so that an accidental press never takes.
+
+**End of round** *(v1.7)*: a large white card with rounded corners in the middle of the table (columns 7 to 26, lines 3 to 9): THE ROUND, each team's points (dark blue or red), CONTRACT MADE, SET!, CAPOT! or TIE in the colour of the team concerned, then OVERALL and the scores. It stays during the countdown; the joystick button (or RETURN) acts as F5.
 
 **Sliding card**: each card played (JOUE) slides to its place on the table in 14 frames (about a quarter of a second), drawn with two sprites: the white body with rounded corners (sprite 1, X-expanded) and, in front, the rank and suit in the card's colour (sprite 0); data at $C400. Your own card starts from its slot in the hand (remembered when JOUE arrives, before the MAIN that follows); the partner's from the top of the screen, the opponents' from the right (EAST) or left (WEST) edge. During that quarter of a second, the client does not read the network: messages wait in the Ultimate. The table and the hand are redrawn in place, without being cleared first: nothing flickers.
 
@@ -502,7 +505,10 @@ L24 1-8 CARD F3 CHAT F7 QUIT F8 HELP
 
 | Area / item | Value | Rendering |
 |---|---|---|
-| Board and border | C64 green = 5 | Green background; empty cells carry a felt pattern (light green dots = 13, the redrawn # character). |
+| Board | C64 green = 5 | Green background; empty cells carry a felt pattern (light green dots = 13, the redrawn # character). |
+| Border *(v1.7)* | C64 brown = 9 | The table's frame (green, then black and dark grey were tried). |
+| Bars *(v1.7)* | Black background (ECM, $D023 = 0) | L0 (title, trump, scores) and L24 (keys in yellow). On black, ♥ ♦ in light red, ♠ ♣ in white. |
+| Separators *(v1.7)* | C64 yellow = 7 | Thin continuous line (the redrawn < character, 2 pixels) on L11 and L20, instead of dashes. |
 | Cards | White background (ECM, $D022 = 1), rounded corners | Rank and suit in the card's colour. The corners are four redrawn characters (" $ % &): a 2-pixel arc in the board's green. |
 | Hearts and diamonds | C64 red = 2 | Red rank and suit on the white card. |
 | Spades and clubs | C64 black = 0 | Black rank and suit on the white card. |
@@ -560,7 +566,7 @@ REM Teams : E0 = P0+P2 ; E1 = P1+P3
 ### 10.2 Graphic conventions
 
 ```
-REM Board/border colour : 5 (green)
+REM Board colour : 5 (green); border: 9 (brown); black bars; yellow lines
 REM Cards : white background, rank and suit red=2 or black=0
 REM Extended colour mode (ECM) ; colour RAM : $D800
 REM FC(0)=0 spades ; FC(1)=2 hearts ; FC(2)=0 clubs ; FC(3)=2 diamonds
@@ -602,7 +608,7 @@ These decisions override contradictory or older wording.
 
 | Topic | Consolidated decision | Status |
 |---|---|---|
-| Keys | F1 settings (host); F2 start (host); F3 chat; F4 wipe the game (host); F5 next round (any player) / new game (host); F7 quit; F8 rules; 1–4 bidding; 1–8 cards; RETURN confirm. | Adopted; F8 *(v3)* |
+| Keys | F1 settings (host); F2 start (host); F3 chat; F4 wipe the game (host); F5 next round (any player) / new game (host); F7 quit; F8 rules; 1–4 bidding; 1–8 cards; RETURN confirm; joystick in port 2, cursor keys and SPACE *(v1.7)*. | Adopted; F8 *(v3)*; joystick (client v1.7) |
 | Seats / partners | P0=SOUTH, P1=EAST, P2=NORTH, P3=WEST; order P0→P1→P2→P3, anticlockwise; teams P0+P2 against P1+P3; relative display, each player as SOUTH. | Adopted; direction *(v4)* |
 | Deal and bidding | Classic belote: 3 + 2 cards + turned-up card, two rounds of bidding, then 3 cards (taker: turned-up card + 2). Everyone passes: redeal, next dealer. | Adopted; deal *(v3)* |
 | Play *(v4)* | Follow suit; in trumps always go higher; trump if the opponent is winning, over-trump if possible; under-trumping forbidden unless only trumps are left; free if the partner is winning. | Adopted *(v4)* |
@@ -611,7 +617,7 @@ These decisions override contradictory or older wording.
 | Contract | Taker: strictly more than the defence, belote included. Dedans: 162 to the defence, belote stays with the team that announced it. Tie: the taker's points in reserve. Capot: 252. Raw points. | Adopted *(v3)*; capot *(v4)* |
 | Presence | No spectators. Idle timeout 3 min by default (F1: 1 to 10 min): bot. Return to your seat possible if free. Disconnection on your turn: the bot plays at once. | Adopted |
 | Chat | Public; name 6 characters; message 30 characters; non-blocking loop; name colour per seat, two shades per team (light blue and blue, light red and red); bots BOT1 to BOT4. | Adopted; bot colours and names (client v1.3) |
-| Graphics | Board/border green 5 with felt pattern; white cards with rounded corners, rank and suit red 2 / black 0; colour RAM $D800; sliding played card (two sprites). | Adopted; white cards (client v1.3); corners and sliding (client v1.5) |
+| Graphics | Board green 5 with felt pattern, brown border 9, black bars and yellow lines *(v1.7)*; white cards with rounded corners, rank and suit red 2 / black 0; colour RAM $D800; sliding played card (two sprites). | Adopted; white cards (client v1.3); corners and sliding (client v1.5) |
 | Sounds | Music on the title screen; sound effects for card played, trick, chat; win and loss jingles. Client side only (section 8.3). | Adopted |
 | Languages | French, English, German, Spanish, chosen with F1 on the connection screen; upper case without accents; protocol unchanged, ERR and INFO translated by the client (section 2.1). | Adopted (client v1.5) |
 | Screen | 40 × 25 grid (L0–L24), no central mat: card played under each player's name; opposing hands not shown; 6-line log; key bar ≤ 39 characters on L24; * before the player on turn (removed at step 30). | Adopted; no mat *(v4)* |
@@ -665,4 +671,4 @@ These decisions override contradictory or older wording.
 | 31 | Teams in colour: names of team P0+P2 in light blue and blue, of team P1+P3 in light red and red (instead of cyan and blue, orange and red), still fixed per seat and the same on every screen; the end-of-round line takes the winning team's light colour. 6-character names instead of 5 (server and client; log: name on 6 columns, message on 32); a v1.5 client cuts these names to 5. Memory: the title image is compressed (identical felt cells: one bit per cell instead of 10 bytes), decoded in assembly (c64/titre_dec.s) so it shows as fast as before; the PRG goes from 44,382 to 38,892 bytes (about 5.5 KB of room below $C000). Image checked pixel-identical in VICE. 1 server test added. | Client and server v1.6 (14 November 2026). |
 | 32 | Code review before v1.6: EAST and WEST names put back at columns 27 and 1 (shifted by one when the asterisk went, a 13-character name at EAST spilled onto the next line and the WEST one was clipped by the clearing of the middle); SUITE ignored when its number is not valid; glisser() reuses deplacer(); comments updated. FR and EN screenshots redone (team colours). GitHub release v1.6. | Client and server v1.6 (14 November 2026). Public server updated by Stéphan, checked without taking a seat: JOIN BOT123 answers ERR NOM RESERVE (a v1.5 server would answer ERR NOM, name too long). End-of-round countdown confirmed by Stéphan on the C64 with the public server. v1.6 release notes and the pinned Discussions announcement updated (v1.6, public server already up to date). |
 | 33 | Server package in the release: `make paquet-serveur` builds belote-serveur-vX.Y.tar.gz and .zip (belote-serveur folder: server, tests, systemd service ready for ~/belote-serveur, protocol, licence, setup notes in French and English). The server uses only the standard library: `python3 -m belote`, without a venv. Checked starting from the archive: running, `JOIN BOT2` → ERR NOM RESERVE, 477 tests. | Release v1.6 completed (14 November 2026): archives added, release notes and Discussions announcement updated. |
-| 34 | v1.7, ideas from an experimental "café edition" client written separately: joystick in port 2 everywhere (title, connection with language and fields, card and bid choice, next round); on your turn, playable cards stand out of the hand (server rules copied into the client) and the number of the chosen card is on white; bids as labels, the chosen one in white, PASS by default; end of round on a large white card with rounded corners in the middle of the table; black bars at the top and bottom (keys in yellow), thin yellow lines instead of dashes, brown border; joystick drawn next to SPACE on the title screen. Screenshots redone. Sections 3 and 8 of this specification still need detailing for these changes. Server unchanged. | Client v1.7 (14 November 2026). |
+| 34 | v1.7, ideas from an experimental "café edition" client written separately: joystick in port 2 everywhere (title, connection with language and fields, card and bid choice, next round); on your turn, playable cards stand out of the hand (server rules copied into the client) and the number of the chosen card is on white; bids as labels, the chosen one in white, PASS by default; end of round on a large white card with rounded corners in the middle of the table; black bars at the top and bottom (keys in yellow), thin yellow lines instead of dashes, brown border; joystick drawn next to SPACE on the title screen. Screenshots redone. Sections 2.1, 3 and 8 of this specification updated. Server unchanged. | Client v1.7 (14 November 2026). |

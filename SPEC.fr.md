@@ -98,22 +98,21 @@ Le projet est un jeu de belote à quatre places, en réseau, avec un client Comm
 Au démarrage, le client affiche l’écran de connexion. Le champ SERVEUR est pré-rempli avec l’adresse par défaut (SERVEUR_IP et SERVEUR_PORT dans config.mk) ; le joueur peut la modifier (DEL pour effacer) puis valide par RETURN. Format : hôte ou IP, suivi éventuellement de :port (6464 si absent), 31 caractères maximum. Le C64 Ultimate résout lui-même le nom d’hôte. En cas d’échec, le message « CONNEXION IMPOSSIBLE » s’affiche et le champ est proposé de nouveau.
 
 ```
-L0  BELOTE LAN C64                          V1.6
-L1  ----------------------------------------
+L0  BELOTE LAN C64                          V1.7
 L3  SERVEUR :51.38.50.79:6464
 L5  NOM     :JEAN_
 L7  (messages : CONNEXION..., CONNEXION IMPOSSIBLE...)
 L11            [A♠] [D♥]
 L12       [V♣]           [R♥]
 L16  4 PLACES : LES BOTS COMPLETENT LA TABLE
-L20 ----------------------------------------
+L20 ────────────────────────────────────────
 L22 FRANCAIS  ENGLISH  DEUTSCH  ESPANOL
 L24 RETURN VALIDER  CRSR CHAMP  F1 LANGUE
 ```
 
-L’écran reprend la présentation des autres : en-tête et tirets, feutre, cartes de la table, touches sur la barre du bas en gris clair, choix en cours en jaune. Les cartes sont celles de l’écran titre (valet de trèfle, as de pique, puis la belote), distribuées une à une depuis le haut avec la carte qui glisse et son claquement, la première fois seulement ; leurs figures suivent la langue.
+L’écran reprend la présentation des autres : bandeaux noirs en haut et en bas, trait fin jaune, feutre, cartes de la table, touches sur la barre du bas en gris clair, choix en cours en jaune. Les cartes sont celles de l’écran titre (valet de trèfle, as de pique, puis la belote), distribuées une à une depuis le haut avec la carte qui glisse et son claquement, la première fois seulement ; leurs figures suivent la langue.
 
-**Langue** : F1 passe à la langue suivante (français, anglais, allemand, espagnol) ; chaque nom est écrit dans sa langue, celle en cours en jaune, et les textes de l’écran changent aussitôt. Le choix vaut pour toute la session ; la langue au démarrage se règle à la compilation (`make LANGUE=0..3`). Tout est en majuscules sans accents : le mode couleur étendue n’a que 64 caractères (UE pour Ü, N pour Ñ). Les figures suivent la langue : V D R, J Q K (anglais, espagnol), B D K (allemand). Le protocole ne change pas : ses mots-clés restent en français et le client traduit à l’affichage les messages ERR et INFO qu’il reconnaît (un texte inconnu s’affiche tel quel). Les textes sont dans tools/textes.py, qui génère c64/textes.c et vérifie leurs largeurs.
+**Langue** : F1 passe à la langue suivante (français, anglais, allemand, espagnol) ; chaque nom est écrit dans sa langue, celle en cours en jaune, et les textes de l’écran changent aussitôt. Le choix vaut pour toute la session ; la langue au démarrage se règle à la compilation (`make LANGUE=0..3`). Tout est en majuscules sans accents : le mode couleur étendue n’a que 64 caractères (UE pour Ü, N pour Ñ). Les figures suivent la langue : V D R, J Q K (anglais, espagnol), B D K (allemand). Le protocole ne change pas : ses mots-clés restent en français et le client traduit à l’affichage les messages ERR et INFO qu’il reconnaît (un texte inconnu s’affiche tel quel). Les textes sont dans tools/textes.py, qui génère c64/textes.c et vérifie leurs largeurs. Au joystick (port 2) *(v1.7)* : droite et gauche changent de langue (suivante, précédente), haut et bas passent d’un champ à l’autre, le bouton vaut RETURN.
 
 Ensuite, le client demande un nom de 6 caractères maximum (A–Z, 0–9) puis rejoint la table. Le serveur attribue une place et la confirme par BIENVENUE. Le premier humain connecté devient chef de table et premier donneur. Les bots occupent les places libres mais ne jouent pas tant que le chef n’a pas lancé la partie avec F2.
 
@@ -137,7 +136,6 @@ Le score cible est 1000 par défaut et peut être modifié par le chef dans les 
 
 ```
 L0  BELOTE LAN C64         PARTIE TERMINEE
-L1  ----------------------------------------
 L2
 L3
 L4  NOUS : 1040
@@ -153,7 +151,7 @@ L12 F7 = QUITTER
 
 ## 3. Touches
 
-La table d’attente réserve F1 aux paramètres serveur. Les règles du jeu se consultent avec F8. F2 lance la partie, F3 ouvre le tchat, F5 passe tout de suite à la manche suivante en fin de manche, sans attendre la fin de la pause (score cumulé conservé, tout joueur) et F7 quitte. Sur l’écran de fin de partie, F5 démarre une nouvelle partie et remet les scores à zéro. Pendant les enchères, 1 à 4 choisissent une option ; pendant le jeu, 1 à 8 jouent les cartes numérotées de la main ; RETURN valide le nom à la connexion.
+La table d’attente réserve F1 aux paramètres serveur. Les règles du jeu se consultent avec F8. F2 lance la partie, F3 ouvre le tchat, F5 passe tout de suite à la manche suivante en fin de manche, sans attendre la fin de la pause (score cumulé conservé, tout joueur) et F7 quitte. Sur l’écran de fin de partie, F5 démarre une nouvelle partie et remet les scores à zéro. Pendant les enchères, 1 à 4 choisissent une option ; pendant le jeu, 1 à 8 jouent les cartes numérotées de la main ; RETURN valide le nom à la connexion. Depuis la v1.7, le joystick en port 2 (ou les flèches et RETURN / ESPACE) permet de tout faire sans clavier : voir les deux dernières lignes du tableau.
 
 | Touche | Code C64 | Action / disponibilité |
 |---|---|---|
@@ -166,8 +164,10 @@ La table d’attente réserve F1 aux paramètres serveur. Les règles du jeu se 
 | F7 | 136 | Quitter la table. |
 | F8 *(v3)* | 140 | Afficher / masquer les règles (écran local, la réception réseau continue). HELP n’existe pas sur C64. |
 | 1 à 4 | Touches ordinaires | Choix d’enchère, uniquement à son tour d’enchère. |
-| 1 à 8 | Touches ordinaires | Jouer la carte portant ce numéro, uniquement à son tour de jeu. |
-| RETURN | 13 | Valider le nom / rejoindre ; envoyer le message de tchat. |
+| 1 à 8 | Touches ordinaires | Jouer la carte portant ce numéro, uniquement à son tour de jeu et si la règle le permet (la carte est sortie du rang). |
+| RETURN | 13 | Valider le nom / rejoindre ; envoyer le message de tchat. En jeu *(v1.7)*, comme ESPACE : jouer la carte choisie, valider l’enchère choisie, en fin de manche passer à la suivante. |
+| CRSR ← → *(v1.7)* | 157, 29 | En jeu : choisir la carte jouable voisine, ou l’enchère voisine. |
+| Joystick, port 2 *(v1.7)* | — | Gauche / droite : comme CRSR ← → (à la connexion : langue). Bouton : comme RETURN (écran titre : lancer). Haut / bas, à la connexion : changer de champ. |
 
 ### 3.1 Paramètres F1 *(v4)*
 
@@ -182,7 +182,7 @@ La réception réseau continue pendant cet écran ; les nouvelles valeurs sont d
 
 ### 3.2 Barre de touches (L24) *(v3)*
 
-La barre affichée dépend de l’état et du rôle. Chaque barre fait 39 caractères au plus, pour ne jamais écrire la dernière case de l’écran (risque de défilement).
+La barre affichée dépend de l’état et du rôle. Chaque barre fait 39 caractères au plus. Depuis la v1.7, elle est écrite sur un bandeau noir, les touches (F1 à F8, 1-8, 1-4) en jaune et le reste en gris clair.
 
 | Situation | Barre affichée (≤ 39 car.) |
 |---|---|
@@ -455,8 +455,7 @@ Grille de 40 colonnes (0–39) et 25 lignes (L0–L24). Le tapis central est sup
 ```
     0         1         2         3
     0123456789012345678901234567890123456789
-L0  BELOTE   ATOUT:♥   NOUS:0000   EUX:0000
-L1  ----------------------------------------
+L0  BELOTE   ATOUT: ♥    NOUS 0000 EUX 0000
 L2                    BOT3
 L3                    [D ]
 L4                    [♥ ]
@@ -465,8 +464,8 @@ L6      [R ]                    [10]
 L7      [♣ ]                    [♦ ]
 L8  
 L9  
-L10                  *JEAN
-L11 ----------------------------------------
+L10                   JEAN
+L11 ────────────────────────────────────────
 L12 BOT3 : PASSE
 L13 BOT2 : PREND A D♥
 L14 BOT2 : BELOTE
@@ -474,10 +473,10 @@ L15 LEA  : BIEN JOUE !
 L16 BOT2 : REBELOTE
 L17 BOT2 : REMPORTE LE PLI
 L18 VOUS : _
-L19 A VOUS DE JOUER : 1-8
-L20 ----------------------------------------
-L21 [V ] [9 ] [D ] [10] [7 ] [R ]
-L22 [♠ ] [♠ ] [♠ ] [♦ ] [♦ ] [♥ ]
+L19 A VOUS DE JOUER : 1-8 OU JOYSTICK
+L20 [V ] [9 ] [D ] ──────────────────────
+L21 [♠ ] [♠ ] [♠ ] [10] [7 ] [R ]
+L22                [♦ ] [♦ ] [♥ ]
 L23  1    2    3    4    5    6
 L24 1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE
 ```
@@ -488,7 +487,11 @@ L24 1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE
 
 **L19** est la ligne d’état. En attente : « CHEF : <NOM>   CIBLE : 1000 POINTS ». Au jeu, à son tour : « A VOUS DE JOUER : 1-8 ». En fin de manche : « MANCHE POUR NOUS - SUITE DANS 10 S » ou « MANCHE POUR EUX - … », selon l’équipe qui a marqué le plus de points, dans la couleur claire de cette équipe (bleu clair ou rouge clair), décompté chaque seconde (avec un serveur sans SUITE, plus ancien : « MANCHE TERMINEE : F5 POUR LA SUIVANTE » pour le chef, « … : ON ATTEND LE CHEF » pour les autres). Pendant les enchères, premier tour : « [1 PRENDRE <couleur retournée>] [2 PASSE] ». Second tour : les 3 autres couleurs puis PASSE (ex. « [1 ♠] [2 ♣] [3 ♦] [4 PASSE] »). Au tour d’un autre joueur : « ENCHERES : AU TOUR DE <NOM>... ». À droite de la ligne, le tour d’enchères en cours (« 1ER TOUR » ou « 2E TOUR »), car le journal ne montre pas toujours les passes du premier tour. Le joueur concerné utilise les touches 1 à 4.
 
-**Main (L21–L23)** : jusqu’à 8 cartes numérotées de 1 à 8, triées pique-cœur-trèfle-carreau ; les numéros sont jaunes quand c’est à soi de jouer une carte, gris foncé sinon. L0 affiche ATOUT:? jusqu’à la fin des enchères ; NOUS et EUX montrent le score cumulé sur 4 chiffres maximum.
+**Main (L20–L23)** *(v1.7)* : jusqu’à 8 cartes numérotées de 1 à 8, dans l’ordre du serveur (pique, cœur, trèfle, carreau). À son tour de jeu, les cartes que la règle permet de jouer sortent du rang (lignes L20–L21, par-dessus le trait) ; le client applique pour cela les règles du serveur (section 5.3), qui reste juge. La carte choisie au joystick ou aux flèches a son numéro en noir sur fond blanc ; les autres numéros jouables sont jaunes, les autres gris clair, et gris foncé hors de son tour. L0, sur le bandeau noir : BELOTE en jaune, l’atout dans sa couleur (? pendant les enchères), puis NOUS et EUX dans la couleur de chaque équipe et le score cumulé sur 4 chiffres.
+
+**Enchères au joystick** *(v1.7)* : en L19, les choix sont des étiquettes (« 1 PRENDRE ♥ », « 2 PASSE » ; au second tour les trois couleurs et « 4 PASSE ») ; celle choisie est sur fond blanc. Le choix repart sur PASSE à chaque tour d’enchères, pour qu’un appui involontaire ne fasse jamais prendre.
+
+**Fin de manche** *(v1.7)* : une grande carte blanche aux coins arrondis, posée au centre du tapis (cases 7 à 26, lignes 3 à 9) : LA MANCHE, les points de chaque équipe (bleu ou rouge foncé), CONTRAT REMPLI, DEDANS !, CAPOT ! ou LITIGE dans la couleur de l’équipe concernée, puis AU TOTAL et les scores. Elle reste pendant le compte à rebours ; le bouton du joystick (ou RETURN) fait comme F5.
 
 **Carte qui glisse** : chaque carte jouée (JOUE) glisse jusqu’à sa place sur le tapis en 14 images (environ un quart de seconde), dessinée par deux sprites : le corps blanc aux coins arrondis (sprite 1, élargi) et, devant, le rang et le symbole dans la couleur de la carte (sprite 0) ; données en $C400. Sa propre carte part de son emplacement dans la main (retenu à la réception de JOUE, avant la MAIN qui suit) ; celle du partenaire du haut de l’écran, celles des adversaires du bord droit (EST) ou gauche (OUEST). Pendant ce quart de seconde, le client ne lit pas le réseau : les messages attendent dans l’Ultimate. La table et la main sont redessinées sur place, sans être effacées d’abord : rien ne clignote.
 
@@ -500,7 +503,10 @@ L24 1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE
 
 | Zone / élément | Valeur retenue | Rendu |
 |---|---|---|
-| Plateau et bordure | Vert C64 = 5 | Fond vert ; les cases vides portent un motif de feutre (points vert clair = 13, le caractère # redessiné). |
+| Plateau | Vert C64 = 5 | Fond vert ; les cases vides portent un motif de feutre (points vert clair = 13, le caractère # redessiné). |
+| Bordure *(v1.7)* | Brun C64 = 9 | Le cadre de la table (le vert, puis le noir et le gris foncé ont été essayés). |
+| Bandeaux *(v1.7)* | Fond noir (ECM, $D023 = 0) | L0 (titre, atout, scores) et L24 (touches en jaune). Sur le noir, ♥ ♦ en rouge clair, ♠ ♣ en blanc. |
+| Séparations *(v1.7)* | Jaune C64 = 7 | Trait fin continu (le caractère < redessiné, 2 pixels) en L11 et L20, au lieu des tirets. |
 | Cartes | Fond blanc (ECM, $D022 = 1), coins arrondis | Rang et symbole dans la couleur de la carte. Les coins sont quatre caractères redessinés (" $ % &) : un arc de 2 pixels en vert du plateau. |
 | Cœurs et carreaux | Rouge C64 = 2 | Rang et symbole rouges sur la carte blanche. |
 | Piques et trèfles | Noir C64 = 0 | Rang et symbole noirs sur la carte blanche. |
@@ -558,7 +564,7 @@ REM Equipes : E0 = P0+P2 ; E1 = P1+P3
 ### 10.2 Conventions graphiques
 
 ```
-REM Couleur plateau/bordure : 5 (vert)
+REM Couleur plateau : 5 (vert) ; bordure : 9 (brun) ; bandeaux noirs ; traits jaunes
 REM Cartes : fond blanc, rang et symbole rouge=2 ou noir=0
 REM Mode couleur etendue (ECM) ; RAM couleur : $D800
 REM FC(0)=0 pique ; FC(1)=2 coeur ; FC(2)=0 trefle ; FC(3)=2 carreau
@@ -600,7 +606,7 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 
 | Sujet | Décision consolidée | État |
 |---|---|---|
-| Touches | F1 paramètres (chef) ; F2 lancer (chef) ; F3 tchat ; F4 effacer la partie (chef) ; F5 suite (tout joueur) / nouvelle partie (chef) ; F7 quitter ; F8 règles ; 1–4 enchères ; 1–8 cartes ; RETURN valider. | Retenu ; F8 *(v3)* |
+| Touches | F1 paramètres (chef) ; F2 lancer (chef) ; F3 tchat ; F4 effacer la partie (chef) ; F5 suite (tout joueur) / nouvelle partie (chef) ; F7 quitter ; F8 règles ; 1–4 enchères ; 1–8 cartes ; RETURN valider ; joystick en port 2, flèches et ESPACE *(v1.7)*. | Retenu ; F8 *(v3)* ; joystick (client v1.7) |
 | Places / partenaires | P0=SUD, P1=EST, P2=NORD, P3=OUEST ; ordre P0→P1→P2→P3, sens inverse des aiguilles d’une montre ; équipes P0+P2 contre P1+P3 ; affichage relatif, chacun en SUD. | Retenu ; sens *(v4)* |
 | Donne et enchères | Belote classique : 3 + 2 cartes + retournée, deux tours d’enchères, puis 3 cartes (preneur : retournée + 2). Tous passent : redistribution, donneur suivant. | Retenu ; donne *(v3)* |
 | Jeu *(v4)* | Fournir ; à l’atout monter toujours ; couper si adversaire maître, surcouper si possible ; sous-coupe interdite sauf s’il ne reste que de l’atout ; libre si partenaire maître. | Retenu *(v4)* |
@@ -609,7 +615,7 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | Contrat | Preneur : strictement plus que la défense, belote comprise. Dedans : 162 à la défense, la belote reste à l’équipe qui l’a annoncée. Litige : points du preneur en réserve. Capot : 252. Points bruts. | Retenu *(v3)* ; capot *(v4)* |
 | Présence | Pas de spectateurs. Inactivité 3 min par défaut (F1 : 1 à 10 min) : bot. Retour possible sur sa place si libre. Déconnexion pendant son tour : le bot joue immédiatement. | Retenu |
 | Tchat | Public ; nom 6 caractères ; message 30 caractères ; boucle non bloquante ; couleur de nom par place, deux nuances par équipe (bleu clair et bleu, rouge clair et rouge) ; bots BOT1 à BOT4. | Retenu ; couleurs et noms des bots (client v1.3) |
-| Graphisme | Plateau/bordure vert 5 avec motif de feutre ; cartes blanches aux coins arrondis, rang et symbole rouge 2 / noir 0 ; RAM couleur $D800 ; carte jouée qui glisse (deux sprites). | Retenu ; cartes blanches (client v1.3) ; coins et glissement (client v1.5) |
+| Graphisme | Plateau vert 5 avec motif de feutre, bordure brune 9, bandeaux noirs et traits jaunes *(v1.7)* ; cartes blanches aux coins arrondis, rang et symbole rouge 2 / noir 0 ; RAM couleur $D800 ; carte jouée qui glisse (deux sprites). | Retenu ; cartes blanches (client v1.3) ; coins et glissement (client v1.5) |
 | Sons | Musique sur l’écran titre ; bruitages carte posée, pli, tchat ; jingles victoire et défaite. Côté client seulement (section 8.3). | Retenu |
 | Langues | Français, anglais, allemand, espagnol, choisis par F1 sur l’écran de connexion ; majuscules sans accents ; protocole inchangé, ERR et INFO traduits par le client (section 2.1). | Retenu (client v1.5) |
 | Écran | Grille 40 × 25 (L0–L24), sans tapis central : carte jouée sous le nom de chaque joueur ; mains adverses non affichées ; journal 6 lignes ; barre de touches ≤ 39 caractères en L24 ; * devant le joueur au tour (retiré à l’étape 30). | Retenu ; sans tapis *(v4)* |
@@ -663,4 +669,4 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 31 | Équipes en couleurs : noms de l’équipe P0+P2 en bleu clair et bleu, de l’équipe P1+P3 en rouge clair et rouge (au lieu de cyan et bleu, orange et rouge), toujours fixes par place et identiques sur tous les écrans ; la ligne de fin de manche prend la couleur claire de l’équipe gagnante. Noms de 6 caractères au lieu de 5 (serveur et client ; journal : nom sur 6 colonnes, message sur 32) ; un client v1.5 tronque ces noms à 5. Mémoire : l’image titre est compressée (cases de feutre identiques : un bit par case au lieu de 10 octets), décodée en assembleur (c64/titre_dec.s) pour s’afficher aussi vite qu’avant ; le PRG passe de 44 382 à 38 892 octets (environ 5,5 Ko de marge sous $C000). Image vérifiée identique au pixel près dans VICE. 1 test serveur ajouté. | Client et serveur v1.6 (14 novembre 2026). |
 | 32 | Relecture du code avant la v1.6 : noms de l’EST et de l’OUEST remis aux colonnes 27 et 1 (décalés d’une case avec le retrait de l’étoile, un nom de 13 caractères à l’EST débordait sur la ligne suivante et celui de l’OUEST était rogné par l’effacement du centre) ; SUITE ignoré si son nombre n’est pas valable ; glisser() réutilise deplacer() ; commentaires mis à jour. Captures FR et EN refaites (couleurs d’équipe). Release GitHub v1.6. | Client et serveur v1.6 (14 novembre 2026). Serveur public mis à jour par Stéphan, vérifié sans prendre de place : JOIN BOT123 répond ERR NOM RESERVE (un serveur v1.5 répondrait ERR NOM, nom trop long). Compte à rebours de fin de manche confirmé par Stéphan sur le C64 avec le serveur public. Notes de la release v1.6 et annonce épinglée des Discussions mises à jour (v1.6, serveur public déjà à jour). |
 | 33 | Paquet du serveur dans la release : `make paquet-serveur` produit belote-serveur-vX.Y.tar.gz et .zip (dossier belote-serveur : serveur, tests, service systemd prêt pour ~/belote-serveur, protocole, licence, notes de mise en place en français et en anglais). Le serveur n’utilise que la bibliothèque standard : `python3 -m belote`, sans venv. Vérifié en partant de l’archive : lancement, `JOIN BOT2` → ERR NOM RESERVE, 477 tests. | Release v1.6 complétée (14 novembre 2026) : archives ajoutées, notes de la release et annonce des Discussions mises à jour. |
-| 34 | v1.7, idées venues d’un client expérimental « édition café » écrit à part : joystick en port 2 partout (titre, connexion avec langue et champs, choix de la carte et de l’enchère, manche suivante) ; à son tour, les cartes jouables sortent du rang (règles du serveur recopiées dans le client) et le numéro de la carte choisie est sur fond blanc ; enchères en étiquettes, la choisie en blanc, PASSE par défaut ; fin de manche sur une grande carte blanche aux coins arrondis au centre du tapis ; bandeaux noirs en haut et en bas (touches en jaune), traits fins jaunes au lieu des tirets, bordure brune ; joystick dessiné à côté de SPACE sur l’écran titre. Captures refaites. Les sections 3 et 8 de cette spécification restent à détailler pour ces changements. Serveur inchangé. | Client v1.7 (14 novembre 2026). |
+| 34 | v1.7, idées venues d’un client expérimental « édition café » écrit à part : joystick en port 2 partout (titre, connexion avec langue et champs, choix de la carte et de l’enchère, manche suivante) ; à son tour, les cartes jouables sortent du rang (règles du serveur recopiées dans le client) et le numéro de la carte choisie est sur fond blanc ; enchères en étiquettes, la choisie en blanc, PASSE par défaut ; fin de manche sur une grande carte blanche aux coins arrondis au centre du tapis ; bandeaux noirs en haut et en bas (touches en jaune), traits fins jaunes au lieu des tirets, bordure brune ; joystick dessiné à côté de SPACE sur l’écran titre. Captures refaites. Sections 2.1, 3 et 8 de cette spécification mises à jour. Serveur inchangé. | Client v1.7 (14 novembre 2026). |

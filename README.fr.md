@@ -20,7 +20,8 @@ retournée. Les règles sont intégrées (F8 les affiche sur le C64).
 - **Client C64** (`c64/`, C avec cc65) : l'écran est en mode couleur étendue (ECM), avec des cartes
   blanches aux coins arrondis (rang et symbole rouges ou noirs) sur un tapis de feutre vert ; chaque
   carte jouée glisse jusqu'au tapis (deux sprites) et le pli ramassé, carte par carte, part vers
-  son gagnant ; les deux équipes ont leurs couleurs (bleus et rouges). Le réseau passe par la
+  son gagnant ; les deux équipes ont leurs couleurs (bleus et rouges). Tout se joue aussi au
+  joystick, et à votre tour les cartes jouables sortent du rang. Le réseau passe par la
   *Ultimate Command Interface* ($DF1C-$DF1F). Un écran titre en bitmap multicolore est généré par
   `tools/titre.py`. Musique sur l'écran titre et bruitages en partie (carte posée, pli, tchat,
   victoire, défaite), joués sur le SID ; ils sont écrits dans `tools/musique.py`. Quatre langues

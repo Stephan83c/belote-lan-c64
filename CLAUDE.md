@@ -48,7 +48,10 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
 - $C000 écran (ECM), $C3F8 pointeurs de sprites, $C400-$C47F sprites de la carte qui glisse (et du pli ramassé),
   $C800 jeu de caractères en RAM, $E000 bitmap de l'écran titre (RAM sous le KERNAL, libre après)
 - ECM : 64 caractères seulement. Redessinés : @ £ ↑ ← (♠ ♥ ♣ ♦), # (tapis), " $ % & (coins des
-  cartes) ; ils s'affichent « ? » si on les écrit en texte.
+  cartes), < (trait fin des séparations) ; ils s'affichent « ? » si on les écrit en texte.
+- Couleurs (v1.7) : bordure brune, bandeaux noirs L0 et L24 ($D023), traits jaunes L11 et L20.
+- Joystick en port 2 (driver statique de cc65, joy_read(JOY_2)) ; jouables() dans proto.c recopie
+  les règles du serveur (moteur.coups_legaux) : à garder en accord si les règles changent.
 
 ## Vérifier
 - Client dans VICE sans fenêtre : `x64sc -console -warp +sound -autostartprgmode 1
