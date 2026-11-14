@@ -8,7 +8,7 @@ Commodore 64 Ultimate client  •  Python table server  •  4 seats
 
 *Update of the consolidated version of 27 October 2026. v3: network hardware, protocol, screen, scoring. v4: official rules of classic belote, central mat removed.*
 
-Version 4 — 7 November 2026
+Version 4 — 7 November 2026; last updated: 14 November 2026 (client v1.5, see section 13)
 
 Status: functional and protocol specification
 
@@ -627,5 +627,5 @@ These decisions override contradictory or older wording.
 | 14 | Bots named BOT1 to BOT4 after their real seat (and no longer after their relative position, which differed from one screen to another); name colours per team: cyan and blue, orange and red. | Client v1.3. |
 | 15 | White cards, rank and suit in the card's colour (red or black), instead of red or black cards with white text. | Client v1.3. |
 | 16 | Names BOT and BOT + digits refused to players (ERR NOM RESERVE); refusal messages in plain words on the connection screen (table full, name reserved or refused). | Server and client v1.4. |
-| 17 | Client in four languages (French, English, German, Spanish), chosen with F1 on the connection screen; face cards of the language; ERR and INFO translated by the client; on the title screen, a drawn SPACE key replaces "ESPACE POUR JOUER". No protocol or server change (see 2.1). English translation of the documentation (SPEC.md, README.md, protocol.md, docs/server-service.md), French kept as *.fr.md. | Client v1.5. |
-| 18 | Bots: memory of the cards played; lead with the highest card left in a suit (master 10 once the ace has fallen), +1 % points over 40,000 deals simulated against the former strategy. Trumping or winning with a master card rather than the lowest winning card was tried and dropped (−6.8 %). | Server v1.5 (fix after the release). |
+| 17 | Client in four languages (French, English, German, Spanish), chosen with F1 on the connection screen; face cards of the language; ERR and INFO translated by the client; on the title screen, a drawn SPACE key replaces "ESPACE POUR JOUER". No protocol or server change (see 2.1). English translation of the documentation (SPEC.md, README.md, protocol.md, docs/server-service.md), French kept as *.fr.md. GitHub release v1.5 (notes in English and French), repository description in English. | Client v1.5 (14 November 2026). Public server updated. |
+| 18 | Bots, after a full game on the public server (Stéphan against Claude, 1115 to 687) and an analysis of its log: the 10s the bots gave away were forced moves, not mistakes. Memory of the cards played; lead with the highest card left in a suit (master 10 once the ace has fallen), +1 % points over 40,000 deals simulated against the former strategy. Trumping or winning with a master card rather than the lowest winning card was tried and dropped (−6.8 %). | Server v1.5, fix after the release (14 November 2026): release notes completed, tag unchanged, public server updated. |
