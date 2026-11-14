@@ -33,6 +33,11 @@
 /* Dans les chaînes affichées, les octets 1 à 4 dessinent ♠ ♥ ♣ ♦ (couleur 0-3 + 1)
  * dans la couleur de la carte. */
 #define SYM(c) ((char)((c) + 1))
+/* Octets 5 à 8 : coins arrondis d'une carte (haut gauche, haut droit, bas gauche, bas droit). */
+#define COIN_HG 5
+#define COIN_HD 6
+#define COIN_BG 7
+#define COIN_BD 8
 
 void ecran_init(void);
 void ecran_effacer(void);

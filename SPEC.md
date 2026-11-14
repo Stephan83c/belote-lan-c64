@@ -487,7 +487,7 @@ L24 1-8 CARD F3 CHAT F7 QUIT F8 HELP
 | Area / item | Value | Rendering |
 |---|---|---|
 | Board and border | C64 green = 5 | Green background. |
-| Cards | White background (ECM, $D022 = 1) | Rank and suit in the card's colour. |
+| Cards | White background (ECM, $D022 = 1), rounded corners | Rank and suit in the card's colour. The corners are four redrawn characters (" $ % &): a 2-pixel arc in the board's green. |
 | Hearts and diamonds | C64 red = 2 | Red rank and suit on the white card. |
 | Spades and clubs | C64 black = 0 | Black rank and suit on the white card. |
 | Colour RAM | Address $D800 | Colour attributes of the screen cells. |
@@ -629,3 +629,4 @@ These decisions override contradictory or older wording.
 | 16 | Names BOT and BOT + digits refused to players (ERR NOM RESERVE); refusal messages in plain words on the connection screen (table full, name reserved or refused). | Server and client v1.4. |
 | 17 | Client in four languages (French, English, German, Spanish), chosen with F1 on the connection screen; face cards of the language; ERR and INFO translated by the client; on the title screen, a drawn SPACE key replaces "ESPACE POUR JOUER". No protocol or server change (see 2.1). English translation of the documentation (SPEC.md, README.md, protocol.md, docs/server-service.md), French kept as *.fr.md. GitHub release v1.5 (notes in English and French), repository description in English. | Client v1.5 (14 November 2026). Public server updated. |
 | 18 | Bots, after a full game on the public server (Stéphan against Claude, 1115 to 687) and an analysis of its log: the 10s the bots gave away were forced moves, not mistakes. Memory of the cards played; lead with the highest card left in a suit (master 10 once the ace has fallen), +1 % points over 40,000 deals simulated against the former strategy. Trumping or winning with a master card rather than the lowest winning card was tried and dropped (−6.8 %). | Server v1.5, fix after the release (14 November 2026): release notes completed, tag unchanged, public server updated. |
+| 19 | Cards with rounded corners (2-pixel arc, preferred to 3 after trying it on the C64); the characters " $ % & become the corners and show as "?" in the chat. | Client (branch cartes-arrondies, 14 November 2026). |

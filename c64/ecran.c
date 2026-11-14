@@ -23,6 +23,17 @@ static const unsigned char motif_feutre[8] = {
     0x80, 0x00, 0x08, 0x00, 0x80, 0x00, 0x08, 0x00
 };
 
+/* Coins arrondis des cartes : " $ % & deviennent les quatre coins (haut gauche,
+ * haut droit, bas gauche, bas droit). Case au fond blanc de la carte, pixels en
+ * vert du plateau : l'angle de la carte paraît arrondi. */
+static const unsigned char code_coin[4] = { 34, 36, 37, 38 };
+static const unsigned char motif_coin[4][8] = {
+    { 0xC0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+    { 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+    { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0xC0 },
+    { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03 },
+};
+
 static unsigned off[25];
 
 void ecran_init(void)
@@ -42,6 +53,9 @@ void ecran_init(void)
         memcpy(CARS + code_sym[i] * 8, ROM_CAR + rom_sym[i] * 8, 8);
     }
     memcpy(CARS + FEUTRE * 8, motif_feutre, 8);
+    for (i = 0; i < 4; ++i) {
+        memcpy(CARS + code_coin[i] * 8, motif_coin[i], 8);
+    }
     POKE(1, port);
     __asm__("cli");
 
@@ -84,8 +98,13 @@ static void car(unsigned o, unsigned char c, unsigned char coul, unsigned char f
         COULEUR[o] = VERT_CLAIR;
         return;
     }
-    if (c == '#') {
-        c = '?';                        /* son caractère dessine le tapis */
+    if (c >= COIN_HG && c <= COIN_BD) {
+        ECRAN[o] = code_coin[c - COIN_HG] | fond;
+        COULEUR[o] = VERT;
+        return;
+    }
+    if (c == '#' || c == '"' || c == '$' || c == '%' || c == '&') {
+        c = '?';                        /* caractères devenus le tapis et les coins */
     } else if (c >= 32 && c < 64) {
         /* espace, chiffres, ponctuation : même code */
     } else if ((c >= 65 && c <= 91) || c == 93) {
@@ -136,9 +155,13 @@ void carte(unsigned char x, unsigned char y, signed char c)
     }
     coul = c >> 3;
     rang = nom_rang(c & 7);           /* figures de la langue choisie */
+    haut[0] = COIN_HG;
     haut[1] = rang[0];
     haut[2] = rang[1] ? rang[1] : ' ';
+    haut[3] = COIN_HD;
+    bas[0] = COIN_BG;
     bas[1] = SYM(coul);
+    bas[3] = COIN_BD;
     ecrire(x, y, haut, FC(coul), FOND_BLANC);
     ecrire(x, y + 1, bas, FC(coul), FOND_BLANC);
 }

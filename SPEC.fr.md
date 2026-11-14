@@ -485,7 +485,7 @@ L24 1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE
 | Zone / élément | Valeur retenue | Rendu |
 |---|---|---|
 | Plateau et bordure | Vert C64 = 5 | Fond vert. |
-| Cartes | Fond blanc (ECM, $D022 = 1) | Rang et symbole dans la couleur de la carte. |
+| Cartes | Fond blanc (ECM, $D022 = 1), coins arrondis | Rang et symbole dans la couleur de la carte. Les coins sont quatre caractères redessinés (" $ % &) : un arc de 2 pixels en vert du plateau. |
 | Cœurs et carreaux | Rouge C64 = 2 | Rang et symbole rouges sur la carte blanche. |
 | Piques et trèfles | Noir C64 = 0 | Rang et symbole noirs sur la carte blanche. |
 | RAM couleur | Adresse $D800 | Attributs couleur des cellules écran. |
@@ -627,3 +627,4 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 16 | Noms BOT et BOT + chiffres refusés aux joueurs (ERR NOM RESERVE) ; messages de refus en clair sur l’écran de connexion (table pleine, nom réservé ou refusé). | Serveur et client v1.4. |
 | 17 | Client en quatre langues (français, anglais, allemand, espagnol), choisie par F1 sur l’écran de connexion ; figures de la langue ; ERR et INFO traduits par le client ; sur l’écran titre, une touche SPACE dessinée remplace « ESPACE POUR JOUER ». Aucun changement de protocole ni de serveur (voir 2.1). Documentation traduite en anglais (SPEC.md, README.md, protocol.md, docs/server-service.md), le français gardé en *.fr.md. Release GitHub v1.5 (notes en anglais et en français), description du dépôt en anglais. | Client v1.5 (14 novembre 2026). Serveur public mis à jour. |
 | 18 | Bots, après une partie complète sur le serveur public (Stéphan contre Claude, 1115 à 687) et l’analyse de son journal : les 10 sacrifiés par les bots étaient des coups forcés, pas des erreurs. Mémoire des cartes jouées ; entame de la plus forte carte restante d’une couleur (10 maître après la chute de l’as), +1 % de points sur 40 000 donnes simulées contre l’ancienne stratégie. Couper ou gagner avec une carte maîtresse plutôt qu’avec la plus petite carte gagnante a été essayé et écarté (−6,8 %). | Serveur v1.5, correction après la release (14 novembre 2026) : notes de la release complétées, tag inchangé, serveur public mis à jour. |
+| 19 | Cartes aux coins arrondis (arc de 2 pixels, préféré à 3 après essai sur le C64) ; les caractères " $ % & deviennent les coins et s’affichent « ? » dans le tchat. | Client (branche cartes-arrondies, 14 novembre 2026). |

@@ -307,8 +307,9 @@ REGLES = {
 NB_REGLES = 21
 LARGEUR_REGLES = 39
 
-# Espace, chiffres, ponctuation (sauf #), A-Z, [ et ] : voir car() dans c64/ecran.c.
-PERMIS = set(chr(c) for c in range(32, 64) if chr(c) != "#") | set("ABCDEFGHIJKLMNOPQRSTUVWXYZ[]")
+# Espace, chiffres, ponctuation (sauf # " $ % &, devenus le tapis et les coins des
+# cartes), A-Z, [ et ] : voir car() dans c64/ecran.c.
+PERMIS = set(chr(c) for c in range(32, 64) if chr(c) not in "#\"$%&") | set("ABCDEFGHIJKLMNOPQRSTUVWXYZ[]")
 FORMAT = re.compile(r"%(-?\d*)([sudc])")
 LARGEUR_FORMAT = {"s": 5, "u": 4, "d": 4, "c": 1}
 
