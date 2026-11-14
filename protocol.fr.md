@@ -11,7 +11,7 @@ que la spec laisse ouvert.
     make server            # dans un terminal
     nc localhost 6464      # dans un autre
 
-    JOIN JEAN              rejoindre (place P0, chef)
+    JOIN JEAN              rejoindre (place P0 et chef si la table est vide)
     PARAM CIBLE 500        optionnel, chef, avant le lancement
     LANCER                 démarrer
     ENCH 1 / PASSE         à son TOUR, pendant les enchères (couleur 1 = coeur)
@@ -31,7 +31,8 @@ Carte = couleur × 8 + rang.
 
 ## Console du serveur
 
-Dans le terminal de `make server` (le chef peut aussi envoyer `RAZ`, voir plus bas) :
+Dans le terminal de `make server` (le chef peut aussi envoyer `RAZ`, voir plus bas ; pas de console
+quand le serveur tourne en service, voir docs/serveur-service.md) :
 
     RAZ                    efface la partie en cours et revient en ATTENTE
 
@@ -61,6 +62,9 @@ Autres cas :
   `GAGNANT` et `ETAT`. Chaque message n'est présent que si le cas s'applique.
 - À la reconnexion pendant les enchères, `ENCHERES T` suit `RETOURNE`, pour que le client sache
   quel tour afficher.
+- Après un `COUP` accepté, la `MAIN` du joueur suit aussitôt son `JOUE` (après `BELOTE` ou
+  `REBELOTE` éventuels), en général dans le même paquet TCP : un client qui a besoin de l'ancienne
+  main (par exemple l'emplacement de la carte jouée) doit la lire dès la réception de `JOUE`.
 - La main vide en fin de manche s'écrit `MAIN` sans paramètre.
 - Après `PREND`, si le premier à jouer est un bot, il attend trois fois son délai habituel
   (3 s par défaut) : le temps de voir la carte prise.
@@ -69,6 +73,8 @@ Autres cas :
   minuscules ($C1-$DA) valent A-Z, sauf si l'octet suivant est $80-$BF (caractère UTF-8 envoyé
   par nc, qui reste `?`). Le terminateur reste LF : un client C64 ne doit pas finir ses lignes
   par le seul CR du PETSCII.
+- Les textes des `INFO` sont fixes (voir SPEC.fr.md 7.2) : le client les reconnaît pour les
+  traduire, et affiche tel quel un texte qu'il ne connaît pas.
 
 ## Décisions d'interprétation des règles
 
@@ -89,4 +95,5 @@ Autres cas :
 - **Table vide (4.2)** : sans humain, les bots s'arrêtent et la partie reste en suspens ; le
   prochain arrivant la reprend et devient chef.
 - **Doublons de nom (4.3)** : suffixes essayés de 2 à 9, puis 1, pour respecter l'exemple
-  JEAN → JEA2. Le nom BOT est réservé.
+  JEAN → JEA2. BOT et BOT suivi de chiffres sont réservés aux bots : un suffixe ne produit jamais
+  un tel nom.

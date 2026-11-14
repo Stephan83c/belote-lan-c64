@@ -17,7 +17,7 @@ MANCHE round score, LITIGE tie, GAGNANT winner, CIBLE target score, INACTIF idle
     make server            # in one terminal
     nc localhost 6464      # in another
 
-    JOIN JEAN              join (seat P0, host)
+    JOIN JEAN              join (seat P0 and host if the table is empty)
     PARAM CIBLE 500        optional, host, before the start
     LANCER                 start
     ENCH 1 / PASSE         on your TOUR, during bidding (suit 1 = hearts)
@@ -37,7 +37,8 @@ Card = suit × 8 + rank.
 
 ## Server console
 
-In the terminal of `make server` (the host can also send `RAZ`, see below):
+In the terminal of `make server` (the host can also send `RAZ`, see below; there is no console
+when the server runs as a service, see docs/server-service.md):
 
     RAZ                    wipes the game in progress and goes back to ATTENTE
 
@@ -67,6 +68,9 @@ Other cases:
   `GAGNANT` and `ETAT`. Each message is present only when it applies.
 - On reconnection during bidding, `ENCHERES T` follows `RETOURNE`, so that the client knows which
   round to show.
+- After an accepted `COUP`, the player's `MAIN` follows their `JOUE` at once (after any `BELOTE` or
+  `REBELOTE`), usually in the same TCP packet: a client that needs the former hand (for example
+  the slot of the card played) must read it as soon as `JOUE` arrives.
 - The empty hand at the end of a round is written `MAIN` with no parameter.
 - After `PREND`, if the first player is a bot, it waits three times its usual delay (3 s by
   default): time to see the card taken.
@@ -94,4 +98,5 @@ Other cases:
 - **Empty table (4.2)**: with no human, the bots stop and the game is on hold; the next player in
   picks it up and becomes host.
 - **Duplicate names (4.3)**: suffixes are tried from 2 to 9, then 1, following the example
-  JEAN → JEA2. The name BOT is reserved.
+  JEAN → JEA2. BOT and BOT followed by digits are reserved for the bots: a suffix never produces
+  such a name.
