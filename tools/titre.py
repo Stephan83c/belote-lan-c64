@@ -130,11 +130,21 @@ def symbole(img, x, y, couleur, w, h):
 def carte(img, x, y, rang, couleur, w=24, h=64, visible=None):
     """Carte blanche bordée de noir ; rang et petit symbole en haut à gauche,
     grand symbole au centre."""
+    # Coins arrondis : 3 pixels de chaque coin laissent voir ce qu'il y a derrière
+    # (tapis ou carte précédente de l'éventail), et le bord noir suit la courbe.
+    coins = []
+    for sx, sy, cx, cy in ((1, 1, x, y), (-1, 1, x + w - 1, y),
+                           (1, -1, x, y + h - 1), (-1, -1, x + w - 1, y + h - 1)):
+        for dx, dy in ((0, 0), (1, 0), (0, 1)):
+            px, py = cx + sx * dx, cy + sy * dy
+            coins.append((px, py, img[py][px]))
     rect(img, x, y, w, h, NOIR)
     rect(img, x + 1, y + 1, w - 2, h - 2, BLANC)
-    # coins arrondis
-    for cx, cy in ((x, y), (x + w - 1, y), (x, y + h - 1), (x + w - 1, y + h - 1)):
-        img[cy][cx] = FOND
+    for px, py, c in coins:
+        img[py][px] = c
+    for sx, sy, cx, cy in ((1, 1, x, y), (-1, 1, x + w - 1, y),
+                           (1, -1, x, y + h - 1), (-1, -1, x + w - 1, y + h - 1)):
+        img[cy + sy][cx + sx] = NOIR
     coul = ROUGE if couleur in ("coeur", "carreau") else NOIR
     texte(img, x + 2, y + 3, rang, coul, sx=1, sy=2)
     symbole(img, x + 2, y + 21, couleur, 9, 16)
