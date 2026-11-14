@@ -126,6 +126,12 @@ hardware (released sockets, stuck Command Interface) are noted in [CLAUDE.md](CL
 
 The source code, its comments and the project notes are in French.
 
+## What's next?
+
+The public server has **a single 4-seat table**, and it will stay that way for now. If the game finds
+its players, a **server with several tables** could become a project. Feedback is welcome: open an
+*issue* on GitHub to say you play it, report a problem or suggest an idea.
+
 ## Authors
 
 Stéphan ([@Stephan83c](https://github.com/Stephan83c)), with help from Claude (Anthropic).

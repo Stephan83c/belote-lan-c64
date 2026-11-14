@@ -125,6 +125,13 @@ Dans le terminal du serveur, `RAZ` efface la partie en cours. Les particularité
 constatées sur le matériel (sockets libérés, Command Interface bloquée) sont notées dans
 [CLAUDE.md](CLAUDE.md).
 
+## Et après ?
+
+Le serveur public n'a qu'**une table de 4 places**, et ça restera ainsi pour l'instant. Si le jeu trouve
+son public, un **serveur à plusieurs tables** pourrait devenir un projet. Vos retours sont les
+bienvenus : ouvrez une *issue* sur GitHub pour dire que vous y jouez, signaler un problème ou
+proposer une idée.
+
 ## Auteurs
 
 Stéphan ([@Stephan83c](https://github.com/Stephan83c)), avec l'aide de Claude (Anthropic).
