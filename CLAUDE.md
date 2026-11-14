@@ -8,16 +8,22 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
 
 ## Matériel
 - C64 Ultimate sur le LAN : 192.168.1.27 (API REST active, Command Interface activée)
-- Serveur Python sur ce PC : 192.168.1.55, port TCP 6464
+- Serveur public (adresse par défaut du C64, SERVEUR_IP dans config.mk) : 51.38.50.79:6464, sur un
+  VPS que Stéphan met à jour lui-même (git pull, make test PYTHON=python3, systemctl --user
+  restart belote ; voir docs/serveur-service.md)
+- Serveur de test sur ce PC : 192.168.1.55:6464 (`make server`, puis
+  `make deploy SERVEUR_IP=192.168.1.55` après `rm build/belote_lan.prg`)
 
 ## Outils
-- Client C64 : cc65 (cl65), cible c64. Assembleur annexe : 64tass
+- Client C64 : cc65 (cl65), cible c64 ; les .s (lecteur SID) sont assemblés par ca65 via cl65
 - Serveur : Python 3.13, asyncio, venv dans server/.venv
 - Émulateur pour tests rapides : VICE (x64sc)
 
 ## Commandes
 - `config.mk` : SERVEUR_IP, SERVEUR_PORT, ULTIMATE (surchargeables : `make deploy ULTIMATE=...`)
-- `make` : compile c64/ vers build/belote_lan.prg
+- `make` : compile c64/ vers build/belote_lan.prg ; `make LANGUE=0..3` choisit la langue au
+  démarrage (FR, EN, DE, ES ; F1 la change sur le C64) ; `make clean` efface build/
+- `VERSION` (Makefile) : numéro affiché sur l'écran de connexion, celui de la release GitHub
 - `make deploy` : pytest, tape F7 sur le C64 (le client quitte la table et ferme son
   socket), puis envoie et lance le PRG sur l'Ultimate
   (curl -X POST --data-binary @build/belote_lan.prg http://192.168.1.27/v1/runners:run_prg)
@@ -32,6 +38,19 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
   versionnés ; refuse un texte trop large ou un caractère hors des 64 de l'ECM)
 - `python3 tools/titre.py [apercu.png]` : régénère l'écran titre (c64/titre_img.c, versionné ;
   demande Pillow et la ROM caractères de VICE)
+
+## Mémoire du client (banque VIC 3)
+- Programme sous $C000 (__HIMEM__ dans le Makefile, environ 42 Ko sur 45 utilisés)
+- $C000 écran (ECM), $C3F8 pointeurs de sprites, $C400-$C47F sprites de la carte qui glisse,
+  $C800 jeu de caractères en RAM, $E000 bitmap de l'écran titre (RAM sous le KERNAL, libre après)
+- ECM : 64 caractères seulement. Redessinés : @ £ ↑ ← (♠ ♥ ♣ ♦), # (tapis), " $ % & (coins des
+  cartes) ; ils s'affichent « ? » si on les écrit en texte.
+
+## Vérifier
+- Client dans VICE sans fenêtre : `x64sc -console -warp +sound -autostartprgmode 1
+  -limitcycles 25000000 -exitscreenshot f.png -autostart build/demoN.prg -keybuf ' \x0djean\x0d'`
+  (une capture par lancement ; pour une animation, plusieurs lancements à -limitcycles croissants)
+- Sur le C64 : `make deploy`, écran lu par l'API REST (voir plus bas)
 
 ## Règles
 - Réseau côté C64 via l'Ultimate Command Interface ($DF1C-$DF1F), cible réseau.
