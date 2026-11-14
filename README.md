@@ -3,7 +3,7 @@
 *English · [Français](README.fr.md)*
 
 Networked belote for the **Commodore 64 Ultimate**, at home or over the Internet. Up to four human
-players, each on their own C64. Empty seats are taken by bots. A Python server referees the game:
+players, each on their own C64, or on a PC with the [PC client](#play-on-a-pc-without-a-c64). Empty seats are taken by bots. A Python server referees the game:
 on a PC of the local network, or the public server already online.
 
 Belote is the classic French trick-taking card game: 32 cards, two teams of two, trumps chosen by
@@ -27,6 +27,8 @@ bidding on a turned-up card. The rules are built in (F8 shows them on the C64).
   win, loss) play on the SID; they are written in `tools/musique.py`. Four languages (French,
   English, German, Spanish), chosen with F1 on the connection screen; the texts live in
   `tools/textes.py`.
+- **PC client** (`pc/belote_lan.py`, Python, standard library only): the same table in a
+  terminal, on Windows, macOS or Linux, to play without a C64 alongside C64 players.
 - **Server** (`server/`, Python 3.13 asyncio): enforces the rules of classic belote and handles
   bots (which remember the cards played), reconnection, idle players and chat; it moves on to the
   next round by itself after a 10-second pause.
@@ -52,12 +54,43 @@ Press a key on the title screen, then **F1** on the connection screen to pick yo
 
 **Limits**: the public server has a single 4-seat table; if it is full ("TABLE FULL"), try again
 later or run your own server (below). VICE cannot connect: it does not emulate the Ultimate's
-Command Interface.
+Command Interface. No C64 Ultimate? Use the PC client (below).
 
 **Your own server, without the repository**: the release also holds `belote-serveur-vX.Y.tar.gz`
 (or `.zip`), the server ready to run with Python 3.10 or later, nothing else to install
 (`python3 -m belote --port 6464`). Its setup notes (`README.md`) cover running, checking, the
 systemd service, the firewall and updating.
+
+## Play on a PC, without a C64
+
+A friend has no C64? The **PC client** sits at the same table, on the same server, next to the
+C64 players. It runs in a terminal (a window of at least 80 x 24), in four languages.
+
+![PC client](docs/pc-en.png)
+
+- **Windows**: download **`belote-lan.exe`** from the [Releases](https://github.com/Stephan83c/belote-lan-c64/releases)
+  and run it, nothing to install. On first launch, Windows may show "Windows protected your PC"
+  (unsigned program): *More info*, then *Run anyway*.
+- **Windows, macOS, Linux with Python 3.8 or later**: download **`belote_lan.py`** and run
+  `python belote_lan.py` (`python3` on macOS and Linux).
+
+The connection screen offers the public server, your name and the language; they are remembered
+for next time (file `.belote-lan.json` in your home folder). Options: `--serveur 192.168.1.55`,
+`--nom JEAN`, `--langue en`, `--ascii` (letters S H C D if the ♠ ♥ ♣ ♦ symbols look wrong).
+
+| Key | Action |
+|---|---|
+| ← → then Enter (or Space) | Pick and play the card, or the bid (PASS comes first) |
+| 1-8 | Play the card with this number; when bidding, the choice with this number |
+| Enter | End of round: next one right away; end of game (host): new game |
+| T | Chat (30 characters, Enter to send, Esc to cancel) |
+| D | Show the last trick again |
+| A | Game rules |
+| L, R | Host, while waiting: start the game, settings (points to win, idle timeout) |
+| E | Host: wipe the game in progress (confirm with Y) |
+| Q or Esc | Leave the table (confirm with Y) |
+
+The C64's F1 to F8 keys work too when the terminal passes them on.
 
 ## Getting started
 
@@ -117,7 +150,8 @@ To have the server start with the PC, install it as a systemd service: see
 
 ```sh
 make                         # build/belote_lan.prg
-make test                    # server tests (pytest)
+make test                    # server and PC client tests (pytest)
+make pc                      # PC client in this terminal, on the server from config.mk
 make paquet-serveur          # server package for the release (build/belote-serveur-vX.Y.*)
 make vice                    # connection screen in VICE (VICE does not emulate the Command Interface)
 make vice-demo SCENARIO=1..7 # client with a simulated network (6: sounds, sliding cards, trick taken;

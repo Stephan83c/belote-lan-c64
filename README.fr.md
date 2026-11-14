@@ -3,7 +3,7 @@
 *[English](README.md) · Français*
 
 Belote en réseau pour **Commodore 64 Ultimate**, à la maison ou par Internet. Jusqu'à quatre joueurs
-humains, chacun sur son C64. Les places libres sont tenues par des bots. Un serveur Python arbitre la
+humains, chacun sur son C64, ou sur PC avec le [client PC](#jouer-sur-pc-sans-c64). Les places libres sont tenues par des bots. Un serveur Python arbitre la
 partie : sur un PC du réseau local, ou le serveur public déjà en ligne.
 
 La belote classique : 32 cartes, deux équipes de deux, l'atout choisi aux enchères sur une carte
@@ -27,6 +27,8 @@ retournée. Les règles sont intégrées (F8 les affiche sur le C64).
   victoire, défaite), joués sur le SID ; ils sont écrits dans `tools/musique.py`. Quatre langues
   (français, anglais, allemand, espagnol), choisies par F1 sur l'écran de connexion ; les textes
   sont dans `tools/textes.py`.
+- **Client PC** (`pc/belote_lan.py`, Python, bibliothèque standard seulement) : la même table dans
+  un terminal, sous Windows, macOS ou Linux, pour jouer sans C64 avec les joueurs sur C64.
 - **Serveur** (`server/`, Python 3.13 asyncio) : il applique les règles de la belote classique, gère
   les bots (qui se souviennent des cartes jouées), la reconnexion, l'inactivité et le tchat ; il
   enchaîne seul les manches après une pause de 10 secondes.
@@ -52,12 +54,45 @@ Appuyez sur une touche à l'écran titre, puis sur **F1** à l'écran de connexi
 
 **Limites** : le serveur public n'a qu'une table de 4 places ; si elle est pleine (« TABLE PLEINE »),
 réessayez plus tard ou lancez votre propre serveur (ci-dessous). VICE ne peut pas se connecter : il
-n'émule pas la Command Interface de l'Ultimate.
+n'émule pas la Command Interface de l'Ultimate. Sans C64 Ultimate, prenez le client PC (ci-dessous).
 
 **Votre propre serveur, sans le dépôt** : la release contient aussi `belote-serveur-vX.Y.tar.gz`
 (ou `.zip`), le serveur prêt à lancer avec Python 3.10 ou plus récent, rien d'autre à installer
 (`python3 -m belote --port 6464`). Ses notes de mise en place (`LISEZMOI.md`) couvrent le
 lancement, la vérification, le service systemd, le pare-feu et la mise à jour.
+
+## Jouer sur PC, sans C64
+
+Un ami n'a pas de C64 ? Le **client PC** s'assoit à la même table, sur le même serveur, à côté des
+joueurs sur C64. Il tourne dans un terminal (fenêtre de 80 x 24 au moins), en quatre langues.
+
+![Client PC](docs/pc.png)
+
+- **Windows** : téléchargez **`belote-lan.exe`** dans les [Releases](https://github.com/Stephan83c/belote-lan-c64/releases)
+  et lancez-le, rien à installer. Au premier lancement, Windows peut afficher « Windows a protégé
+  votre ordinateur » (programme non signé) : *Informations complémentaires*, puis *Exécuter quand
+  même*.
+- **Windows, macOS, Linux avec Python 3.8 ou plus** : téléchargez **`belote_lan.py`** et lancez
+  `python belote_lan.py` (`python3` sous macOS et Linux).
+
+L'écran de connexion propose le serveur public, votre nom et la langue ; ils sont retenus pour la
+fois suivante (fichier `.belote-lan.json` dans votre dossier personnel). Options :
+`--serveur 192.168.1.55`, `--nom JEAN`, `--langue fr`, `--ascii` (lettres S H C D si les symboles
+♠ ♥ ♣ ♦ s'affichent mal).
+
+| Touche | Action |
+|---|---|
+| ← → puis Entrée (ou Espace) | Choisir et jouer la carte, ou l'enchère (PASSE est proposé d'abord) |
+| 1-8 | Jouer la carte de ce numéro ; aux enchères, le choix de ce numéro |
+| Entrée | Fin de manche : la suivante tout de suite ; fin de partie (chef) : nouvelle partie |
+| T | Tchat (30 caractères, Entrée pour envoyer, Échap pour annuler) |
+| D | Revoir le dernier pli |
+| A | Règles du jeu |
+| L, R | Chef, en attente : lancer la partie, réglages (points pour gagner, inactivité) |
+| E | Chef : effacer la partie en cours (confirmation par O) |
+| Q ou Échap | Quitter la table (confirmation par O) |
+
+Les touches F1 à F8 du C64 marchent aussi quand le terminal les transmet.
 
 ## Démarrer
 
@@ -117,7 +152,8 @@ Pour que le serveur démarre tout seul avec le PC, installez-le en service syste
 
 ```sh
 make                         # build/belote_lan.prg
-make test                    # tests du serveur (pytest)
+make test                    # tests du serveur et du client PC (pytest)
+make pc                      # client PC dans ce terminal, sur le serveur de config.mk
 make paquet-serveur          # paquet du serveur pour la release (build/belote-serveur-vX.Y.*)
 make vice                    # écran de connexion dans VICE (VICE n'émule pas la Command Interface)
 make vice-demo SCENARIO=1..7 # client avec un réseau simulé (6 : sons, cartes qui glissent, pli ramassé ;

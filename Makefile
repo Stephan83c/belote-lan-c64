@@ -7,8 +7,9 @@ include config.mk
 
 # Client C64 (cc65). Adresse pré-remplie dans le champ SERVEUR (SPEC 2.1).
 SERVEUR_DEFAUT := $(SERVEUR_IP):$(SERVEUR_PORT)
-# Version affichée sur l'écran de connexion (celle de la release GitHub).
-VERSION := 1.7
+# Version affichée sur l'écran de connexion (celle de la release GitHub) ; pc/belote_lan.py
+# porte la même (VERSION, vérifiée par les tests).
+VERSION := 1.8
 # Langue au démarrage (F1 la change sur l'écran de connexion) : 0 FR, 1 EN, 2 DE, 3 ES.
 LANGUE ?= 0
 PRG := build/belote_lan.prg
@@ -19,7 +20,7 @@ ENTETES := $(sort $(wildcard c64/*.h) c64/textes.h)
 # l'image titre en $E000 (voir CLAUDE.md, mémoire du client).
 CFLAGS := -t c64 -O -Or -DSERVEUR_DEFAUT='"$(SERVEUR_DEFAUT)"' -DVERSION='"$(VERSION)"' -DLANGUE_DEFAUT=$(LANGUE) -Wl -D,__HIMEM__=0xC000,-D,__STACKSIZE__=0x600
 
-.PHONY: all deploy vice demo vice-demo test server paquet-serveur clean
+.PHONY: all deploy vice demo vice-demo test server paquet-serveur pc clean
 
 all: $(PRG)
 
@@ -74,6 +75,11 @@ test: $(VENV)/bin/pytest
 
 server: $(VENV)/bin/pytest
 	cd server && .venv/bin/python -m belote --port $(SERVEUR_PORT)
+
+# Client PC dans ce terminal (pc/belote_lan.py, bibliothèque standard seulement), sur le
+# serveur de config.mk : make pc SERVEUR_IP=192.168.1.55 pour le serveur de test.
+pc:
+	python3 pc/belote_lan.py --serveur $(SERVEUR_DEFAUT)
 
 # Paquet du serveur pour la release : build/belote-serveur-vX.Y.tar.gz et .zip, un dossier
 # belote-serveur (serveur, tests, service systemd, notes d'installation FR/EN, protocole, licence).

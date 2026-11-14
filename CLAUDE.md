@@ -29,6 +29,10 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
   socket), puis envoie et lance le PRG sur l'Ultimate
   (curl -X POST --data-binary @build/belote_lan.prg http://192.168.1.27/v1/runners:run_prg)
 - `make server` : lance le serveur Python
+- `make pc` : client PC (pc/belote_lan.py, terminal 80x24, bibliothèque standard, Python 3.8+) sur
+  le serveur de config.mk ; `--auto` (caché) joue seul, pour les essais. Sa VERSION doit égaler celle
+  du Makefile (test). belote-lan.exe : .github/workflows/client-windows.yml (PyInstaller sur
+  windows-latest), joint automatiquement à chaque release publiée, ou lancé à la main (artefact)
 - `make paquet-serveur` : pytest puis build/belote-serveur-vX.Y.tar.gz et .zip, à joindre à la
   release (serveur sans dépendance, service, notes FR/EN de tools/paquet-serveur/)
 - `make vice` : le vrai client dans VICE (écran de connexion seulement : VICE n'émule pas
@@ -52,12 +56,15 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
 - Couleurs (v1.7) : bordure brune, bandeaux noirs L0 et L24 ($D023), traits jaunes L11 et L20.
 - Joystick en port 2 (driver statique de cc65, joy_read(JOY_2)) ; jouables() dans proto.c recopie
   les règles du serveur (moteur.coups_legaux) : à garder en accord si les règles changent.
+  Le client PC en a une copie Python (pc/belote_lan.py), comparée au serveur par les tests.
 
 ## Vérifier
 - Client dans VICE sans fenêtre : `x64sc -console -warp +sound -autostartprgmode 1
   -limitcycles 25000000 -exitscreenshot f.png -autostart build/demoN.prg -keybuf ' \x0djean\x0d'`
   (une capture par lancement ; pour une animation, plusieurs lancements à -limitcycles croissants)
 - Sur le C64 : `make deploy`, écran lu par l'API REST (voir plus bas)
+- Client PC : captures en lançant pc/belote_lan.py dans un pseudo-terminal 80x24 rendu par pyte
+  et Pillow (venv à part, pas dans le dépôt) ; docs/pc.png (FR) et docs/pc-en.png (EN)
 
 ## Règles
 - Réseau côté C64 via l'Ultimate Command Interface ($DF1C-$DF1F), cible réseau.
