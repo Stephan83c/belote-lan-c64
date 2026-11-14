@@ -14,8 +14,8 @@ jobs:
   exe:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Outils
@@ -26,8 +26,8 @@ jobs:
       - name: belote-lan.exe
         run: pyinstaller --onefile --console --name belote-lan pc/belote_lan.py
       - name: L'exe démarre
-        run: dist/belote-lan.exe --help
-      - uses: actions/upload-artifact@v4
+        run: dist/belote-lan.exe --help > aide.txt; Get-Content aide.txt
+      - uses: actions/upload-artifact@v5
         with:
           name: belote-lan-windows
           path: dist/belote-lan.exe

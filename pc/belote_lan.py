@@ -1625,6 +1625,13 @@ def activer_ansi_windows() -> None:
 
 
 def main() -> None:
+    # Avant tout affichage (l'aide de --help contient ♠) : sous Windows, une sortie redirigée
+    # serait sinon en cp1252.
+    for flux in (sys.stdout, sys.stderr):
+        try:
+            flux.reconfigure(encoding="utf-8")
+        except (AttributeError, ValueError):
+            pass
     parser = argparse.ArgumentParser(description="BELOTE LAN : client pour PC (terminal)")
     parser.add_argument("--serveur", help="adresse du serveur, éventuellement avec :port "
                         "(par défaut %s:%d)" % (SERVEUR_DEFAUT, PORT_DEFAUT))
@@ -1635,10 +1642,6 @@ def main() -> None:
     args = parser.parse_args()
 
     activer_ansi_windows()
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-    except (AttributeError, ValueError):
-        pass
     app = App(args)
     clavier = Clavier(app.file)
     sys.stdout.write("\x1b[?1049h\x1b[?25l\x1b]0;BELOTE LAN\x07")
