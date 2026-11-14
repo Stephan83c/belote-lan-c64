@@ -4,6 +4,7 @@
  * y écrit), matrice de couleurs à la place de l'écran texte en $C000 ; le jeu
  * de caractères en $C800 n'est pas touché. */
 #include <cbm.h>
+#include <joystick.h>
 #include <string.h>
 #include "ecran.h"
 #include "son.h"
@@ -30,7 +31,10 @@ void titre(void)
     POKE(0xD011, (PEEK(0xD011) & 0xBF) | 0x30);     /* bitmap, écran allumé */
 
     son_musique(AIR_TITRE);
-    while (!cbm_k_getin()) {
+    /* SPACE (toute touche) ou le bouton du joystick ; on attend qu'il soit relâché */
+    while (!cbm_k_getin() && !JOY_BTN_1(joy_read(JOY_2))) {
+    }
+    while (JOY_BTN_1(joy_read(JOY_2))) {
     }
     son_stop();
 

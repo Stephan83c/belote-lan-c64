@@ -27,6 +27,7 @@
 #define BLEU       6
 #define JAUNE      7
 #define ORANGE     8
+#define BRUN       9
 #define GRIS_FONCE 11
 #define ROUGE_CLAIR 10
 #define BLEU_CLAIR 14
@@ -48,7 +49,12 @@ void ecrire(unsigned char x, unsigned char y, const char *s, unsigned char coul,
 /* Écrit au plus n caractères et complète par des espaces. */
 void ecrire_n(unsigned char x, unsigned char y, const char *s, unsigned char n,
               unsigned char coul, unsigned char fond);
+/* Séparation : trait fin continu (couleur COUL_TRAIT), sur toute la ligne ou n cases. */
 void ligne_tirets(unsigned char y);
+void trait(unsigned char x, unsigned char y, unsigned char n);
+#define COUL_TRAIT JAUNE
+/* Bandeau noir (titre et scores en haut, touches en bas). */
+void bandeau(unsigned char y);
 void carte(unsigned char x, unsigned char y, signed char c);
 /* Carte qui glisse (sprites 0 et 1) : dessin de la carte c, position en pixels
  * sprite du coin haut gauche (case x, y de l'écran = 24 + 8x, 50 + 8y), effacement. */

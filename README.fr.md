@@ -102,6 +102,7 @@ Pour que le serveur démarre tout seul avec le PC, installez-le en service syste
 |---|---|
 | 1-4 | Enchères : prendre (à la couleur retournée au 1er tour, à une autre au 2e) ou passer |
 | 1-8 | Jouer la carte affichée au-dessus de ce numéro (au dernier pli, la dernière carte part seule) |
+| Joystick (port 2) | Gauche/droite : choisir la carte ou l'enchère ; bouton : jouer, valider, lancer depuis le titre, RETURN à la connexion, manche suivante en fin de manche. CRSR ←/→ et RETURN font de même |
 | F1 | Écran de connexion : changer de langue |
 | F1 | Chef, en attente : réglages (points pour gagner, délai d'inactivité) |
 | F2 | Chef : lancer la partie |

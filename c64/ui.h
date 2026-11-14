@@ -12,9 +12,13 @@ extern unsigned param_cible, param_inactif;
 extern unsigned char tchat;         /* F3 : saisie en cours */
 extern char tchat_txt[];
 extern unsigned char tchat_n;
+extern unsigned char sel;           /* carte choisie dans la main (joystick, curseur) */
+extern unsigned char ench_sel;      /* choix d'enchère choisi (0 : le premier) */
 
 unsigned char vue_courante(void);
 void dessiner(void);
+/* Barre de touches sur le bandeau noir du bas (touches en jaune). */
+void barre(const char *s);
 void vue_forcer(void);
 /* Distribue la carte c (sprite qui glisse depuis le point sx, sy, en pixels de
  * sprite) jusqu'à la case x, y, où elle reste en texte. */

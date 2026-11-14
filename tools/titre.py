@@ -28,6 +28,7 @@ PAL = [
     (108, 108, 108), (154, 210, 132), (108, 94, 181), (149, 149, 149),
 ]
 NOIR, BLANC, ROUGE, VERT, JAUNE, GRIS_CLAIR, VERT_CLAIR = 0, 1, 2, 5, 7, 15, 13
+ROUGE_CLAIR = 10
 FOND = VERT
 
 CHARGEN = Path.home() / ".local/share/vice/C64/chargen-901225-01.bin"
@@ -186,12 +187,19 @@ def image():
     # Touche discrète, centrée entre l'éventail et la ligne d'auteur : un cadre
     # fin aux coins arrondis, juste autour du mot.
     # Lettres moins hautes (12 lignes au lieu de 16) pour une barre plus fine.
-    kx, ky, kw, kh = (W - 48) // 2, 159, 48, 17
+    # À droite de la touche, un petit joystick (le bouton lance aussi le jeu).
+    kx, ky, kw, kh = (W - 48 - 6 - 13) // 2, 159, 48, 17
     rect(img, kx, ky, kw, kh, BLANC)
     rect(img, kx + 1, ky + 1, kw - 2, kh - 2, FOND)
     for cx, cy in ((kx, ky), (kx + kw - 1, ky), (kx, ky + kh - 1), (kx + kw - 1, ky + kh - 1)):
         rect(img, cx, cy, 1, 1, FOND)
-    texte(img, (W - 5 * 8) // 2, ky + 3, "SPACE", JAUNE, sx=1, sy=1.5)
+    texte(img, kx + 4, ky + 3, "SPACE", JAUNE, sx=1, sy=1.5)
+    jx, jy = kx + kw + 6, ky - 1
+    rect(img, jx - 1, jy - 1, 15, kh + 2, FOND)     # pas de points du feutre ici
+    rect(img, jx + 5, jy + 4, 2, 9, NOIR)           # manche
+    rect(img, jx + 4, jy, 4, 5, ROUGE_CLAIR)        # boule
+    rect(img, jx, jy + 13, 13, 5, NOIR)             # socle
+    rect(img, jx + 1, jy + 11, 3, 2, ROUGE_CLAIR)   # bouton de tir
     mini(img, 187, "(C) 2026 STEPHAN - LICENCE GPL V3", BLANC)
     return img
 

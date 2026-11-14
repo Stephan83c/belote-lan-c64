@@ -148,11 +148,18 @@ TEXTES = [
     ("V_PASSER", 10, "PASSE", "PASS", "PASSEN", "PASAR"),
     ("V_TOUR1", 8, "1ER TOUR", "ROUND 1", "RUNDE 1", "RONDA 1"),
     ("V_TOUR2", 8, "2E TOUR", "ROUND 2", "RUNDE 2", "RONDA 2"),
-    ("V_A_VOUS", 40, "A VOUS DE JOUER : 1-8", "YOUR TURN: 1-8", "DU BIST DRAN: 1-8",
-     "TE TOCA: 1-8"),
+    ("V_A_VOUS", 40, "A VOUS DE JOUER : 1-8 OU JOYSTICK", "YOUR TURN: 1-8 OR JOYSTICK",
+     "DU BIST DRAN: 1-8 ODER JOYSTICK", "TE TOCA: 1-8 O JOYSTICK"),
     ("V_FIN_CHEF", 40, "MANCHE TERMINEE : F5 POUR LA SUIVANTE", "ROUND OVER: F5 FOR THE NEXT ONE",
      "RUNDE VORBEI: F5 FUER DIE NAECHSTE", "MANO TERMINADA: F5 PARA LA SIGUIENTE"),
     # %s : NOUS ou EUX, l'équipe qui a marqué le plus de points dans la manche
+    # Tableau de fin de manche (ardoise posée sur la table, 18 cases utiles)
+    ("P_MANCHE", 18, "LA MANCHE", "THE ROUND", "DIE RUNDE", "LA MANO"),
+    ("P_REUSSI", 18, "CONTRAT REMPLI", "CONTRACT MADE", "VERTRAG ERFUELLT", "CONTRATO HECHO"),
+    ("P_DEDANS", 18, "DEDANS !", "SET!", "DURCHGEFALLEN!", "FALLADO!"),
+    ("P_CAPOT", 18, "CAPOT !", "CAPOT!", "CAPOT!", "CAPOT!"),
+    ("P_LITIGE", 18, "LITIGE", "TIE", "PATT", "EMPATE"),
+    ("P_TOTAL", 18, "AU TOTAL", "OVERALL", "GESAMT", "EN TOTAL"),
     ("V_SUITE", 40, "MANCHE POUR %s - SUITE DANS %u S", "ROUND TO %s - NEXT ONE IN %u S",
      "RUNDE FUER %s - WEITER IN %u S", "MANO PARA %s - SIGUE EN %u S"),
     ("V_FIN_AUTRE", 40, "MANCHE TERMINEE : ON ATTEND LE CHEF", "ROUND OVER: WAITING FOR THE HOST",
@@ -317,7 +324,7 @@ LARGEUR_REGLES = 39
 
 # Espace, chiffres, ponctuation (sauf # " $ % &, devenus le tapis et les coins des
 # cartes), A-Z, [ et ] : voir car() dans c64/ecran.c.
-PERMIS = set(chr(c) for c in range(32, 64) if chr(c) not in "#\"$%&") | set("ABCDEFGHIJKLMNOPQRSTUVWXYZ[]")
+PERMIS = set(chr(c) for c in range(32, 64) if chr(c) not in "#\"$%&<") | set("ABCDEFGHIJKLMNOPQRSTUVWXYZ[]")
 FORMAT = re.compile(r"%(-?\d*)([sudc])")
 LARGEUR_FORMAT = {"s": 6, "u": 4, "d": 4, "c": 1}
 

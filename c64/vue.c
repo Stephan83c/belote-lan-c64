@@ -41,9 +41,25 @@ unsigned char vue_courante(void)
     return V_TABLE;
 }
 
-static void barre(const char *s)
+/* Barre de touches sur le bandeau noir du bas : les touches (F1 à F8, 1-8, 1-4)
+ * en jaune, le reste en gris clair. */
+void barre(const char *s)
 {
-    ecrire_n(0, 24, s, 39, GRIS_CLAIR, FOND_VERT);   /* jamais la case 39 de L24 */
+    unsigned char x = 1, n = 0;
+    char c[2];
+    bandeau(24);
+    c[1] = 0;
+    while (*s && x < 40) {
+        if ((s[0] == 'F' && s[1] >= '1' && s[1] <= '8') ||
+            (s[0] >= '1' && s[0] <= '9' && s[1] == '-')) {
+            n = s[1] == '-' ? 3 : 2;
+        }
+        c[0] = *s++;
+        ecrire(x++, 24, c, n ? JAUNE : GRIS_CLAIR, FOND_NOIR);
+        if (n) {
+            --n;
+        }
+    }
 }
 
 static void barre_table(void)
@@ -77,23 +93,29 @@ static void barre_table(void)
 /* Titre d'un écran, aligné à droite de « BELOTE LAN C64 ». */
 static void titre_ecran(unsigned char id)
 {
-    ecrire(0, 0, "BELOTE LAN C64", BLANC, FOND_VERT);
-    ecrire(38 - strlen(T(id)), 0, T(id), BLANC, FOND_VERT);
-    ligne_tirets(1);
+    bandeau(0);
+    ecrire(1, 0, "BELOTE LAN C64", JAUNE, FOND_NOIR);
+    ecrire(39 - strlen(T(id)), 0, T(id), BLANC, FOND_NOIR);
 }
 
+/* Bandeau noir du haut : BELOTE en jaune, l'atout dans sa couleur, puis les
+ * scores, NOUS et EUX dans la couleur de chaque équipe. */
 static void entete(void)
 {
-    ecrire(0, 0, T(T_V_ATOUT), BLANC, FOND_VERT);
-    if (atout >= 0) {
-        t[0] = SYM(atout);
-        t[1] = 0;
-    } else {
-        strcpy(t, "?");
-    }
-    ecrire_n(15, 0, t, 4, BLANC, FOND_VERT);
-    sprintf(t, T(T_V_SCORES), scores[moi & 1], scores[(moi & 1) ^ 1]);
-    ecrire(19, 0, t, BLANC, FOND_VERT);
+    unsigned char nous = moi & 1, x;
+    bandeau(0);
+    ecrire(1, 0, T(T_V_ATOUT), GRIS_CLAIR, FOND_NOIR);
+    ecrire(1, 0, "BELOTE", JAUNE, FOND_NOIR);
+    t[1] = 0;
+    t[0] = atout >= 0 ? SYM(atout) : '?';
+    ecrire(2 + strlen(T(T_V_ATOUT)), 0, t, BLANC, FOND_NOIR);
+    ecrire(21, 0, T(T_NOUS), COUL_EQUIPE(nous), FOND_NOIR);
+    sprintf(t, "%04u", scores[nous]);
+    ecrire(22 + strlen(T(T_NOUS)), 0, t, BLANC, FOND_NOIR);
+    sprintf(t, "%04u", scores[nous ^ 1]);
+    x = 39 - 5 - strlen(T(T_EUX));
+    ecrire(x, 0, T(T_EUX), COUL_EQUIPE(nous + 1), FOND_NOIR);
+    ecrire(x + strlen(T(T_EUX)) + 1, 0, t, BLANC, FOND_NOIR);
 }
 
 /* Table redessinée sur place, sans effacer d'abord : chaque nom (13 cases, avec
@@ -192,6 +214,8 @@ static void glisser(signed char p)
         sx = dx;
         sy = 50 + 21 * 8;
         if (glisse_case >= 0) {
+            /* Une fois le coup envoyé, la main est redescendue (lignes 21-22)
+             * avant que JOUE n'arrive : la carte part de là. */
             i = (unsigned char)glisse_case;
             sx = 24 + i * 5 * 8;
             effacer(i * 5, 21, 4);          /* la carte quitte la main */
@@ -300,6 +324,37 @@ static void zone_saisie(void)
     }
 }
 
+/* Un choix d'enchère : « 1 PRENDRE ♠ ». Celui qu'on a choisi (joystick, curseur)
+ * est sur une étiquette blanche, sinon touche en jaune et mot en blanc. */
+static unsigned char choix(unsigned char x, char touche, const char *mot, char sym,
+                           unsigned char actif)
+{
+    unsigned char fond = actif ? FOND_BLANC : FOND_VERT;
+    char s[2];
+    s[1] = 0;
+    s[0] = ' ';
+    ecrire(x - 1, 19, s, BLANC, fond);
+    s[0] = touche;
+    ecrire(x, 19, s, actif ? ROUGE : JAUNE, fond);
+    s[0] = ' ';
+    ecrire(x + 1, 19, s, BLANC, fond);
+    x += 2;
+    if (*mot) {
+        ecrire(x, 19, mot, actif ? NOIR : BLANC, fond);
+        x += strlen(mot);
+        if (sym) {
+            ecrire(x++, 19, s, BLANC, fond);
+        }
+    }
+    if (sym) {
+        s[0] = sym;
+        ecrire(x++, 19, s, BLANC, fond);
+    }
+    s[0] = ' ';
+    ecrire(x, 19, s, BLANC, fond);
+    return x + 3;
+}
+
 static void zone_encheres(void)
 {
     unsigned char c, k, x;
@@ -313,33 +368,19 @@ static void zone_encheres(void)
             sprintf(t, T(T_V_AU_TOUR), nom_place(tour));
             ecrire(0, 19, t, GRIS_CLAIR, FOND_VERT);
         } else if (tour_ench == 1) {
-            /* [1 PRENDRE ♠] [2 PASSE] */
-            strcpy(t, "[1 ");
-            strcat(t, T(T_V_PRENDRE));
-            strcat(t, "  ] [2 ");
-            strcat(t, T(T_V_PASSER));
-            strcat(t, "]");
-            t[4 + strlen(T(T_V_PRENDRE))] = SYM(retournee >> 3);
-            ecrire(0, 19, t, JAUNE, FOND_VERT);
+            /* 1 PRENDRE ♠   2 PASSE */
+            x = choix(1, '1', T(T_V_PRENDRE), SYM(retournee >> 3), ench_sel == 0);
+            choix(x, '2', T(T_V_PASSER), 0, ench_sel == 1);
         } else {
-            x = 0;
-            k = 1;
+            x = 1;
+            k = 0;
             for (c = 0; c < 4; ++c) {
                 if (c != (unsigned char)(retournee >> 3)) {
-                    t[0] = '[';
-                    t[1] = '0' + k++;
-                    t[2] = ' ';
-                    t[3] = SYM(c);
-                    t[4] = ']';
-                    t[5] = 0;
-                    ecrire(x, 19, t, JAUNE, FOND_VERT);
-                    x += 6;
+                    x = choix(x, '1' + k, "", SYM(c), ench_sel == k);
+                    ++k;
                 }
             }
-            strcpy(t, "[4 ");
-            strcat(t, T(T_V_PASSER));
-            strcat(t, "]");
-            ecrire(x, 19, t, JAUNE, FOND_VERT);
+            choix(x, '4', T(T_V_PASSER), 0, ench_sel == 3);
         }
         /* Le journal ne montre pas toujours les passes du 1er tour. */
         k = tour_ench == 1 ? T_V_TOUR1 : T_V_TOUR2;
@@ -355,29 +396,131 @@ static void zone_encheres(void)
     }
 }
 
+/* Main, sur place, emplacement par emplacement (pas de clignotement). À mon tour,
+ * les cartes que la règle permet sortent du rang (lignes 20-21, sur les tirets) ;
+ * le numéro de la carte choisie (joystick, curseur) est sur fond blanc. */
 static void zone_main(void)
 {
-    unsigned char i, coul;
+    unsigned char i, x, ok[8], a_moi = etat == E_COURS && atout >= 0 && tour == moi;
 
-    /* Sur place, emplacement par emplacement (pas de clignotement). */
-    coul = (etat == E_COURS && atout >= 0 && tour == moi) ? JAUNE : GRIS_FONCE;
+    jouables(ok);
+    if (a_moi && (sel >= nmain || !ok[sel])) {
+        for (sel = 0; sel < nmain && !ok[sel]; ++sel) {
+        }
+    }
+    t[1] = 0;
     for (i = 0; i < 8; ++i) {
-        if (i < nmain) {
-            carte(i * 5, 21, main_c[i]);
-            t[0] = '1' + i;
-            t[1] = 0;
-            ecrire(i * 5 + 1, 23, t, coul, FOND_VERT);
+        x = i * 5;
+        if (i < nmain && a_moi && ok[i]) {
+            carte(x, 20, main_c[i]);
+            effacer(x, 22, 4);
         } else {
-            carte(i * 5, 21, -1);
-            effacer(i * 5 + 1, 23, 1);
+            trait(x, 20, 5);
+            carte(x, 21, i < nmain ? main_c[i] : -1);
+        }
+        effacer(x + 1, 23, 1);
+        if (i < nmain) {
+            t[0] = '1' + i;
+            if (a_moi && i == sel) {
+                ecrire(x + 1, 23, t, NOIR, FOND_BLANC);
+            } else {
+                ecrire(x + 1, 23, t, !a_moi ? GRIS_FONCE : (ok[i] ? JAUNE : GRIS_CLAIR), FOND_VERT);
+            }
         }
     }
 }
 
+/* Tableau de fin de manche : une grande carte blanche aux coins arrondis, posée
+ * au centre du tapis (cases 7 à 26, lignes 3 à 9), avant le nom de l'EST (27).
+ * Équipes en bleu et en rouge foncés, lisibles sur le blanc. */
+#define PX 7
+#define PW 20
+static unsigned char panneau_pose;
+#define COUL_FONCE(e) (((e) & 1) ? ROUGE : BLEU)
+
+static void ligne_panneau(unsigned char y, const char *s, unsigned char coul)
+{
+    ecrire_n(PX + 1, y, "", PW - 2, NOIR, FOND_BLANC);
+    ecrire(PX + 1 + (PW - 2 - strlen(s)) / 2, y, s, coul, FOND_BLANC);
+}
+
+/* « NOUS 72  EUX 90 » centré. */
+static void scores_panneau(unsigned char y, int a, int b)
+{
+    unsigned char nous = moi & 1, x, e = 1;
+    char n1[6], n2[6];
+    sprintf(n1, "%d", nous ? b : a);
+    sprintf(n2, "%d", nous ? a : b);
+    x = strlen(T(T_NOUS)) + strlen(n1) + strlen(T(T_EUX)) + strlen(n2) + 4;
+    if (x > PW - 2) {                   /* espagnol, deux scores à 4 chiffres */
+        e = 0;
+        x -= 2;
+    }
+    ecrire_n(PX + 1, y, "", PW - 2, NOIR, FOND_BLANC);
+    x = PX + 1 + (PW - 2 - x) / 2;
+    ecrire(x, y, T(T_NOUS), COUL_FONCE(nous), FOND_BLANC);
+    x += strlen(T(T_NOUS)) + e;
+    ecrire(x, y, n1, NOIR, FOND_BLANC);
+    x += strlen(n1) + 2;
+    ecrire(x, y, T(T_EUX), COUL_FONCE(nous + 1), FOND_BLANC);
+    x += strlen(T(T_EUX)) + e;
+    ecrire(x, y, n2, NOIR, FOND_BLANC);
+}
+
+static void panneau_manche(void)
+{
+    unsigned char id = 0, coul = NOIR;
+    signed char pe = preneur >= 0 ? (preneur & 1) : -1;
+    char coin[2];
+
+    coin[1] = 0;
+    ligne_panneau(3, "", NOIR);
+    ligne_panneau(9, "", NOIR);
+    coin[0] = COIN_HG;
+    ecrire(PX, 3, coin, VERT, FOND_BLANC);
+    coin[0] = COIN_HD;
+    ecrire(PX + PW - 1, 3, coin, VERT, FOND_BLANC);
+    coin[0] = COIN_BG;
+    ecrire(PX, 9, coin, VERT, FOND_BLANC);
+    coin[0] = COIN_BD;
+    ecrire(PX + PW - 1, 9, coin, VERT, FOND_BLANC);
+    for (id = 4; id <= 8; ++id) {
+        ecrire_n(PX, id, "", 1, NOIR, FOND_BLANC);
+        ecrire_n(PX + PW - 1, id, "", 1, NOIR, FOND_BLANC);
+    }
+    id = 0;
+    ligne_panneau(4, T(T_P_MANCHE), NOIR);
+    scores_panneau(5, manche_pts[0], manche_pts[1]);
+    if (capot_eq >= 0) {
+        id = T_P_CAPOT;
+        coul = COUL_FONCE(capot_eq);
+    } else if (litige_m) {
+        id = T_P_LITIGE;
+    } else if (pe >= 0) {
+        id = manche_pts[pe] == 0 ? T_P_DEDANS : T_P_REUSSI;
+        coul = COUL_FONCE(manche_pts[pe] == 0 ? pe + 1 : pe);
+    }
+    if (id) {
+        ligne_panneau(6, T(id), coul);
+    } else {
+        ligne_panneau(6, "", NOIR);
+    }
+    ligne_panneau(7, T(T_P_TOTAL), GRIS_FONCE);
+    scores_panneau(8, scores[0], scores[1]);
+    panneau_pose = 1;
+}
+
 static void vue_table(void)
 {
+    unsigned char y;
+    if (panneau_pose && (etat != E_FIN_MANCHE || sale == D_TOUT)) {
+        for (y = 3; y <= 9; ++y) {
+            effacer(PX, y, PW);
+        }
+        panneau_pose = 0;
+        sale |= D_TABLE;
+    }
     if (sale == D_TOUT) {
-        ligne_tirets(1);
         ligne_tirets(11);
         ligne_tirets(20);
     }
@@ -405,6 +548,9 @@ static void vue_table(void)
                 son_effet(FX_PLI);
             }
             ramasse = -1;
+        }
+        if (etat == E_FIN_MANCHE) {
+            panneau_manche();
         }
     }
     if (sale & D_JOURNAL) {

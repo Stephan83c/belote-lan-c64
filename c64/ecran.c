@@ -34,6 +34,10 @@ static const unsigned char motif_coin[4][8] = {
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03 },
 };
 
+/* Trait fin des séparations : le caractère < devient une ligne de 2 pixels. */
+#define C_TRAIT 60
+static const unsigned char motif_trait[8] = { 0, 0, 0, 0xFF, 0xFF, 0, 0, 0 };
+
 static unsigned off[25];
 
 void ecran_init(void)
@@ -56,6 +60,7 @@ void ecran_init(void)
     for (i = 0; i < 4; ++i) {
         memcpy(CARS + code_coin[i] * 8, motif_coin[i], 8);
     }
+    memcpy(CARS + C_TRAIT * 8, motif_trait, 8);
     POKE(1, port);
     __asm__("cli");
 
@@ -63,10 +68,10 @@ void ecran_init(void)
     POKE(0x0288, 0xC0);                 /* écran du KERNAL en $C000 */
     POKE(0xDD00, PEEK(0xDD00) & 0xFC);  /* banque VIC 3 : $C000-$FFFF */
     POKE(0xD018, 0x02);                 /* écran +$0000, caractères +$0800 */
-    POKE(0xD020, VERT);
+    POKE(0xD020, BRUN);                 /* bordure : le cadre en bois de la table */
     POKE(0xD021, VERT);
     POKE(0xD022, BLANC);                /* fond des cartes */
-    POKE(0xD023, NOIR);
+    POKE(0xD023, NOIR);                 /* bandeaux du haut et du bas */
     POKE(0xD024, GRIS_FONCE);
     ecran_effacer();
     POKE(0xD011, PEEK(0xD011) | 0x40);  /* mode couleur étendue */
@@ -90,7 +95,9 @@ static void car(unsigned o, unsigned char c, unsigned char coul, unsigned char f
 {
     if (c >= 1 && c <= 4) {
         ECRAN[o] = code_sym[c - 1] | fond;
-        COULEUR[o] = (fond == FOND_VERT || fond == FOND_BLANC) ? FC(c - 1) : BLANC;
+        /* sur le noir des bandeaux : ♥ ♦ en rouge clair, ♠ ♣ en blanc */
+        COULEUR[o] = (fond == FOND_VERT || fond == FOND_BLANC) ? FC(c - 1)
+                     : (((c - 1) & 1) ? ROUGE_CLAIR : BLANC);
         return;
     }
     if (c == ' ' && fond == FOND_VERT) {
@@ -103,7 +110,7 @@ static void car(unsigned o, unsigned char c, unsigned char coul, unsigned char f
         COULEUR[o] = VERT;
         return;
     }
-    if (c == '#' || c == '"' || c == '$' || c == '%' || c == '&') {
+    if (c == '#' || c == '"' || c == '$' || c == '%' || c == '&' || c == '<') {
         c = '?';                        /* caractères devenus le tapis et les coins */
     } else if (c >= 32 && c < 64) {
         /* espace, chiffres, ponctuation : même code */
@@ -134,10 +141,22 @@ void ecrire_n(unsigned char x, unsigned char y, const char *s, unsigned char n,
     }
 }
 
+void trait(unsigned char x, unsigned char y, unsigned char n)
+{
+    unsigned o = off[y] + x;
+    memset(ECRAN + o, C_TRAIT, n);
+    memset(COULEUR + o, COUL_TRAIT, n);
+}
+
 void ligne_tirets(unsigned char y)
 {
+    trait(0, y, 40);
+}
+
+void bandeau(unsigned char y)
+{
     unsigned o = off[y];
-    memset(ECRAN + o, '-', 40);
+    memset(ECRAN + o, 32 | FOND_NOIR, 40);
     memset(COULEUR + o, BLANC, 40);
 }
 

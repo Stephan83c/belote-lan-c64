@@ -26,6 +26,11 @@ unsigned char pli_fini;
 signed char glisse = -1;
 signed char glisse_case = -1;
 signed char ramasse = -1;
+unsigned char npli;
+signed char entame = -1;
+int manche_pts[2];
+signed char capot_eq = -1;
+unsigned char litige_m;
 unsigned char suite, suite_vue, manche_nous;
 static clock_t suite_fin;
 unsigned char sale;
@@ -108,6 +113,98 @@ static void manche_raz(void)
     pli[0] = pli[1] = pli[2] = pli[3] = -1;
     pli_fini = 0;
     ramasse = -1;
+    npli = 0;
+    entame = -1;
+    capot_eq = -1;
+    litige_m = 0;
+}
+
+/* ---- Règles du jeu de la carte (copie de server/belote/moteur.py) --------
+ * Pour faire sortir de la main les cartes jouables ; le serveur reste juge. */
+
+/* Force dans la couleur, par rang 7 8 9 10 V D R A */
+static const unsigned char force_normale[8] = { 0, 1, 2, 6, 3, 4, 5, 7 };
+static const unsigned char force_atout[8]   = { 0, 1, 6, 4, 7, 2, 3, 5 };
+
+#define COUL(c) ((unsigned char)(c) >> 3)
+
+static unsigned char force(signed char c)
+{
+    return (COUL(c) == atout ? force_atout : force_normale)[c & 7];
+}
+
+/* Valeur d'une carte dans le pli : atout > couleur demandée > le reste. */
+static unsigned char poids(signed char c, unsigned char demandee)
+{
+    if (COUL(c) == atout) {
+        return 32 + force(c);
+    }
+    return COUL(c) == demandee ? 16 + force(c) : 0;
+}
+
+/* Place maîtresse du pli en cours. */
+static signed char maitre(void)
+{
+    unsigned char i, p, dem = COUL(pli[entame]), meilleur = 0, w;
+    signed char g = entame;
+    for (i = 0; i < 4; ++i) {
+        p = (entame + i) & 3;
+        if (pli[p] >= 0 && (w = poids(pli[p], dem)) > meilleur) {
+            meilleur = w;
+            g = p;
+        }
+    }
+    return g;
+}
+
+void jouables(unsigned char *ok)
+{
+    unsigned char i, dem, pf = 0, n = 0, a = 0, sur = 0;
+    signed char c;
+
+    for (i = 0; i < 8; ++i) {
+        ok[i] = 0;
+    }
+    if (etat != E_COURS || atout < 0 || tour != moi || moi < 0) {
+        return;
+    }
+    if (!npli || pli_fini || entame < 0) {      /* j'entame : tout est permis */
+        for (i = 0; i < nmain; ++i) {
+            ok[i] = 1;
+        }
+        return;
+    }
+    dem = COUL(pli[entame]);
+    for (i = 0; i < 4; ++i) {                   /* plus fort atout posé (+1) */
+        c = pli[i];
+        if (c >= 0 && COUL(c) == atout && force(c) + 1 > pf) {
+            pf = force(c) + 1;
+        }
+    }
+    for (i = 0; i < nmain; ++i) {
+        c = main_c[i];
+        n += COUL(c) == dem;
+        if (COUL(c) == atout) {
+            ++a;
+            sur += force(c) + 1 > pf;
+        }
+    }
+    for (i = 0; i < nmain; ++i) {
+        c = main_c[i];
+        if (dem == atout) {
+            /* atout demandé : monter si possible, sinon atout, sinon n'importe quoi */
+            ok[i] = sur ? (COUL(c) == atout && force(c) + 1 > pf) : (a ? COUL(c) == atout : 1);
+        } else if (n) {
+            ok[i] = COUL(c) == dem;             /* fournir */
+        } else if (!a || maitre() == ((moi + 2) & 3)) {
+            ok[i] = 1;                          /* pas d'atout, ou partenaire maître */
+        } else if (sur) {
+            ok[i] = COUL(c) == atout && force(c) + 1 > pf;   /* couper, surcouper */
+        } else {
+            /* sous-couper seulement s'il ne reste que de l'atout */
+            ok[i] = COUL(c) != atout || a == nmain;
+        }
+    }
 }
 
 void jeu_raz(void)
@@ -254,7 +351,12 @@ void traiter_ligne(char *ligne)
             if (pli_fini) {
                 pli[0] = pli[1] = pli[2] = pli[3] = -1;
                 pli_fini = 0;
+                npli = 0;
             }
+            if (!npli) {
+                entame = p;
+            }
+            ++npli;
             pli[p] = (signed char)n;
             glisse = p;
             /* Sa propre carte : son emplacement dans la main, avant que MAIN
@@ -356,8 +458,16 @@ void traiter_ligne(char *ligne)
     } else if (!strcmp(mot, "REBELOTE")) {
         journal_place(place(), "REBELOTE");
     } else if (!strcmp(mot, "PLICOURS")) {
+        npli = 0;
         for (i = 0; i < 4; ++i) {
             pli[i] = (signed char)nombre();
+            npli += pli[i] >= 0;
+        }
+        /* Entame : la carte posée dont le voisin de droite n'a pas joué. */
+        for (i = 0; i < 4; ++i) {
+            if (pli[i] >= 0 && pli[(i + 3) & 3] < 0) {
+                entame = i;
+            }
         }
         pli_fini = 0;
         prise = -1;
@@ -421,6 +531,8 @@ void traiter_ligne(char *ligne)
         /* MANCHE E0 E1 : on affiche NOUS puis EUX */
         {
             int e0 = nombre(), e1 = nombre(), nous = e0, eux = e1;
+            manche_pts[0] = e0;
+            manche_pts[1] = e1;
             if (moi & 1) {
                 nous = e1;
                 eux = e0;
@@ -431,8 +543,10 @@ void traiter_ligne(char *ligne)
         journal_info(tampon);
     } else if (!strcmp(mot, "CAPOT")) {
         n = nombre();
+        capot_eq = (signed char)(n & 1);
         journal_info(T(moi >= 0 && n == (moi & 1) ? T_J_CAPOT_NOUS : T_J_CAPOT_EUX));
     } else if (!strcmp(mot, "LITIGE")) {
+        litige_m = 1;
         sprintf(tampon, T(T_J_LITIGE), nombre());
         journal_info(tampon);
     } else if (!strcmp(mot, "GAGNANT")) {

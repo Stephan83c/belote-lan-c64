@@ -102,6 +102,7 @@ To have the server start with the PC, install it as a systemd service: see
 |---|---|
 | 1-4 | Bidding: take (the turned-up suit in round 1, another suit in round 2) or pass |
 | 1-8 | Play the card shown above this number (on the last trick, the last card goes by itself) |
+| Joystick (port 2) | Left/right: pick the card or the bid; button: play, confirm, start from the title, RETURN on the connection screen, next round at the end of a round. CRSR ←/→ and RETURN do the same |
 | F1 | Connection screen: change language |
 | F1 | Host, while waiting: settings (points to win, idle timeout) |
 | F2 | Host: start the game |

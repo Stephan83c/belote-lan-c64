@@ -37,6 +37,15 @@ extern unsigned char nmain;
 extern unsigned char nbcartes[4];
 extern signed char pli[4];
 extern unsigned char pli_fini;
+/* Pli en cours : nombre de cartes posées, place qui a entamé (-1). */
+extern unsigned char npli;
+extern signed char entame;
+/* Fin de manche : points (MANCHE, équipe absolue), équipe capot (-1), litige. */
+extern int manche_pts[2];
+extern signed char capot_eq;
+extern unsigned char litige_m;
+/* Cartes de ma main que la règle permet de jouer maintenant (1 par case). */
+void jouables(unsigned char *ok);
 /* Place dont la carte vient d'être jouée, à faire glisser au prochain dessin ; -1 sinon. */
 extern signed char glisse;
 /* Pour sa propre carte : emplacement qu'elle occupait dans la main ; -1 sinon. */

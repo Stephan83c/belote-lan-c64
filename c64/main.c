@@ -1,6 +1,7 @@
 /* Belote LAN pour C64 Ultimate : connexion, boucle clavier/réseau, touches. */
 #include "ascii.h"
 #include <cbm.h>
+#include <joystick.h>
 #include <stdlib.h>
 #include <string.h>
 #include "ecran.h"
@@ -30,6 +31,10 @@
 #define K_F2     137
 #define K_F4     138
 #define K_F8     140
+#define K_ESPACE 32
+#define K_GAUCHE 157
+#define K_DROITE 29
+#define K_LANGUE_PREC 0xFE          /* joystick à gauche à la connexion (aucune touche) */
 
 #define PEEK(a) (*(volatile unsigned char *)(a))
 
@@ -43,6 +48,9 @@ static char ligne[65];
 static unsigned char lg, deborde;
 static char rx[64];
 static char tx[66];
+
+unsigned char sel, ench_sel;        /* carte et enchère choisies (joystick, curseur) */
+static unsigned char joy_avant, ench_tour, ench_mien;
 
 /* Horloge du KERNAL (60 Hz), 16 bits de poids faible. */
 static unsigned jiffies(void)
@@ -122,15 +130,34 @@ static unsigned char accepte(unsigned char c, unsigned char hote_permis)
 /* Saisie bloquante d'un champ ; renvoie la touche qui la termine. */
 static unsigned char saisir(unsigned char y, char *buf, unsigned char max, unsigned char hote_permis)
 {
-    unsigned char n = strlen(buf), c;
+    unsigned char n = strlen(buf), c, j, nv;
     for (;;) {
         ecrire_n(9, y, buf, 40 - 9, BLANC, FOND_VERT);
         if (n < max) {
             curseur(9 + n, y);
         }
+        /* Joystick (sur front) : bouton = RETURN, haut/bas = champ,
+         * droite/gauche = langue suivante/précédente. */
         while (!(c = cbm_k_getin())) {
+            j = joy_read(JOY_2);
+            nv = j & ~joy_avant;
+            joy_avant = j;
+            if (JOY_BTN_1(nv)) {
+                c = K_RETURN;
+            } else if (JOY_RIGHT(nv)) {
+                c = K_F1;
+            } else if (JOY_LEFT(nv)) {
+                c = K_LANGUE_PREC;
+            } else if (JOY_UP(nv)) {
+                c = K_HAUT;
+            } else if (JOY_DOWN(nv)) {
+                c = K_BAS;
+            }
+            if (c) {
+                break;
+            }
         }
-        if (c == K_RETURN || c == K_HAUT || c == K_BAS || c == K_F1) {
+        if (c == K_RETURN || c == K_HAUT || c == K_BAS || c == K_F1 || c == K_LANGUE_PREC) {
             ecrire_n(9, y, buf, 40 - 9, BLANC, FOND_VERT);
             return c;
         }
@@ -213,7 +240,7 @@ static void textes_connexion(void)
         ecrire(x, 22, textes[i][T_LANGUE], i == langue ? JAUNE : GRIS_FONCE, FOND_VERT);
         x += strlen(textes[i][T_LANGUE]) + 2;
     }
-    ecrire_n(0, 24, T(T_B_CONNEXION), 39, GRIS_CLAIR, FOND_VERT);
+    barre(T(T_B_CONNEXION));
 }
 
 /* L'éventail de l'écran titre en cartes de la table : valet de trèfle, as de
@@ -244,9 +271,9 @@ static void connexion(void)
     static unsigned char deja;      /* donne déjà animée */
 
     ecran_effacer();
-    ecrire(0, 0, "BELOTE LAN C64", BLANC, FOND_VERT);
-    ecrire(39 - sizeof(VERSION), 0, "V" VERSION, GRIS_CLAIR, FOND_VERT);   /* jusqu'à la case 38 */
-    ligne_tirets(1);
+    bandeau(0);
+    ecrire(1, 0, "BELOTE LAN C64", JAUNE, FOND_NOIR);
+    ecrire(39 - sizeof(VERSION), 0, "V" VERSION, GRIS_CLAIR, FOND_NOIR);   /* jusqu'à la case 38 */
     ligne_tirets(20);
     textes_connexion();
     ecrire_n(9, 3, serveur, 31, BLANC, FOND_VERT);
@@ -263,8 +290,8 @@ static void connexion(void)
 
     for (;;) {
         k = champ == 0 ? saisir(3, serveur, SERVEUR_MAX, 1) : saisir(5, nom, NOM_MAX, 0);
-        if (k == K_F1) {
-            langue_choisir(langue + 1);
+        if (k == K_F1 || k == K_LANGUE_PREC) {
+            langue_choisir(k == K_F1 ? langue + 1 : (langue + NB_LANGUES - 1) % NB_LANGUES);
             textes_connexion();
             cartes_connexion(0);            /* figures de la nouvelle langue */
             effacer(0, Y_MESSAGE, 40);
@@ -414,9 +441,24 @@ static void touche_tchat(unsigned char c)
 }
 
 /* Touches 1-4 pendant les enchères. */
+static unsigned char a_moi_d_encherir(void)
+{
+    return etat == E_COURS && tour == moi && atout < 0 && retournee >= 0;
+}
+
+static unsigned char a_moi_de_jouer(void)
+{
+    return etat == E_COURS && tour == moi && atout >= 0;
+}
+
 static void enchere(unsigned char k)
 {
     unsigned char c, couleur = retournee >> 3;
+    if (!a_moi_d_encherir()) {
+        return;
+    }
+    tour = -1;                      /* plus mon tour : pas de second envoi */
+    sale |= D_ENCH | D_TABLE;
     if (tour_ench == 1) {
         if (k == 1) {
             envoyer_nombre("ENCH ", couleur);
@@ -434,6 +476,61 @@ static void enchere(unsigned char k)
             envoyer_nombre("ENCH ", c);
             return;
         }
+    }
+}
+
+/* Joue la carte i de la main si la règle le permet (sinon rien : elle n'est pas
+ * sortie du rang). */
+static void jouer(unsigned char i)
+{
+    unsigned char ok[8];
+    if (!a_moi_de_jouer() || i >= nmain) {
+        return;
+    }
+    jouables(ok);
+    if (!ok[i]) {
+        return;
+    }
+    envoyer_nombre("COUP ", (unsigned char)main_c[i]);
+    tour = -1;                      /* plus mon tour : pas de second envoi */
+    sale |= D_MAIN | D_ENCH;
+}
+
+/* Gauche (d = 255) ou droite (d = 1) : enchère voisine, ou carte jouable voisine. */
+static void choisir(unsigned char d)
+{
+    unsigned char ok[8], i, k, n;
+    if (a_moi_d_encherir()) {
+        n = tour_ench == 1 ? 2 : 4;
+        ench_sel = d == 1 ? (ench_sel + 1) % n : (ench_sel + n - 1) % n;
+        sale |= D_ENCH;
+        return;
+    }
+    if (!a_moi_de_jouer()) {
+        return;
+    }
+    jouables(ok);
+    i = sel;
+    for (k = 0; k < nmain; ++k) {
+        i = (unsigned char)(i + d) & 7;
+        if (i < nmain && ok[i]) {
+            sel = i;
+            break;
+        }
+    }
+    sale |= D_MAIN;
+}
+
+/* RETURN, ESPACE ou le bouton : l'enchère choisie, la carte choisie, ou en fin de
+ * manche la suite (comme F5). */
+static void valider(void)
+{
+    if (a_moi_d_encherir()) {
+        enchere(ench_sel + 1);
+    } else if (a_moi_de_jouer()) {
+        jouer(sel);
+    } else if (etat == E_FIN_MANCHE && (suite || suis_chef())) {
+        envoyer("REJOUER");
     }
 }
 
@@ -512,6 +609,16 @@ static unsigned char touche(void)
             envoyer("REJOUER");
         }
         break;
+    case K_GAUCHE:
+        choisir(255);
+        break;
+    case K_DROITE:
+        choisir(1);
+        break;
+    case K_RETURN:
+    case K_ESPACE:
+        valider();
+        break;
     default:
         if (etat != E_COURS || tour != moi || c < '1' || c > '8') {
             break;
@@ -521,8 +628,8 @@ static unsigned char touche(void)
             if (retournee >= 0 && c <= 4) {
                 enchere(c);
             }
-        } else if (c <= nmain) {
-            envoyer_nombre("COUP ", main_c[c - 1]);
+        } else {
+            jouer(c - 1);
         }
     }
     return 1;
@@ -543,6 +650,25 @@ static void derniere_carte(void)
     if (jouee != main_c[0] && jiffies() - depuis >= 30) {
         jouee = main_c[0];
         envoyer_nombre("COUP ", jouee);
+        tour = -1;                  /* comme jouer() : la main redescend aussitôt */
+        sale |= D_MAIN | D_ENCH;
+    }
+}
+
+/* Joystick en port 2 : gauche, droite, bouton (sur front). */
+static void joystick(void)
+{
+    unsigned char j = joy_read(JOY_2), nouveau = j & ~joy_avant;
+    joy_avant = j;
+    if (!nouveau || tchat || regles || param || raz_conf) {
+        return;
+    }
+    if (JOY_LEFT(nouveau)) {
+        choisir(255);
+    } else if (JOY_RIGHT(nouveau)) {
+        choisir(1);
+    } else if (JOY_BTN_1(nouveau)) {
+        valider();
     }
 }
 
@@ -553,6 +679,15 @@ static void partie(void)
     for (;;) {
         reseau();
         derniere_carte();
+        joystick();
+        /* nouveau tour d'enchères pour moi : le choix repart sur PASSE (un
+         * appui involontaire ne fait jamais prendre) */
+        if (a_moi_d_encherir() && (!ench_mien || tour_ench != ench_tour)) {
+            ench_sel = tour_ench == 1 ? 1 : 3;
+            ench_tour = tour_ench;
+            sale |= D_ENCH;
+        }
+        ench_mien = a_moi_d_encherir();
         if (uci_bloquee) {
             uci_bloquee = 0;
             perdu = 1;
@@ -580,6 +715,7 @@ static void partie(void)
 int main(void)
 {
     langue_choisir(langue);
+    joy_install(joy_static_stddrv);
     ecran_init();
     son_init();
     titre();
