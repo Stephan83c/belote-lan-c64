@@ -22,7 +22,7 @@ MANCHE round score, LITIGE tie, GAGNANT winner, CIBLE target score, INACTIF idle
     LANCER                 start
     ENCH 1 / PASSE         on your TOUR, during bidding (suit 1 = hearts)
     COUP 14                on your TOUR, during play (card 14 = king of hearts)
-    REJOUER                host: at ETAT FIN MANCHE or FIN PARTIE
+    REJOUER                any player at ETAT FIN MANCHE (no need to wait for SUITE), host at FIN PARTIE
     RAZ                    host: wipes the game in progress (like RAZ on the console)
     TCHAT HELLO            any time after JOIN
     LEAVE                  leave
@@ -91,7 +91,11 @@ Other cases:
 - **Tie with the taker's belote (5.4, 5.5)**: the belote is scored at once, only its card points go
   to the reserve. A round with no winning team (a new tie) adds to the reserve.
 - **Idle players (4.3)**: only the human the table is waiting for can be idle (player on turn, host
-  at FIN MANCHE or FIN PARTIE). Never in ATTENTE. Any line received counts as activity.
+  at FIN PARTIE). Never in ATTENTE nor in FIN MANCHE, where the next round comes by itself. Any line received counts as activity.
+- **End-of-round pause**: `SUITE S` follows `ETAT FIN MANCHE`; the next round starts by itself
+  S seconds later (10 by default, `--delai-manche` when starting the server). A player who
+  reconnects during the pause gets the time left. With no human at the table, the pause waits for
+  the next one to arrive, who gets a full pause.
 - **Reconnection (4.3)**: the server recognises a player by name, without authentication. A
   newcomer avoids reserved seats as long as another one is free.
 - **Ghost connection (4.3)**: a JOIN with the name of a human still seated, from the same IP

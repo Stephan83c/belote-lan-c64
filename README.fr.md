@@ -19,14 +19,16 @@ retournée. Les règles sont intégrées (F8 les affiche sur le C64).
 
 - **Client C64** (`c64/`, C avec cc65) : l'écran est en mode couleur étendue (ECM), avec des cartes
   blanches aux coins arrondis (rang et symbole rouges ou noirs) sur un tapis de feutre vert ; chaque
-  carte jouée glisse jusqu'au tapis (deux sprites). Le réseau passe par la
+  carte jouée glisse jusqu'au tapis (deux sprites) et le pli ramassé, carte par carte, part vers
+  son gagnant ; les deux équipes ont leurs couleurs (bleus et rouges). Le réseau passe par la
   *Ultimate Command Interface* ($DF1C-$DF1F). Un écran titre en bitmap multicolore est généré par
   `tools/titre.py`. Musique sur l'écran titre et bruitages en partie (carte posée, pli, tchat,
   victoire, défaite), joués sur le SID ; ils sont écrits dans `tools/musique.py`. Quatre langues
   (français, anglais, allemand, espagnol), choisies par F1 sur l'écran de connexion ; les textes
   sont dans `tools/textes.py`.
 - **Serveur** (`server/`, Python 3.13 asyncio) : il applique les règles de la belote classique, gère
-  les bots (qui se souviennent des cartes jouées), la reconnexion, l'inactivité et le tchat.
+  les bots (qui se souviennent des cartes jouées), la reconnexion, l'inactivité et le tchat ; il
+  enchaîne seul les manches après une pause de 10 secondes.
 - **Protocole** : texte ASCII, une ligne par message terminée par LF (64 octets au maximum), sur le
   port TCP 6464. On peut jouer ou déboguer avec `nc` (voir [protocol.fr.md](protocol.fr.md)).
 - **Spécification complète** (règles, protocole, écran) : [SPEC.fr.md](SPEC.fr.md).
@@ -79,7 +81,7 @@ make deploy    # tests, compilation, envoi et lancement sur l'Ultimate
 ```
 
 Sur le C64 : une touche passe l'écran titre. Le champ SERVEUR contient déjà `SERVEUR_IP:SERVEUR_PORT`
-et reste modifiable (RETURN pour passer au nom). Entrez ensuite un nom de 5 caractères. Le premier
+et reste modifiable (RETURN pour passer au nom). Entrez ensuite un nom de 6 caractères. Le premier
 arrivé devient le chef. Pour les autres C64, il suffit d'envoyer le même programme
 (`make deploy ULTIMATE=<ip de l'autre C64>`) ou de le copier sur leur carte.
 
@@ -100,7 +102,7 @@ Pour que le serveur démarre tout seul avec le PC, installez-le en service syste
 | F2 | Chef : lancer la partie |
 | F3 | Tchat (30 caractères) |
 | F4 | Chef : effacer la partie en cours (confirmation par O, ou Y, J, S selon la langue) |
-| F5 | Chef : manche suivante, ou nouvelle partie |
+| F5 | Manche suivante sans attendre les 10 s (tout joueur), ou nouvelle partie (chef) |
 | F7 | Quitter la table (un bot prend la place) |
 | F8 | Règles du jeu |
 
@@ -110,7 +112,8 @@ Pour que le serveur démarre tout seul avec le PC, installez-le en service syste
 make                         # build/belote_lan.prg
 make test                    # tests du serveur (pytest)
 make vice                    # écran de connexion dans VICE (VICE n'émule pas la Command Interface)
-make vice-demo SCENARIO=1..6 # client avec un réseau simulé (6 : sons et cartes qui glissent)
+make vice-demo SCENARIO=1..7 # client avec un réseau simulé (6 : sons, cartes qui glissent, pli ramassé ;
+                             # 7 : fin de manche et compte à rebours)
 python3 tools/titre.py       # régénère l'écran titre (Pillow)
 python3 tools/musique.py     # régénère la musique et les bruitages
 python3 tools/textes.py      # régénère les textes des 4 langues (vérifie les largeurs)

@@ -1,4 +1,4 @@
-"""Serveur TCP : python -m belote [--host H] [--port 6464] [--delai-bot 1.0]"""
+"""Serveur TCP : python -m belote [--host H] [--port 6464] [--delai-bot 1.0] [--delai-manche 10]"""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import os
 import sys
 
 from .protocole import TROP_LONG, Cadreur
-from .table import DELAI_BOT, Table
+from .table import DELAI_BOT, DELAI_MANCHE, Table
 
 log = logging.getLogger("belote")
 
@@ -110,8 +110,8 @@ async def demarrer(table: Table, host: str | None, port: int,
     return await asyncio.start_server(rappel, host, port)
 
 
-async def principal(host: str, port: int, delai_bot: float) -> None:
-    table = Table(delai_bot=delai_bot)
+async def principal(host: str, port: int, delai_bot: float, delai_manche: float) -> None:
+    table = Table(delai_bot=delai_bot, delai_manche=delai_manche)
     serveur = await demarrer(table, host, port)
     inactivite = asyncio.create_task(table.boucle_inactivite())
     ecouter_console(table)
@@ -128,10 +128,12 @@ def main() -> None:
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=6464)
     parser.add_argument("--delai-bot", type=float, default=DELAI_BOT, help="secondes par action de bot")
+    parser.add_argument("--delai-manche", type=float, default=DELAI_MANCHE,
+                        help="secondes de pause en fin de manche avant la suivante")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     try:
-        asyncio.run(principal(args.host, args.port, args.delai_bot))
+        asyncio.run(principal(args.host, args.port, args.delai_bot, args.delai_manche))
     except KeyboardInterrupt:
         pass
 

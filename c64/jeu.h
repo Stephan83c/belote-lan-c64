@@ -14,7 +14,7 @@ enum { E_AUCUN, E_ATTENTE, E_LANCEE, E_COURS, E_FIN_MANCHE, E_FIN_PARTIE };
 #define D_SAISIE  0x40
 #define D_TOUT    0xFF
 
-#define NOM_MAX   5
+#define NOM_MAX   6
 #define TCHAT_MAX 30
 
 extern signed char moi;            /* place, -1 avant BIENVENUE */
@@ -41,7 +41,14 @@ extern unsigned char pli_fini;
 extern signed char glisse;
 /* Pour sa propre carte : emplacement qu'elle occupait dans la main ; -1 sinon. */
 extern signed char glisse_case;
+/* Gagnant du pli qui vient de finir, dont les cartes partent vers lui au prochain dessin ; -1 sinon. */
+extern signed char ramasse;
 extern unsigned char sale;         /* drapeaux D_* */
+/* Fin de manche : le serveur a annoncé la suite (SUITE S) ; secondes affichées. */
+extern unsigned char suite, suite_vue;
+extern unsigned char manche_nous;  /* 1 si notre équipe a gagné la dernière manche */
+/* Secondes avant la manche suivante annoncée (0 si l'heure est passée). */
+unsigned char suite_secondes(void);
 extern char erreur[41];            /* dernier ERR reçu (connexion) */
 
 /* Journal L12-L17 */
@@ -63,7 +70,11 @@ const char *motif_refus(const char *code);
 const char *nom_rang(unsigned char r);
 /* Position à l'écran (0 SUD, 1 EST, 2 NORD, 3 OUEST) d'une place absolue. */
 #define REL(p) ((unsigned char)(((p) - moi + 4) & 3))
-/* Couleur du nom d'une place dans le tchat */
+/* Couleur du nom d'une place, la même sur tous les écrans : équipe P0+P2 en
+ * bleus (bleu clair, bleu), équipe P1+P3 en rouges (rouge clair, rouge). */
 extern const unsigned char coul_place[4];
+#define COUL_PLACE(p) coul_place[p]
+/* Couleur claire d'une équipe (0 : P0+P2, 1 : P1+P3). */
+#define COUL_EQUIPE(e) coul_place[(e) & 1]
 
 #endif

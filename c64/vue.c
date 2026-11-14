@@ -4,6 +4,7 @@
 #include <string.h>
 #include "ecran.h"
 #include "jeu.h"
+#include "son.h"
 #include "textes.h"
 #include "ui.h"
 
@@ -13,8 +14,10 @@ char tchat_txt[TCHAT_MAX + 1];
 
 static char t[41];
 
-/* Positions par place relative : 0 SUD, 1 EST, 2 NORD, 3 OUEST */
-static const unsigned char nom_x[4] = { 17, 27, 17, 1 };
+/* Positions par place relative : 0 SUD, 1 EST, 2 NORD, 3 OUEST. Un nom occupe
+ * LARGEUR_NOM cases (6 lettres et « (CHEF) ») : OUEST de 1 à 13, EST de 27 à 39,
+ * le centre de la ligne 5 (14 à 26) reste libre ; SUD et NORD sur leur carte. */
+static const unsigned char nom_x[4] = { 18, 27, 18, 1 };
 static const unsigned char nom_y[4] = { 10, 5, 2, 5 };
 static const unsigned char carte_x[4] = { 18, 28, 18, 4 };
 static const unsigned char carte_y[4] = { 8, 6, 3, 6 };
@@ -65,6 +68,8 @@ static void barre_table(void)
         }
     } else if (etat == E_COURS && tour == moi) {
         s = atout < 0 ? T_B_ENCH : T_B_CARTE;
+    } else if (etat == E_FIN_MANCHE && suite) {
+        s = T_B_MANCHE;
     }
     barre(T(s));
 }
@@ -109,8 +114,7 @@ static void zone_table(void)
     }
     for (p = 0; p < 4; ++p) {
         r = REL(p);
-        t[0] = (etat == E_COURS && tour == (signed char)p) ? '*' : ' ';
-        strcpy(t + 1, nom_place(p));
+        strcpy(t, nom_place(p));
         if (humain[p]) {
             if ((etat == E_ATTENTE || etat == E_AUCUN) && chef == (signed char)p) {
                 strcat(t, " (");
@@ -118,7 +122,7 @@ static void zone_table(void)
                 strcat(t, ")");
             }
         }
-        ecrire_n(nom_x[r], nom_y[r], t, LARGEUR_NOM, coul_place[p], FOND_VERT);
+        ecrire_n(nom_x[r], nom_y[r], t, LARGEUR_NOM, COUL_PLACE(p), FOND_VERT);
         carte(carte_x[r], carte_y[r], pli[p]);
     }
     /* Centre : carte retournée (enchères) ou prise, avec son libellé. Les cases 14
@@ -150,21 +154,37 @@ static void image_suivante(void)
     }
 }
 
-/* Point k (sur GLISSE_ETAPES) entre a et b. Sans différence négative : cc65 la
- * multipliait mal par k et la carte montait en zigzag. */
-static int etape(int a, int b, unsigned char k)
+/* Point k (sur n) entre a et b. Sans différence négative : cc65 la multipliait
+ * mal par k et la carte montait en zigzag. */
+static int etape(int a, int b, unsigned char k, unsigned char n)
 {
     if (b >= a) {
-        return a + (unsigned)(b - a) * k / GLISSE_ETAPES;
+        return a + (unsigned)(b - a) * k / n;
     }
-    return a - (unsigned)(a - b) * k / GLISSE_ETAPES;
+    return a - (unsigned)(a - b) * k / n;
+}
+
+/* La carte 0 (déjà dessinée par sprite_carte) va de a à b en n images, en
+ * accélérant si accel. Chaque position est calculée avant d'attendre l'image. */
+static void deplacer(int ax, int ay, int bx, int by, unsigned char n, unsigned char accel)
+{
+    unsigned char k, e;
+    int x, y;
+
+    for (k = 1; k <= n; ++k) {
+        e = accel ? k * k / n : k;
+        x = etape(ax, bx, e, n);
+        y = etape(ay, by, e, n);
+        image_suivante();
+        sprite_position(x, y);
+    }
 }
 
 /* La carte jouée par la place p glisse de sa main jusqu'à sa place sur le tapis :
  * depuis la main pour soi, depuis le bord de l'écran pour les autres. */
 static void glisser(signed char p)
 {
-    unsigned char r = REL(p), i, k;
+    unsigned char r = REL(p), i;
     int sx, sy, dx = 24 + carte_x[r] * 8, dy = 50 + carte_y[r] * 8;
 
     switch (r) {
@@ -183,11 +203,72 @@ static void glisser(signed char p)
     default: sx = 0;   sy = dy; break;      /* OUEST : bord gauche */
     }
     sprite_carte(pli[p]);
-    for (k = 1; k <= GLISSE_ETAPES; ++k) {
-        image_suivante();
-        sprite_position(etape(sx, dx, k), etape(sy, dy, k));
-    }
+    deplacer(sx, sy, dx, dy, GLISSE_ETAPES, 0);
     image_suivante();
+}
+
+/* Pli ramassé : le pli complet reste un instant, puis les cartes rejoignent le
+ * centre une par une (la carte du gagnant en dernier, sur le dessus) et le paquet
+ * part vers le gagnant : vers son nom pour soi, hors de l'écran par son bord pour
+ * les autres. Une seule carte bouge à la fois (sprites 0 et 1, comme la carte
+ * qui glisse). Le bruitage PLI (tools/musique.py, un glissement) part avec le
+ * paquet. */
+#define PAUSE_PLI      30   /* 1/60 s où le pli complet reste visible */
+#define REUNIR_ETAPES   5   /* images (1/50 s) par carte */
+#define CENTRE_CX      18   /* case 18, 6 : libre pendant les plis */
+#define CENTRE_CY       6
+#define CENTRE_X       (24 + CENTRE_CX * 8)
+#define CENTRE_Y       (50 + CENTRE_CY * 8)
+
+/* Départ du paquet selon la place relative du gagnant : arrivée et images. */
+static const int sortie_x[4] = { CENTRE_X, 344, CENTRE_X, 0 };
+static const unsigned char sortie_y[4] = { 50 + 10 * 8, CENTRE_Y, 20, CENTRE_Y };
+static const unsigned char sortie_n[4] = { 8, 14, 14, 14 };
+
+void donner(signed char c, int sx, int sy, unsigned char x, unsigned char y)
+{
+    int dx = 24 + x * 8, dy = 50 + y * 8;
+
+    sprite_carte(c);
+    son_effet(FX_CARTE);
+    image_suivante();
+    sprite_position(sx, sy);
+    deplacer(sx, sy, dx, dy, GLISSE_ETAPES, 0);
+    carte(x, y, c);
+    image_suivante();
+    sprite_cacher();
+}
+
+static void ramasser(signed char g)
+{
+    unsigned char i, p, r, t0 = PEEK(0xA2);
+
+    while ((unsigned char)(PEEK(0xA2) - t0) < PAUSE_PLI) {
+    }
+    /* Dans l'ordre des places après le gagnant, lui en dernier. */
+    for (i = 1; i <= 4; ++i) {
+        p = (g + i) & 3;
+        r = REL(p);
+        sprite_carte(pli[p]);           /* sprite caché pendant qu'on le dessine */
+        image_suivante();
+        sprite_position(24 + carte_x[r] * 8, 50 + carte_y[r] * 8);
+        carte(carte_x[r], carte_y[r], -1);
+        deplacer(24 + carte_x[r] * 8, 50 + carte_y[r] * 8, CENTRE_X, CENTRE_Y,
+                 REUNIR_ETAPES, 0);
+        carte(CENTRE_CX, CENTRE_CY, pli[p]);    /* posée sur le paquet */
+        son_effet(FX_RAMASSE);
+        image_suivante();
+        sprite_cacher();
+    }
+    /* Le paquet (la carte du gagnant, déjà dans le sprite) part. */
+    r = REL(g);
+    sprite_position(CENTRE_X, CENTRE_Y);
+    carte(CENTRE_CX, CENTRE_CY, -1);
+    son_effet(FX_PLI);
+    deplacer(CENTRE_X, CENTRE_Y, sortie_x[r], sortie_y[r], sortie_n[r], 1);
+    image_suivante();
+    sprite_cacher();
+    pli[0] = pli[1] = pli[2] = pli[3] = -1;
 }
 
 static void zone_journal(void)
@@ -199,9 +280,9 @@ static void zone_journal(void)
         y = 12 + i;
         e = &journal[i];
         if (e->nom[0]) {
-            ecrire_n(0, y, e->nom, 5, e->coul_nom, FOND_VERT);
-            ecrire(5, y, ": ", BLANC, FOND_VERT);
-            ecrire_n(7, y, e->texte, 33, e->coul_texte, FOND_VERT);
+            ecrire_n(0, y, e->nom, 6, e->coul_nom, FOND_VERT);
+            ecrire(6, y, ": ", BLANC, FOND_VERT);
+            ecrire_n(8, y, e->texte, 32, e->coul_texte, FOND_VERT);
         } else {
             ecrire_n(0, y, e->texte, 40, e->coul_texte, FOND_VERT);
         }
@@ -213,9 +294,9 @@ static void zone_saisie(void)
     effacer(0, 18, 40);
     if (tchat) {
         ecrire(0, 18, T(T_V_VOUS), BLANC, FOND_VERT);
-        ecrire(5, 18, ": ", BLANC, FOND_VERT);
-        ecrire(7, 18, tchat_txt, BLANC, FOND_VERT);
-        curseur(7 + tchat_n, 18);
+        ecrire(6, 18, ": ", BLANC, FOND_VERT);
+        ecrire(8, 18, tchat_txt, BLANC, FOND_VERT);
+        curseur(8 + tchat_n, 18);
     }
 }
 
@@ -265,7 +346,11 @@ static void zone_encheres(void)
         ecrire(40 - strlen(T(k)), 19, T(k), BLANC, FOND_VERT);
     } else if (etat == E_COURS && atout >= 0 && tour == moi) {
         ecrire(0, 19, T(T_V_A_VOUS), JAUNE, FOND_VERT);
-    } else if (etat == E_FIN_MANCHE) {
+    } else if (etat == E_FIN_MANCHE && suite) {
+        suite_vue = suite_secondes();
+        sprintf(t, T(T_V_SUITE), T(manche_nous ? T_NOUS : T_EUX), suite_vue);
+        ecrire(0, 19, t, COUL_EQUIPE(manche_nous ? moi : moi + 1), FOND_VERT);
+    } else if (etat == E_FIN_MANCHE) {          /* serveur sans SUITE (v1.5) */
         ecrire(0, 19, T(suis_chef() ? T_V_FIN_CHEF : T_V_FIN_AUTRE), GRIS_CLAIR, FOND_VERT);
     }
 }
@@ -313,6 +398,14 @@ static void vue_table(void)
             zone_table();
         }
         glisse = -1;
+        if (ramasse >= 0) {
+            if (pli[0] >= 0 && pli[1] >= 0 && pli[2] >= 0 && pli[3] >= 0) {
+                ramasser(ramasse);
+            } else {
+                son_effet(FX_PLI);
+            }
+            ramasse = -1;
+        }
     }
     if (sale & D_JOURNAL) {
         zone_journal();
@@ -397,6 +490,10 @@ void dessiner(void)
     }
     if (v != V_TABLE) {
         glisse = -1;
+        if (ramasse >= 0) {
+            son_effet(FX_PLI);          /* pas d'animation hors de la table */
+            ramasse = -1;
+        }
     }
     switch (v) {
     case V_TABLE:  vue_table();  break;

@@ -29,6 +29,13 @@ v_onde: .res 3              ; forme d'onde sans gate
 v_arp1: .res 3
 v_arp2: .res 3
 v_arpc: .res 3              ; 0, 1, 2 : note jouée de l'arpège
+v_pwl:  .res 3              ; largeur d'impulsion (12 bits) qui varie
+v_pwh:  .res 3
+v_pws:  .res 3              ; pas de sa variation par image (signé ; 0 : fixe)
+v_vib:  .res 3              ; amplitude du vibrato (0 : sans)
+lfo:    .res 1              ; compteur d'images du vibrato
+vib_lo: .res 1              ; décalage de fréquence ajouté par frequence
+vib_hi: .res 1
 boucle: .res 1
 fx_actif: .res 1
 fx_file: .res 1             ; bruitage en attente + 1 (0 : aucun)
@@ -40,6 +47,8 @@ vx:     .res 1
 
         .segment "RODATA"
 decal:  .byte 0, 7, 14      ; registres de chaque voix
+PW_MIN  = $03               ; bornes de la largeur d'impulsion modulée (octet haut)
+PW_MAX  = $08
 
         .segment "CODE"
 
@@ -149,13 +158,25 @@ _son_musique:
         lda (ptr_c),y
         sta SID+3,x         ; largeur d'impulsion
         ldx vx
-@saute: lda tmp
-        clc
-        adc #3
-        tay
+@saute: ldy tmp
+        iny
+        iny
+        lda (ptr_c),y       ; largeur d'impulsion de départ
+        sta v_pwh,x
+        lda #0
+        sta v_pwl,x
+        iny
+        lda (ptr_c),y
+        sta v_pws,x
+        iny
+        lda (ptr_c),y
+        sta v_vib,x
+        iny
         inx
         cpx #3
-        bne @voix
+        beq @fini
+        jmp @voix
+@fini:
         cli
         rts
 
@@ -163,8 +184,10 @@ _son_musique:
 
 irq:
         cld
+        inc lfo
         ldx #0
 @v:     jsr voix
+        jsr module
         inx
         cpx #3
         bne @v
@@ -247,6 +270,76 @@ voix:
         jmp gate_bas        ; dernière image : gate baissé, la note suivante attaque
 @rts:   rts
 
+; Mouvement à l'intérieur de la note de la voix x : largeur d'impulsion qui va
+; et vient entre PW_MIN et PW_MAX (le son s'épaissit), et vibrato rapide qui
+; imite le battement des anches d'un accordéon musette (0, +1, +2, +1, 0, -1,
+; -2, -1 fois l'amplitude, une étape par image : 7,5 Hz).
+module_fin:
+        rts
+module: lda v_actif,x
+        beq module_fin
+        lda v_note,x
+        beq module_fin      ; silence
+        jsr libre           ; y = décalage des registres
+        bne module_fin
+        lda v_pws,x
+        beq @vib
+        clc
+        adc v_pwl,x
+        sta v_pwl,x
+        lda v_pws,x
+        and #$80
+        beq @pos
+        lda #$FF
+@pos:   adc v_pwh,x
+        sta v_pwh,x
+        lda v_pws,x
+        bmi @bas
+        lda v_pwh,x
+        cmp #PW_MAX
+        bcc @ecrit
+        bcs @inv
+@bas:   lda v_pwh,x
+        cmp #PW_MIN
+        bcs @ecrit
+@inv:   lda #0              ; demi-tour
+        sec
+        sbc v_pws,x
+        sta v_pws,x
+@ecrit: lda v_pwl,x
+        sta SID+2,y
+        lda v_pwh,x
+        sta SID+3,y
+@vib:   lda v_vib,x
+        beq @r
+        sta vib_lo
+        lda #0
+        sta vib_hi
+        lda lfo
+        and #3
+        beq @zero           ; étapes 0 et 4 : sans décalage
+        cmp #2
+        bne @signe
+        asl vib_lo          ; étapes 2 et 6 : double
+        rol vib_hi
+@signe: lda lfo
+        and #4
+        beq @appl
+        lda #0              ; étapes 4 à 7 : vers le bas
+        sec
+        sbc vib_lo
+        sta vib_lo
+        lda #0
+        sbc vib_hi
+        sta vib_hi
+        jmp @appl
+@zero:  sta vib_lo
+@appl:  jsr frequence
+        lda #0
+        sta vib_lo
+        sta vib_hi
+@r:     rts
+
 ; a += position du flux de la voix x
 avance: clc
         adc v_lo,x
@@ -289,8 +382,11 @@ frequence:
         sty ptr             ; ptr sert ici de registre temporaire
         ldy tmp
         lda son_freq_lo,y
+        clc
+        adc vib_lo          ; vibrato (0 hors de module)
         pha
         lda son_freq_hi,y
+        adc vib_hi
         ldy ptr
         sta SID+1,y
         pla

@@ -11,6 +11,7 @@
 #define FX_CARTE 0
 #define FX_PLI   1
 #define FX_TCHAT 2
+#define FX_RAMASSE 3
 
 /* Volume et branchement sur l'interruption du KERNAL, une fois au démarrage. */
 void son_init(void);

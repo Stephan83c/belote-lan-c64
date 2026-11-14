@@ -16,6 +16,9 @@ extern unsigned char tchat_n;
 unsigned char vue_courante(void);
 void dessiner(void);
 void vue_forcer(void);
+/* Distribue la carte c (sprite qui glisse depuis le point sx, sy, en pixels de
+ * sprite) jusqu'à la case x, y, où elle reste en texte. */
+void donner(signed char c, int sx, int sy, unsigned char x, unsigned char y);
 /* Écran titre, jusqu'à une touche. */
 void titre(void);
 

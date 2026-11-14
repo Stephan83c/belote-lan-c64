@@ -145,9 +145,11 @@ static unsigned char saisir(unsigned char y, char *buf, unsigned char max, unsig
     }
 }
 
+#define Y_MESSAGE 7
+
 static void message(const char *s)
 {
-    ecrire_n(0, 9, s, 40, JAUNE, FOND_VERT);
+    ecrire_n(0, Y_MESSAGE, s, 40, JAUNE, FOND_VERT);
 }
 
 /* BOT, BOT1... : noms donnés aux bots, refusés aux joueurs (le serveur aussi). */
@@ -194,20 +196,42 @@ static void ferme(void)
 }
 
 /* Libellés de l'écran de connexion dans la langue choisie ; en bas, les
- * langues dans la leur, celle en cours en jaune (F1 passe à la suivante). */
+ * langues dans la leur, celle en cours en jaune (F1 passe à la suivante), et la
+ * barre de touches comme en jeu. */
 static void textes_connexion(void)
 {
     unsigned char i, x = 0;
+    const char *s = T(T_C_INFO);
 
     ecrire_n(0, 3, T(T_C_SERVEUR), 8, BLANC, FOND_VERT);
     ecrire(8, 3, ":", BLANC, FOND_VERT);
     ecrire_n(0, 5, T(T_C_NOM), 8, BLANC, FOND_VERT);
     ecrire(8, 5, ":", BLANC, FOND_VERT);
-    ecrire_n(0, 7, T(T_C_VALIDER), 40, GRIS_CLAIR, FOND_VERT);
-    ecrire_n(0, 22, T(T_C_LANGUE), 39, GRIS_CLAIR, FOND_VERT);
+    effacer(0, 16, 40);
+    ecrire((40 - strlen(s)) / 2, 16, s, GRIS_CLAIR, FOND_VERT);
     for (i = 0; i < NB_LANGUES; ++i) {
-        ecrire(x, 24, textes[i][T_LANGUE], i == langue ? JAUNE : GRIS_FONCE, FOND_VERT);
+        ecrire(x, 22, textes[i][T_LANGUE], i == langue ? JAUNE : GRIS_FONCE, FOND_VERT);
         x += strlen(textes[i][T_LANGUE]) + 2;
+    }
+    ecrire_n(0, 24, T(T_B_CONNEXION), 39, GRIS_CLAIR, FOND_VERT);
+}
+
+/* L'éventail de l'écran titre en cartes de la table : valet de trèfle, as de
+ * pique, puis la belote (dame et roi de coeur), les cartes du bord plus bas. */
+static const signed char eventail[4] = { 2 * 8 + 4, 0 * 8 + 7, 1 * 8 + 5, 1 * 8 + 6 };
+
+static void cartes_connexion(unsigned char animer)
+{
+    unsigned char i, x, y;
+
+    for (i = 0; i < 4; ++i) {
+        x = 10 + i * 5;
+        y = (i == 0 || i == 3) ? 12 : 11;
+        if (animer) {
+            donner(eventail[i], 24 + 18 * 8, 20, x, y);   /* depuis le haut, comme une donne */
+        } else {
+            carte(x, y, eventail[i]);
+        }
     }
 }
 
@@ -217,13 +241,21 @@ static void connexion(void)
     unsigned char champ = 0, k;
     unsigned port, debut;
     char *dp;
+    static unsigned char deja;      /* donne déjà animée */
 
     ecran_effacer();
-    ecrire(0, 0, "BELOTE LAN C64  V" VERSION, BLANC, FOND_VERT);
+    ecrire(0, 0, "BELOTE LAN C64", BLANC, FOND_VERT);
+    ecrire(39 - sizeof(VERSION), 0, "V" VERSION, GRIS_CLAIR, FOND_VERT);   /* jusqu'à la case 38 */
     ligne_tirets(1);
+    ligne_tirets(20);
     textes_connexion();
     ecrire_n(9, 3, serveur, 31, BLANC, FOND_VERT);
     ecrire_n(9, 5, nom, 31, BLANC, FOND_VERT);
+    /* Serveur déjà rempli (le cas courant) : le curseur commence sur le nom. */
+    champ = serveur[0] ? 1 : 0;
+    /* La donne animée une fois, en arrivant de l'écran titre. */
+    cartes_connexion(!deja);
+    deja = 1;
     if (perdu) {
         message(T(T_M_PERDUE));
         perdu = 0;
@@ -234,7 +266,8 @@ static void connexion(void)
         if (k == K_F1) {
             langue_choisir(langue + 1);
             textes_connexion();
-            effacer(0, 9, 40);
+            cartes_connexion(0);            /* figures de la nouvelle langue */
+            effacer(0, Y_MESSAGE, 40);
             continue;
         }
         if (k == K_HAUT || k == K_BAS || (k == K_RETURN && champ == 0)) {
@@ -472,7 +505,10 @@ static unsigned char touche(void)
         }
         break;
     case K_F5:
-        if (suis_chef() && (etat == E_FIN_MANCHE || etat == E_FIN_PARTIE)) {
+        /* Fin de manche : tout joueur écourte la pause (serveur qui envoie SUITE) ;
+         * nouvelle partie : le chef seulement. */
+        if ((etat == E_FIN_MANCHE && (suite || suis_chef()))
+            || (etat == E_FIN_PARTIE && suis_chef())) {
             envoyer("REJOUER");
         }
         break;
@@ -531,6 +567,10 @@ static void partie(void)
         if (raz_conf && (etat == E_ATTENTE || chef != moi)) {
             raz_conf = 0;
             sale |= D_BARRE;
+        }
+        /* Compte à rebours de fin de manche, une fois par seconde. */
+        if (suite && etat == E_FIN_MANCHE && suite_secondes() != suite_vue) {
+            sale |= D_ENCH;
         }
         dessiner();
     }

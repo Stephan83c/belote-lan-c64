@@ -8,7 +8,7 @@ include config.mk
 # Client C64 (cc65). Adresse pré-remplie dans le champ SERVEUR (SPEC 2.1).
 SERVEUR_DEFAUT := $(SERVEUR_IP):$(SERVEUR_PORT)
 # Version affichée sur l'écran de connexion (celle de la release GitHub).
-VERSION := 1.5
+VERSION := 1.6
 # Langue au démarrage (F1 la change sur l'écran de connexion) : 0 FR, 1 EN, 2 DE, 3 ES.
 LANGUE ?= 0
 PRG := build/belote_lan.prg
@@ -17,7 +17,7 @@ SOURCES := $(sort $(wildcard c64/*.c c64/*.s) c64/titre_img.c c64/son_donnees.s 
 ENTETES := $(sort $(wildcard c64/*.h) c64/textes.h)
 # Le programme s'arrête sous $C000 : écran, sprites et caractères vivent en $C000-$CFFF,
 # l'image titre en $E000 (voir CLAUDE.md, mémoire du client).
-CFLAGS := -t c64 -O -Or -DSERVEUR_DEFAUT='"$(SERVEUR_DEFAUT)"' -DVERSION='"$(VERSION)"' -DLANGUE_DEFAUT=$(LANGUE) -Wl -D,__HIMEM__=0xC000
+CFLAGS := -t c64 -O -Or -DSERVEUR_DEFAUT='"$(SERVEUR_DEFAUT)"' -DVERSION='"$(VERSION)"' -DLANGUE_DEFAUT=$(LANGUE) -Wl -D,__HIMEM__=0xC000,-D,__STACKSIZE__=0x600
 
 .PHONY: all deploy vice demo vice-demo test server clean
 
@@ -62,7 +62,7 @@ DEMO := build/demo$(SCENARIO).prg
 
 demo: $(SOURCES) $(ENTETES) c64/vice/faux_uci.c Makefile
 	@mkdir -p build
-	cl65 -t c64 -O -Or -Ic64 -DSCENARIO=$(SCENARIO) -DLANGUE_DEFAUT=$(LANGUE) -Wl -D,__HIMEM__=0xC000 \
+	cl65 -t c64 -O -Or -Ic64 -DSCENARIO=$(SCENARIO) -DLANGUE_DEFAUT=$(LANGUE) -Wl -D,__HIMEM__=0xC000,-D,__STACKSIZE__=0x600 \
 	  -o $(DEMO) $(filter-out c64/uci.c,$(SOURCES)) c64/vice/faux_uci.c
 	@rm -f c64/*.o c64/vice/*.o
 

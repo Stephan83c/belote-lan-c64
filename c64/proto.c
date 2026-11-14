@@ -2,6 +2,7 @@
 #include "ascii.h"
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 #include "ecran.h"
 #include "jeu.h"
 #include "son.h"
@@ -24,12 +25,15 @@ signed char pli[4];
 unsigned char pli_fini;
 signed char glisse = -1;
 signed char glisse_case = -1;
+signed char ramasse = -1;
+unsigned char suite, suite_vue, manche_nous;
+static clock_t suite_fin;
 unsigned char sale;
 char erreur[41];
 struct entree journal[JOURNAL_N];
 
 /* Équipe P0+P2 en bleus, P1+P3 en rouges : mêmes couleurs sur tous les écrans. */
-const unsigned char coul_place[4] = { CYAN, ORANGE, BLEU, ROUGE };
+const unsigned char coul_place[4] = { BLEU_CLAIR, ROUGE_CLAIR, BLEU, ROUGE };
 /* Nom d'un bot : sa place réelle, le même sur tous les écrans. */
 const char *const noms_bots[4] = { "BOT1", "BOT2", "BOT3", "BOT4" };
 
@@ -56,6 +60,16 @@ static signed char place(void)
 {
     int p = nombre();
     return (p >= 0 && p <= 3) ? (signed char)p : -1;
+}
+
+/* Secondes avant la manche suivante annoncée par SUITE, arrondies au-dessus. */
+unsigned char suite_secondes(void)
+{
+    clock_t t = clock();
+    if (t >= suite_fin) {
+        return 0;
+    }
+    return (unsigned char)((suite_fin - t + CLOCKS_PER_SEC - 1) / CLOCKS_PER_SEC);
 }
 
 /* Rang d'une carte : 7 8 9 10, figures de la langue (V D R, J Q K...), A. */
@@ -93,6 +107,7 @@ static void manche_raz(void)
     tour_ench = 1;
     pli[0] = pli[1] = pli[2] = pli[3] = -1;
     pli_fini = 0;
+    ramasse = -1;
 }
 
 void jeu_raz(void)
@@ -126,9 +141,9 @@ static void journal_ajouter(const char *nom, unsigned char coul_nom,
     strncpy(e->nom, nom, NOM_MAX);
     e->nom[NOM_MAX] = 0;
     e->coul_nom = coul_nom;
-    /* 33 caractères après « NOM  : », 40 pour un message serveur */
+    /* 32 caractères après « NOM6  : », 40 pour un message serveur */
     strncpy(e->texte, texte, 39);
-    e->texte[nom[0] ? 33 : 39] = 0;
+    e->texte[nom[0] ? 32 : 39] = 0;
     e->coul_texte = coul_texte;
     sale |= D_JOURNAL;
 }
@@ -157,7 +172,7 @@ static void journal_place(signed char p, const char *texte)
     if (p < 0) {
         return;
     }
-    journal_ajouter(nom_place(p), coul_place[p], texte, BLANC);
+    journal_ajouter(nom_place(p), COUL_PLACE(p), texte, BLANC);
 }
 
 static char tampon[41];
@@ -267,7 +282,9 @@ void traiter_ligne(char *ligne)
     } else if (!strcmp(mot, "PLI")) {
         p = place();
         pli_fini = 1;
-        son_effet(FX_PLI);
+        /* Le bruitage part avec les cartes, au dessin (vue.c, ramasser). */
+        ramasse = p;
+        sale |= D_TABLE;
         journal_place(p, T(T_J_PLI));
     } else if (!strcmp(mot, "TCHAT")) {
         /* TCHAT NOM TEXTE */
@@ -280,7 +297,7 @@ void traiter_ligne(char *ligne)
         }
         for (i = 0; i < 4; ++i) {
             if (humain[i] && !strcmp(noms[i], reste)) {
-                coul = coul_place[i];
+                coul = COUL_PLACE(i);
             }
         }
         journal_ajouter(reste, coul, texte, BLANC);
@@ -362,6 +379,7 @@ void traiter_ligne(char *ligne)
         chef = (n >= 0 && n <= 3) ? (signed char)n : -1;
         sale |= D_TABLE | D_ENCH | D_BARRE;
     } else if (!strcmp(mot, "ETAT")) {
+        suite = 0;
         if (!strcmp(reste, "ATTENTE")) {
             etat = E_ATTENTE;
             manche_raz();
@@ -400,14 +418,15 @@ void traiter_ligne(char *ligne)
         donneur = place();
         sale |= D_TABLE;
     } else if (!strcmp(mot, "MANCHE")) {
-        n = nombre();
-        i = (unsigned char)(moi & 1);
         /* MANCHE E0 E1 : on affiche NOUS puis EUX */
-        if (i) {
-            int e1 = nombre();
-            sprintf(tampon, T(T_J_MANCHE), e1, n);
-        } else {
-            sprintf(tampon, T(T_J_MANCHE), n, nombre());
+        {
+            int e0 = nombre(), e1 = nombre(), nous = e0, eux = e1;
+            if (moi & 1) {
+                nous = e1;
+                eux = e0;
+            }
+            manche_nous = nous > eux;
+            sprintf(tampon, T(T_J_MANCHE), nous, eux);
         }
         journal_info(tampon);
     } else if (!strcmp(mot, "CAPOT")) {
@@ -422,6 +441,15 @@ void traiter_ligne(char *ligne)
             son_musique(gagnant == (moi & 1) ? AIR_VICTOIRE : AIR_DEFAITE);
         }
         sale = D_TOUT;
+    } else if (!strcmp(mot, "SUITE")) {
+        /* SUITE S : la manche suivante démarre seule dans S secondes. */
+        n = nombre();
+        if (n > 0) {
+            suite_fin = clock() + (clock_t)n * CLOCKS_PER_SEC;
+            suite = 1;
+            suite_vue = 0xFF;
+            sale |= D_ENCH | D_BARRE;
+        }
     } else if (!strcmp(mot, "REDONNE")) {
         journal_info(T(T_J_REDONNE));
     } else if (!strcmp(mot, "BIENVENUE")) {

@@ -6,7 +6,9 @@ Le lecteur (c64/son.s) tourne dans l'interruption du KERNAL, 60 fois par seconde
 toutes les durées sont en 1/60 s. Compositions originales.
 
 Format d'un air : 1 octet (1 = en boucle), puis pour chaque voix 1-3 :
-adresse du flux (0 = voix muette), forme d'onde, AD, SR, largeur d'impulsion (octet haut).
+adresse du flux (0 = voix muette), forme d'onde, AD, SR, largeur d'impulsion (octet haut),
+pas de sa modulation par image (signé, 0 = fixe ; elle va et vient entre $300 et $800),
+amplitude du vibrato en unités du registre de fréquence (0 = sans).
 Flux d'une voix : note durée (note 0 = silence), $FD a b = arpège de la note
 avec +a et +b demi-tons (0 0 : sans arpège), $FF = fin.
 
@@ -83,11 +85,11 @@ MELODIE = [
 ]
 # accord : (basse fondamentale, basse alternée, note de l'accord, arpège)
 ACCORDS = {
-    "C":  ("C3", "G2", "C4", (4, 7)),
-    "G7": ("G2", "D3", "G3", (4, 10)),
-    "F":  ("F2", "C3", "F3", (4, 7)),
-    "A7": ("A2", "E3", "A3", (4, 10)),
-    "Dm": ("D3", "A2", "D4", (3, 7)),
+    "C":  ("C2", "G1", "C4", (4, 7)),
+    "G7": ("G1", "D2", "G3", (4, 10)),
+    "F":  ("F1", "C2", "F3", (4, 7)),
+    "A7": ("A1", "E2", "A3", (4, 10)),
+    "Dm": ("D2", "A1", "D4", (3, 7)),
 }
 
 
@@ -117,21 +119,24 @@ DEFAITE = (
     [("A3", 15), ("G#3", 15), ("G3", 15), ("ARP", 3, 7), ("A2", 54), ("ARP", 0, 0)],
 )
 
-# Airs : nom, boucle, voix (événements, onde, AD, SR, impulsion haute) ou None
+# Airs : nom, boucle, voix (événements, onde, AD, SR, impulsion haute, pas de la
+# modulation d'impulsion, vibrato) ou None
 AIRS = [
     ("TITRE", 1, [
-        (valse()[0], CARRE, 0x26, 0xA4, 0x04),   # mélodie, carré étroit (accordéon)
-        (valse()[1], TRI, 0x09, 0x00, 0x08),     # basse pincée
-        (valse()[2], CARRE, 0x04, 0x00, 0x02),   # accords secs
+        # mélodie : accordéon musette, impulsion qui respire et anches qui battent
+        (valse()[0], CARRE, 0x26, 0xB5, 0x04, 0x0A, 16),
+        # basse grave en carré (le triangle porte mal dans le grave), un peu tenue
+        (valse()[1], CARRE, 0x09, 0x64, 0x06, 0, 0),
+        (valse()[2], CARRE, 0x05, 0x00, 0x05, 0x18, 0),    # accords, impulsion qui tourne
     ]),
     ("VICTOIRE", 0, [
-        (VICTOIRE[0], CARRE, 0x08, 0xC6, 0x06),
-        (VICTOIRE[1], TRI, 0x0A, 0xA6, 0x08),
+        (VICTOIRE[0], CARRE, 0x08, 0xC6, 0x06, 0x0C, 14),
+        (VICTOIRE[1], TRI, 0x0A, 0xA6, 0x08, 0, 0),
         None,
     ]),
     ("DEFAITE", 0, [
-        (DEFAITE[0], CARRE, 0x2A, 0x96, 0x03),
-        (DEFAITE[1], TRI, 0x0A, 0x96, 0x08),
+        (DEFAITE[0], CARRE, 0x2A, 0x96, 0x03, 0x08, 12),
+        (DEFAITE[1], TRI, 0x0A, 0x96, 0x08, 0, 0),
         None,
     ]),
 ]
@@ -144,7 +149,7 @@ def images(onde, freqs, gate_images):
     return [(onde | (GATE if i < gate_images else 0), f) for i, f in enumerate(freqs)]
 
 
-EFFETS = [
+EFFETS = [  # dans l'ordre des numéros FX_ de c64/son.h
     # carte posée : claquement de bruit qui descend
     ("CARTE", 0x00, 0xA0, images(BRUIT, [0x5000, 0x3800, 0x2400, 0x1800, 0x1000], 3)),
     # pli ramassé : glissement de bruit, attaque douce et longue retombée
@@ -154,6 +159,9 @@ EFFETS = [
     # tchat : deux notes claires (triangle)
     ("TCHAT", 0x09, 0x00,
      images(TRI, [frequence(note("E6"))] * 5 + [frequence(note("B6"))] * 12, 16)),
+    # carte réunie au paquet (pli ramassé) : toc grave et feutré (triangle vers 150 Hz qui
+    # descend, retombée rapide), bien plus discret que le claquement de la carte posée
+    ("RAMASSE", 0x01, 0x00, images(TRI, [0x0A00, 0x0880, 0x0740, 0x0640], 1)),
 ]
 
 
@@ -187,11 +195,12 @@ def main() -> None:
         lignes += ["", f"air_{nom}:", f"        .byte {boucle}"]
         for i, v in enumerate(voix):
             if v is None:
-                lignes.append("        .word 0\n        .byte 0,0,0,0")
+                lignes.append("        .word 0\n        .byte 0,0,0,0,0,0")
             else:
-                _, onde, ad, sr, pw = v
+                _, onde, ad, sr, pw, pas, vib = v
                 lignes.append(f"        .word flux_{nom}_{i}")
-                lignes.append(f"        .byte ${onde:02X},${ad:02X},${sr:02X},${pw:02X}")
+                lignes.append(f"        .byte ${onde:02X},${ad:02X},${sr:02X},${pw:02X},"
+                              f"${pas & 0xFF:02X},{vib}")
         for i, v in enumerate(voix):
             if v is not None:
                 lignes.append(f"flux_{nom}_{i}:")

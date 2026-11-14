@@ -16,7 +16,7 @@ que la spec laisse ouvert.
     LANCER                 démarrer
     ENCH 1 / PASSE         à son TOUR, pendant les enchères (couleur 1 = coeur)
     COUP 14                à son TOUR, pendant le jeu (carte 14 = roi de coeur)
-    REJOUER                chef : à ETAT FIN MANCHE ou FIN PARTIE
+    REJOUER                tout joueur à ETAT FIN MANCHE (sans attendre SUITE), chef à FIN PARTIE
     RAZ                    chef : efface la partie en cours (comme RAZ en console)
     TCHAT BONJOUR          à tout moment après JOIN
     LEAVE                  quitter
@@ -87,8 +87,12 @@ Autres cas :
   points de cartes vont en réserve. Une manche sans équipe gagnante (nouveau litige) cumule la
   réserve.
 - **Inactivité (4.3)** : seul l'humain dont la table attend une action est jugé inactif (joueur
-  à son tour, chef en FIN MANCHE ou FIN PARTIE). Jamais en ATTENTE. Toute ligne reçue compte
+  à son tour, chef en FIN PARTIE). Jamais en ATTENTE ni en FIN MANCHE, où la suite vient seule. Toute ligne reçue compte
   comme activité.
+- **Pause de fin de manche** : `SUITE S` suit `ETAT FIN MANCHE` ; la manche suivante démarre
+  seule S secondes plus tard (10 par défaut, `--delai-manche` au lancement du serveur). Un joueur
+  qui se reconnecte pendant la pause reçoit le temps restant. Sans humain à la table, la pause
+  attend le prochain arrivé, qui reçoit une pause entière.
 - **Reconnexion (4.3)** : le serveur reconnaît un joueur à son nom, sans authentification. Un
   nouveau venu évite les places réservées tant qu'il en reste une autre.
 - **Connexion fantôme (4.3)** : un JOIN au nom d'un humain encore assis, venant de la même

@@ -72,7 +72,7 @@ def test_premiere_connexion_sequence_de_la_spec():
 @dans_boucle
 def test_nom_invalide_refuse():
     t = table_ne_jouant_pas()
-    for ligne in ("JOIN", "JOIN TROPLONG", "JOIN A-B", "JOIN A B"):
+    for ligne in ("JOIN", "JOIN TROPLON", "JOIN TROPLONG", "JOIN A-B", "JOIN A B"):
         c = FauxClient()
         t.recevoir(c, ligne)
         assert c.lignes == ["ERR NOM"]
@@ -112,6 +112,13 @@ def test_noms_de_bots_refuses():
     t.recevoir(c, "JOIN BOTTE")
     assert "BIENVENUE BOTTE 0" in c.lignes
     assert "BIENVENUE BOB 1" in rejoindre(t, "BOB").lignes
+
+
+@dans_boucle
+def test_nom_de_six_caracteres_et_doublon():
+    t = table_ne_jouant_pas()
+    assert "BIENVENUE STEPHA 0" in rejoindre(t, "STEPHA").lignes
+    assert "BIENVENUE STEPH2 1" in rejoindre(t, "STEPHA").lignes
 
 
 @dans_boucle
@@ -419,7 +426,7 @@ def test_fin_de_manche_messages_dans_l_ordre():
     t.recevoir(a, "LANCER")
     a.vider()
     fin_manche(t, lambda r: compter_manche(0, (90, 72), (5, 3), None, r))
-    assert a.lignes == ["MANCHE 90 72", "SCORE 90 72", "ETAT FIN MANCHE"]
+    assert a.lignes == ["MANCHE 90 72", "SCORE 90 72", "ETAT FIN MANCHE", "SUITE 10"]
     assert t.etat == FIN_MANCHE
 
 
@@ -440,7 +447,7 @@ def test_litige_puis_reserve_attribuee_la_manche_suivante():
     t.recevoir(a, "LANCER")
     a.vider()
     fin_manche(t, lambda r: compter_manche(0, (81, 81), (4, 4), None, r))
-    assert a.lignes == ["LITIGE 81", "MANCHE 0 81", "SCORE 0 81", "ETAT FIN MANCHE"]
+    assert a.lignes == ["LITIGE 81", "MANCHE 0 81", "SCORE 0 81", "ETAT FIN MANCHE", "SUITE 10"]
     assert t.reserve == 81
     a.vider()
     fin_manche(t, lambda r: compter_manche(0, (90, 72), (5, 3), None, r))
@@ -470,6 +477,95 @@ def test_rejouer_manche_suivante_score_conserve_donneur_tourne():
     t.recevoir(a, "REJOUER")
     assert a.lignes[:2] == ["ETAT EN COURS", "DONNEUR 1"]
     assert t.scores == [90, 72]
+
+
+def test_manche_suivante_seule_apres_la_pause():
+    async def corps():
+        t = Table(rng=random.Random(1), delai_bot=3600, delai_manche=0.05)
+        a = rejoindre(t, "A")
+        t.recevoir(a, "LANCER")
+        fin_manche(t, lambda r: compter_manche(0, (90, 72), (5, 3), None, r))
+        assert a.lignes[-1] == "SUITE 1"
+        await asyncio.sleep(0.02)
+        assert t.etat == FIN_MANCHE
+        a.vider()
+        await asyncio.sleep(0.06)
+        assert t.etat == EN_COURS
+        assert a.lignes[:2] == ["ETAT EN COURS", "DONNEUR 1"]
+        assert t.scores == [90, 72]
+    asyncio.run(corps())
+
+
+def test_rejouer_ecourte_la_pause_sans_seconde_donne():
+    async def corps():
+        t = Table(rng=random.Random(1), delai_bot=3600, delai_manche=0.05)
+        a = rejoindre(t, "A")
+        b = rejoindre(t, "B")
+        t.recevoir(a, "LANCER")
+        fin_manche(t, lambda r: compter_manche(0, (90, 72), (5, 3), None, r))
+        a.vider()
+        t.recevoir(b, "REJOUER")  # pas le chef : permis en fin de manche
+        assert a.lignes[:2] == ["ETAT EN COURS", "DONNEUR 1"]
+        donne = t.donne
+        await asyncio.sleep(0.08)  # le minuteur annulé ne redonne pas
+        assert t.donne is donne and t.donneur == 1
+    asyncio.run(corps())
+
+
+def test_raz_annule_la_pause():
+    async def corps():
+        t = Table(rng=random.Random(1), delai_bot=3600, delai_manche=0.05)
+        a = rejoindre(t, "A")
+        t.recevoir(a, "LANCER")
+        fin_manche(t, lambda r: compter_manche(0, (90, 72), (5, 3), None, r))
+        t.recevoir(a, "RAZ")
+        await asyncio.sleep(0.08)
+        assert t.etat == ATTENTE
+    asyncio.run(corps())
+
+
+def test_sans_humain_la_pause_attend_le_prochain_arrive():
+    async def corps():
+        t = Table(rng=random.Random(1), delai_bot=3600, delai_manche=0.05)
+        a = rejoindre(t, "A")
+        t.recevoir(a, "LANCER")
+        fin_manche(t, lambda r: compter_manche(0, (90, 72), (5, 3), None, r))
+        t.deconnexion(a)
+        await asyncio.sleep(0.08)
+        assert t.etat == FIN_MANCHE
+        retour = rejoindre(t, "A")
+        assert "ETAT FIN MANCHE" in retour.lignes
+        assert retour.dernier("SUITE") == "SUITE 1"
+        await asyncio.sleep(0.08)
+        assert t.etat == EN_COURS
+    asyncio.run(corps())
+
+
+@dans_boucle
+def test_reconnexion_en_fin_de_manche_renvoie_le_temps_restant():
+    t = table_ne_jouant_pas()
+    a = rejoindre(t, "A")
+    b = rejoindre(t, "B")
+    t.recevoir(a, "LANCER")
+    fin_manche(t, lambda r: compter_manche(0, (90, 72), (5, 3), None, r))
+    t.deconnexion(b)
+    retour = rejoindre(t, "B")
+    assert retour.lignes.index("ETAT FIN MANCHE") < retour.lignes.index("SUITE 10")
+
+
+@dans_boucle
+def test_nouvelle_partie_reste_au_chef():
+    t = table_ne_jouant_pas()
+    a = rejoindre(t, "A")
+    b = rejoindre(t, "B")
+    t.recevoir(a, "PARAM CIBLE 500")
+    t.recevoir(a, "LANCER")
+    t.scores = [450, 100]
+    fin_manche(t, lambda r: compter_manche(0, (90, 72), (5, 3), None, r))
+    b.vider()
+    t.recevoir(b, "REJOUER")
+    assert b.lignes == ["ERR CHEF SEUL"]
+    assert t.etat == FIN_PARTIE
 
 
 @dans_boucle
@@ -698,12 +794,28 @@ def test_tchat_compte_comme_activite():
 
 
 @dans_boucle
-def test_chef_inactif_en_fin_de_manche_passe_la_main():
+def test_personne_inactif_en_fin_de_manche():
+    # La manche suivante vient seule : le chef n'est plus attendu.
     t = table_ne_jouant_pas()
     a = rejoindre(t, "A")
     b = rejoindre(t, "B")
     t.recevoir(a, "LANCER")
     fin_manche(t, lambda r: compter_manche(0, (90, 72), (5, 3), None, r))
+    t.verifier_inactivite(t._attendu_depuis + 180)
+    assert not a.ferme and not b.ferme
+    assert t.chef == 0
+
+
+@dans_boucle
+def test_chef_inactif_en_fin_de_partie_passe_la_main():
+    t = table_ne_jouant_pas()
+    a = rejoindre(t, "A")
+    b = rejoindre(t, "B")
+    t.recevoir(a, "PARAM CIBLE 500")
+    t.recevoir(a, "LANCER")
+    t.scores = [450, 100]
+    fin_manche(t, lambda r: compter_manche(0, (90, 72), (5, 3), None, r))
+    assert t.etat == FIN_PARTIE
     t.verifier_inactivite(t._attendu_depuis + 180)
     assert a.ferme and not b.ferme
     assert t.chef == 1

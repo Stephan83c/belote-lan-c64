@@ -2,7 +2,7 @@
 
 Toute la logique est synchrone et s'exécute dans la boucle asyncio : chaque
 message reçu est traité entièrement avant le suivant. Seuls les délais des bots
-passent par `call_later`.
+et la pause de fin de manche passent par `call_later`.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ FIN_MANCHE = "FIN MANCHE"
 FIN_PARTIE = "FIN PARTIE"
 
 NOM_BOT = "BOT"
-NOM_VALIDE = re.compile(r"[A-Z0-9]{1,5}")
+NOM_VALIDE = re.compile(r"[A-Z0-9]{1,6}")
 # Les clients nomment les bots BOT1 à BOT4 : ces noms (et BOT) sont refusés aux humains.
 NOM_RESERVE = re.compile(r"BOT[0-9]*")
 TCHAT_MAX = 30
@@ -35,6 +35,9 @@ TCHAT_FENETRE = 10.0
 DELAI_BOT = 1.0
 # Après une prise, le premier bot attend plus longtemps : le temps de voir la carte prise.
 FACTEUR_PAUSE_PRISE = 3
+# Pause de fin de manche (SUITE) : le temps de lire le résultat, puis la manche
+# suivante démarre seule ; REJOUER (F5, tout joueur) l'écourte.
+DELAI_MANCHE = 10.0
 
 
 class Client(Protocol):
@@ -59,9 +62,11 @@ def _entier(texte: str) -> int | None:
 
 
 class Table:
-    def __init__(self, rng: random.Random | None = None, delai_bot: float = DELAI_BOT):
+    def __init__(self, rng: random.Random | None = None, delai_bot: float = DELAI_BOT,
+                 delai_manche: float = DELAI_MANCHE):
         self.rng = rng or random.Random()
         self.delai_bot = delai_bot
+        self.delai_manche = delai_manche
         self._pause_prise = False
         self.sieges = [Siege() for _ in range(4)]
         self.chef = -1
@@ -73,6 +78,8 @@ class Table:
         self.donneur = 0
         self.donne: Donne | None = None
         self._minuteur_bot: asyncio.TimerHandle | None = None
+        self._minuteur_manche: asyncio.TimerHandle | None = None
+        self._fin_pause = 0.0
         self._attendu_depuis = time.monotonic()
 
     # ---- Diffusion -------------------------------------------------------
@@ -277,6 +284,10 @@ class Table:
             return
         client.envoyer(f"SCORE {self.scores[0]} {self.scores[1]}")
         client.envoyer(f"DONNEUR {self.donneur}")
+        if self.etat == FIN_MANCHE:
+            if self._minuteur_manche is None:
+                self._planifier_manche()
+            client.envoyer(f"SUITE {self._suite_restante()}")
         if self.etat == FIN_PARTIE:
             # Sinon l'écran de fin d'un joueur revenu n'affiche pas le vainqueur.
             gagnante = equipe_gagnante(self.scores, self.cible)
@@ -355,11 +366,12 @@ class Table:
             client.envoyer("ERR PARAM")
 
     def _cmd_rejouer(self, client: Client, place: int) -> None:
-        if place != self.chef:
+        # En fin de manche, tout joueur peut écourter la pause ; une nouvelle
+        # partie reste l'affaire du chef.
+        if self.etat == FIN_MANCHE:
+            self._manche_suivante()
+        elif place != self.chef:
             client.envoyer("ERR CHEF SEUL")
-        elif self.etat == FIN_MANCHE:
-            self.donneur = (self.donneur + 1) % 4
-            self._nouvelle_donne()
         elif self.etat == FIN_PARTIE:
             self.donneur = (self.donneur + 1) % 4
             self._demarrer_partie()
@@ -376,6 +388,7 @@ class Table:
         """
         if self.etat == ATTENTE:
             return False
+        self._annuler_manche()
         self.etat = ATTENTE
         self.donne = None
         self.scores = [0, 0]
@@ -399,6 +412,7 @@ class Table:
         self._nouvelle_donne()
 
     def _nouvelle_donne(self) -> None:
+        self._annuler_manche()
         self.donne = Donne(self.donneur, self.rng)
         self.etat = EN_COURS
         self._diffuser(f"ETAT {EN_COURS}")
@@ -457,6 +471,38 @@ class Table:
             self.etat = FIN_PARTIE
             self._diffuser(f"GAGNANT {gagnante}")
         self._diffuser(f"ETAT {self.etat}")
+        if self.etat == FIN_MANCHE:
+            self._planifier_manche()
+            self._diffuser(f"SUITE {self._suite_restante()}")
+
+    # ---- Pause de fin de manche ------------------------------------------
+
+    def _planifier_manche(self) -> None:
+        self._annuler_manche()
+        boucle = asyncio.get_running_loop()
+        self._fin_pause = boucle.time() + self.delai_manche
+        self._minuteur_manche = boucle.call_later(self.delai_manche, self._fin_de_pause)
+
+    def _annuler_manche(self) -> None:
+        if self._minuteur_manche is not None:
+            self._minuteur_manche.cancel()
+            self._minuteur_manche = None
+
+    def _suite_restante(self) -> int:
+        """Secondes avant la manche suivante, arrondies au-dessus (au moins 1)."""
+        reste = self._fin_pause - asyncio.get_running_loop().time()
+        return max(1, -int(-reste // 1))
+
+    def _fin_de_pause(self) -> None:
+        self._minuteur_manche = None
+        # Sans humain à la table, la partie reste en suspens (4.2) : le prochain
+        # arrivé relance la pause.
+        if self.etat == FIN_MANCHE and self._humains():
+            self._manche_suivante()
+
+    def _manche_suivante(self) -> None:
+        self.donneur = (self.donneur + 1) % 4
+        self._nouvelle_donne()
 
     # ---- Bots et inactivité ----------------------------------------------
 
@@ -493,7 +539,8 @@ class Table:
     def _place_attendue(self) -> int | None:
         if self.etat == EN_COURS:
             return self.donne.joueur
-        if self.etat in (FIN_MANCHE, FIN_PARTIE):
+        # En fin de manche, la suite vient seule : personne n'est attendu.
+        if self.etat == FIN_PARTIE:
             return self.chef
         return None
 
@@ -501,7 +548,7 @@ class Table:
         """Remplace par un bot l'humain attendu depuis trop longtemps (4.3).
 
         Seul celui dont la table attend une action peut être jugé inactif : le
-        joueur à son tour, ou le chef en fin de manche ou de partie.
+        joueur à son tour, ou le chef en fin de partie.
         """
         place = self._place_attendue()
         if place is None or place < 0:

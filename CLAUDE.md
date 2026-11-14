@@ -31,18 +31,19 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
 - `make server` : lance le serveur Python
 - `make vice` : le vrai client dans VICE (écran de connexion seulement : VICE n'émule pas
   la Command Interface)
-- `make vice-demo SCENARIO=1..6` : client avec réseau simulé (c64/vice/faux_uci.c) ;
+- `make vice-demo SCENARIO=1..7` : client avec réseau simulé (c64/vice/faux_uci.c) ;
   `make demo` compile sans lancer VICE
 - `python3 tools/musique.py` : régénère la musique et les bruitages (c64/son_donnees.s, versionné ;
   lecteur SID dans c64/son.s, branché sur l'IRQ du KERNAL, page zéro $FB-$FE)
 - `python3 tools/textes.py` : régénère les textes du client en 4 langues (c64/textes.c et .h,
   versionnés ; refuse un texte trop large ou un caractère hors des 64 de l'ECM)
-- `python3 tools/titre.py [apercu.png]` : régénère l'écran titre (c64/titre_img.c, versionné ;
-  demande Pillow et la ROM caractères de VICE)
+- `python3 tools/titre.py [apercu.png]` : régénère l'écran titre (c64/titre_img.c, versionné, compressé :
+  décodé par c64/titre_dec.s ; demande Pillow et la ROM caractères de VICE)
 
 ## Mémoire du client (banque VIC 3)
-- Programme sous $C000 (__HIMEM__ dans le Makefile, environ 42 Ko sur 45 utilisés)
-- $C000 écran (ECM), $C3F8 pointeurs de sprites, $C400-$C47F sprites de la carte qui glisse,
+- Programme sous $C000 (__HIMEM__ dans le Makefile), pile C de 1,5 Ko (__STACKSIZE__) : environ
+  5,5 Ko de marge depuis la compression de l'image titre ; au-delà, ld65 refuse (« BSS overflows »).
+- $C000 écran (ECM), $C3F8 pointeurs de sprites, $C400-$C47F sprites de la carte qui glisse (et du pli ramassé),
   $C800 jeu de caractères en RAM, $E000 bitmap de l'écran titre (RAM sous le KERNAL, libre après)
 - ECM : 64 caractères seulement. Redessinés : @ £ ↑ ← (♠ ♥ ♣ ♦), # (tapis), " $ % & (coins des
   cartes) ; ils s'affichent « ? » si on les écrit en texte.
@@ -61,6 +62,9 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
 ## Pièges de cc65 (constatés)
 - `(b - a) * k / n` avec b < a (int) et k unsigned char donne un résultat faux : la carte qui glisse
   montait en zigzag. Calculer sans différence négative (voir etape() dans c64/vue.c).
+- Les calculs 16 bits (multiplication, division) sont lents : les positions de 8 sprites prenaient
+  plus d'une image ; sprite_carte() prend à lui seul plus d'une image. Calculer la position avant
+  d'attendre l'image (deplacer() dans c64/vue.c), dessiner le sprite pendant qu'il est caché.
 - Le serveur envoie MAIN juste après JOUE et les deux sont traités avant le dessin : tout ce qui
   dépend de l'ancienne main (emplacement de la carte jouée) doit être relevé à la réception de JOUE.
 

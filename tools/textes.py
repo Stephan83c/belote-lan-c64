@@ -9,7 +9,7 @@ caractères (espace, chiffres, ponctuation, A-Z, [ et ]), sans # ni @ (devenus l
 tapis et les symboles des cartes). Tout est donc en majuscules, sans accents :
 UE pour Ü, N pour Ñ, comme le français s'écrit déjà sans accents.
 
-Dans un format (sprintf), la largeur compte %s pour 5 caractères (un nom), %u et
+Dans un format (sprintf), la largeur compte %s pour 6 caractères (un nom), %u et
 %d pour 4, %c pour 1.
 
 Les mots-clés du protocole ne se traduisent pas : ils restent en français sur le
@@ -34,14 +34,17 @@ TEXTES = [
     # ---- Écran de connexion (libellés suivis de « : » en colonne 8) ----
     ("C_SERVEUR", 8, "SERVEUR", "SERVER", "SERVER", "SERVIDOR"),
     ("C_NOM", 8, "NOM", "NAME", "NAME", "NOMBRE"),
-    ("C_VALIDER", 40, "RETURN = VALIDER", "RETURN = CONFIRM", "RETURN = BESTAETIGEN",
-     "RETURN = ACEPTAR"),
-    ("C_LANGUE", 36, "F1 = LANGUE", "F1 = LANGUAGE", "F1 = SPRACHE", "F1 = IDIOMA"),
+    ("C_INFO", 40, "4 PLACES : LES BOTS COMPLETENT LA TABLE", "4 SEATS: BOTS FILL THE EMPTY ONES",
+     "4 PLAETZE: BOTS FUELLEN FREIE PLAETZE", "4 PLAZAS: LOS BOTS COMPLETAN LA MESA"),
+    # Barre de touches de l'écran de connexion (ligne 24, comme en jeu)
+    ("B_CONNEXION", 39, "RETURN VALIDER  CRSR CHAMP  F1 LANGUE",
+     "RETURN CONFIRM  CRSR FIELD  F1 LANGUAGE", "RETURN OK  CRSR FELD  F1 SPRACHE",
+     "RETURN ACEPTAR  CRSR CAMPO  F1 IDIOMA"),
     ("M_PERDUE", 40, "CONNEXION PERDUE", "CONNECTION LOST", "VERBINDUNG VERLOREN",
      "CONEXION PERDIDA"),
-    ("M_ENTREZ_NOM", 40, "ENTREZ UN NOM (5 LETTRES OU CHIFFRES)",
-     "ENTER A NAME (5 LETTERS OR DIGITS)", "NAME EINGEBEN (5 BUCHSTABEN/ZIFFERN)",
-     "ESCRIBA UN NOMBRE (5 LETRAS O CIFRAS)"),
+    ("M_ENTREZ_NOM", 40, "ENTREZ UN NOM (6 LETTRES OU CHIFFRES)",
+     "ENTER A NAME (6 LETTERS OR DIGITS)", "NAME EINGEBEN (6 BUCHSTABEN/ZIFFERN)",
+     "ESCRIBA UN NOMBRE (6 LETRAS O CIFRAS)"),
     ("M_NOM_BOT", 40, "NOM RESERVE AUX BOTS : CHOISIR UN AUTRE",
      "NAME RESERVED FOR BOTS: CHOOSE ANOTHER", "NAME FUER BOTS RESERVIERT: BITTE AENDERN",
      "NOMBRE RESERVADO A LOS BOTS: ELIJA OTRO"),
@@ -149,6 +152,9 @@ TEXTES = [
      "TE TOCA: 1-8"),
     ("V_FIN_CHEF", 40, "MANCHE TERMINEE : F5 POUR LA SUIVANTE", "ROUND OVER: F5 FOR THE NEXT ONE",
      "RUNDE VORBEI: F5 FUER DIE NAECHSTE", "MANO TERMINADA: F5 PARA LA SIGUIENTE"),
+    # %s : NOUS ou EUX, l'équipe qui a marqué le plus de points dans la manche
+    ("V_SUITE", 40, "MANCHE POUR %s - SUITE DANS %u S", "ROUND TO %s - NEXT ONE IN %u S",
+     "RUNDE FUER %s - WEITER IN %u S", "MANO PARA %s - SIGUE EN %u S"),
     ("V_FIN_AUTRE", 40, "MANCHE TERMINEE : ON ATTEND LE CHEF", "ROUND OVER: WAITING FOR THE HOST",
      "RUNDE VORBEI: WARTEN AUF DEN CHEF", "MANO TERMINADA: ESPERANDO AL JEFE"),
 
@@ -172,6 +178,8 @@ TEXTES = [
     ("B_CHEF_MANCHE", 39, "F3 MSG F4 RAZ F5 SUITE F7 QUIT F8 AIDE",
      "F3 MSG F4 WIPE F5 NEXT F7 QUIT F8 HELP", "F3 MSG F4 NEU F5 LOS F7 ENDE F8 HILFE",
      "F3 MSG F4 CERO F5 SIGUE F7 FIN F8 AYUDA"),
+    ("B_MANCHE", 39, "F3 TCHAT F5 SUITE F7 QUIT F8 AIDE", "F3 CHAT F5 NEXT F7 QUIT F8 HELP",
+     "F3 CHAT F5 LOS F7 ENDE F8 HILFE", "F3 CHAT F5 SIGUE F7 FIN F8 AYUDA"),
     ("B_CHEF", 39, "F3 TCHAT F4 RAZ F7 QUIT F8 AIDE", "F3 CHAT F4 WIPE F7 QUIT F8 HELP",
      "F3 CHAT F4 NEU F7 ENDE F8 HILFE", "F3 CHAT F4 CERO F7 FIN F8 AYUDA"),
     ("B_ENCH", 39, "1-4 CHOIX F3 TCHAT F7 QUIT F8 AIDE", "1-4 BID F3 CHAT F7 QUIT F8 HELP",
@@ -311,7 +319,7 @@ LARGEUR_REGLES = 39
 # cartes), A-Z, [ et ] : voir car() dans c64/ecran.c.
 PERMIS = set(chr(c) for c in range(32, 64) if chr(c) not in "#\"$%&") | set("ABCDEFGHIJKLMNOPQRSTUVWXYZ[]")
 FORMAT = re.compile(r"%(-?\d*)([sudc])")
-LARGEUR_FORMAT = {"s": 5, "u": 4, "d": 4, "c": 1}
+LARGEUR_FORMAT = {"s": 6, "u": 4, "d": 4, "c": 1}
 
 
 def largeur(s: str) -> int:

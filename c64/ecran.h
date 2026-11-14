@@ -28,6 +28,8 @@
 #define JAUNE      7
 #define ORANGE     8
 #define GRIS_FONCE 11
+#define ROUGE_CLAIR 10
+#define BLEU_CLAIR 14
 #define GRIS_CLAIR 15
 
 /* Dans les chaînes affichées, les octets 1 à 4 dessinent ♠ ♥ ♣ ♦ (couleur 0-3 + 1)

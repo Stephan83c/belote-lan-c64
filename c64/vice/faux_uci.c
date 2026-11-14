@@ -1,10 +1,11 @@
 /* Réseau simulé pour VICE, qui n'émule pas la Command Interface de l'Ultimate.
  * Remplace uci.c : le client « reçoit » un scénario écrit d'avance, puis plus
- * rien ; ce qu'il envoie est ignoré. make vice-demo SCENARIO=1, 2 ou 3 :
+ * rien ; ce qu'il envoie est ignoré. make vice-demo SCENARIO=1 à 7 :
  * 1 table d'attente et tchat, 2 partie reprise en cours de manche, 3 fin de partie,
  * 4 le serveur ferme la connexion : bordure rouge si le client touche encore au socket,
  * 5 second tour d'enchères, à notre tour,
- * 6 sons : un pli joué, un tchat, la fin de partie (une ligne toutes les 30/60 s). */
+ * 6 sons : un pli joué, un tchat, la fin de partie (une ligne toutes les 30/60 s),
+ * 7 fin de manche sans être chef : compte à rebours de la suite (SUITE). */
 #include "../ascii.h"
 #include <string.h>
 #include "../uci.h"
@@ -41,6 +42,11 @@ static const char *const lignes[] = {
  "PLI 0", "TCHAT LEA BIEN JOUE", "MANCHE 120 42", "SCORE 1020 742", "GAGNANT 0",
  "ETAT FIN PARTIE", 0 };
 #define RYTHME 30
+#elif SCENARIO == 7
+static const char *const lignes[] = {
+ "BIENVENUE JEAN 1", "SIEGE 0 H MARC", "SIEGE 1 H JEAN", "SIEGE 2 B BOT", "SIEGE 3 B BOT",
+ "CHEF 0", "ETAT EN COURS", "SCORE 432 518", "DONNEUR 0", "PREND 2 3",
+ "PLI 3", "MANCHE 90 72", "SCORE 522 590", "ETAT FIN MANCHE", "SUITE 10", 0 };
 #else
 static const char *const lignes[] = {
  "BIENVENUE JEAN 0", "SIEGE 0 H JEAN", "SIEGE 1 B BOT", "SIEGE 2 B BOT", "SIEGE 3 B BOT",

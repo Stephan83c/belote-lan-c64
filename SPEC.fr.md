@@ -8,7 +8,7 @@ Client Commodore 64 Ultimate  •  serveur de table Python  •  4 places
 
 *Mise à jour de la version consolidée du 27 octobre 2026. v3 : matériel réseau, protocole, écran, comptage. v4 : règles officielles de la belote classique, tapis supprimé.*
 
-Version 4 — 7 novembre 2026 ; dernière mise à jour : 14 novembre 2026 (client v1.5, voir section 13)
+Version 4 — 7 novembre 2026 ; dernière mise à jour : 14 novembre 2026 (v1.6, voir section 13)
 
 Statut : spécification fonctionnelle et protocolaire
 
@@ -98,18 +98,24 @@ Le projet est un jeu de belote à quatre places, en réseau, avec un client Comm
 Au démarrage, le client affiche l’écran de connexion. Le champ SERVEUR est pré-rempli avec l’adresse par défaut (SERVEUR_IP et SERVEUR_PORT dans config.mk) ; le joueur peut la modifier (DEL pour effacer) puis valide par RETURN. Format : hôte ou IP, suivi éventuellement de :port (6464 si absent), 31 caractères maximum. Le C64 Ultimate résout lui-même le nom d’hôte. En cas d’échec, le message « CONNEXION IMPOSSIBLE » s’affiche et le champ est proposé de nouveau.
 
 ```
-L0  BELOTE LAN C64  V1.5
+L0  BELOTE LAN C64                          V1.6
 L1  ----------------------------------------
 L3  SERVEUR :51.38.50.79:6464
 L5  NOM     :JEAN_
-L7  RETURN = VALIDER
-L22 F1 = LANGUE
-L24 FRANCAIS  ENGLISH  DEUTSCH  ESPANOL
+L7  (messages : CONNEXION..., CONNEXION IMPOSSIBLE...)
+L11            [A♠] [D♥]
+L12       [V♣]           [R♥]
+L16  4 PLACES : LES BOTS COMPLETENT LA TABLE
+L20 ----------------------------------------
+L22 FRANCAIS  ENGLISH  DEUTSCH  ESPANOL
+L24 RETURN VALIDER  CRSR CHAMP  F1 LANGUE
 ```
+
+L’écran reprend la présentation des autres : en-tête et tirets, feutre, cartes de la table, touches sur la barre du bas en gris clair, choix en cours en jaune. Les cartes sont celles de l’écran titre (valet de trèfle, as de pique, puis la belote), distribuées une à une depuis le haut avec la carte qui glisse et son claquement, la première fois seulement ; leurs figures suivent la langue.
 
 **Langue** : F1 passe à la langue suivante (français, anglais, allemand, espagnol) ; chaque nom est écrit dans sa langue, celle en cours en jaune, et les textes de l’écran changent aussitôt. Le choix vaut pour toute la session ; la langue au démarrage se règle à la compilation (`make LANGUE=0..3`). Tout est en majuscules sans accents : le mode couleur étendue n’a que 64 caractères (UE pour Ü, N pour Ñ). Les figures suivent la langue : V D R, J Q K (anglais, espagnol), B D K (allemand). Le protocole ne change pas : ses mots-clés restent en français et le client traduit à l’affichage les messages ERR et INFO qu’il reconnaît (un texte inconnu s’affiche tel quel). Les textes sont dans tools/textes.py, qui génère c64/textes.c et vérifie leurs largeurs.
 
-Ensuite, le client demande un nom de 5 caractères maximum (A–Z, 0–9) puis rejoint la table. Le serveur attribue une place et la confirme par BIENVENUE. Le premier humain connecté devient chef de table et premier donneur. Les bots occupent les places libres mais ne jouent pas tant que le chef n’a pas lancé la partie avec F2.
+Ensuite, le client demande un nom de 6 caractères maximum (A–Z, 0–9) puis rejoint la table. Le serveur attribue une place et la confirme par BIENVENUE. Le premier humain connecté devient chef de table et premier donneur. Les bots occupent les places libres mais ne jouent pas tant que le chef n’a pas lancé la partie avec F2.
 
 ### 2.2 Cycle d’une manche *(v4)*
 
@@ -123,7 +129,7 @@ Ensuite, le client demande un nom de 5 caractères maximum (A–Z, 0–9) puis r
 
 - Comptage des points, mise à jour du score cumulé, puis vérification de la fin de partie uniquement en fin de manche.
 
-- Si la partie continue, le chef de table demande la manche suivante avec F5. Le donneur tourne, y compris après une égalité ou une donne annulée.
+- Si la partie continue, la manche suivante démarre seule après une pause de 10 secondes (le temps de lire le résultat), avec un compte à rebours sur la ligne d’état ; n’importe quel joueur peut l’écourter avec F5. Le donneur tourne, y compris après une égalité ou une donne annulée.
 
 ### 2.3 Fin de partie
 
@@ -147,7 +153,7 @@ L12 F7 = QUITTER
 
 ## 3. Touches
 
-La table d’attente réserve F1 aux paramètres serveur. Les règles du jeu se consultent avec F8. F2 lance la partie, F3 ouvre le tchat, F5 passe à la manche suivante en fin de manche (score cumulé conservé) et F7 quitte. Sur l’écran de fin de partie, F5 démarre une nouvelle partie et remet les scores à zéro. Pendant les enchères, 1 à 4 choisissent une option ; pendant le jeu, 1 à 8 jouent les cartes numérotées de la main ; RETURN valide le nom à la connexion.
+La table d’attente réserve F1 aux paramètres serveur. Les règles du jeu se consultent avec F8. F2 lance la partie, F3 ouvre le tchat, F5 passe tout de suite à la manche suivante en fin de manche, sans attendre la fin de la pause (score cumulé conservé, tout joueur) et F7 quitte. Sur l’écran de fin de partie, F5 démarre une nouvelle partie et remet les scores à zéro. Pendant les enchères, 1 à 4 choisissent une option ; pendant le jeu, 1 à 8 jouent les cartes numérotées de la main ; RETURN valide le nom à la connexion.
 
 | Touche | Code C64 | Action / disponibilité |
 |---|---|---|
@@ -155,7 +161,7 @@ La table d’attente réserve F1 aux paramètres serveur. Les règles du jeu se 
 | F2 | 137 | Lancer la partie en attente ; chef seulement. |
 | F3 | 134 | Ouvrir le tchat public, saisir puis envoyer un message. |
 | F4 | 138 | Chef, partie lancée : effacer la partie en cours, après confirmation (O, ou Y, J, S selon la langue). |
-| F5 | 135 | Fin de manche : manche suivante, score cumulé conservé. Écran de fin de partie : nouvelle partie, scores remis à zéro. Chef seulement. |
+| F5 | 135 | Fin de manche : manche suivante sans attendre la fin de la pause, score cumulé conservé (tout joueur). Écran de fin de partie : nouvelle partie, scores remis à zéro (chef seulement). |
 | F6 | 139 | Aucune action. |
 | F7 | 136 | Quitter la table. |
 | F8 *(v3)* | 140 | Afficher / masquer les règles (écran local, la réception réseau continue). HELP n’existe pas sur C64. |
@@ -187,7 +193,7 @@ La barre affichée dépend de l’état et du rôle. Chaque barre fait 39 caract
 | Pas son tour | F3 TCHAT F7 QUIT F8 AIDE |
 | Chef, partie lancée | F4 RAZ s'ajoute ; F3 TCHAT devient F3 MSG quand la ligne dépasserait 39 caractères (ex. 1-8 CARTE F3 MSG F4 RAZ F7 QUIT F8 AIDE) |
 | Chef, fin de manche | F3 MSG F4 RAZ F5 SUITE F7 QUIT F8 AIDE |
-| Autre joueur, fin de manche | F3 TCHAT F7 QUIT F8 AIDE |
+| Autre joueur, fin de manche | F3 TCHAT F5 SUITE F7 QUIT F8 AIDE |
 | Chef, fin de partie | F5 NOUVELLE PARTIE F7 QUIT |
 | Autre joueur, fin de partie | F7 QUIT |
 | Chef, après F4 | EFFACER LA PARTIE ? O OUI, AUTRE NON |
@@ -214,13 +220,13 @@ L’ordre de parcours des places est P0 → P1 → P2 → P3 → P0, soit SUD �
 
 - Si le chef quitte ou est remplacé par inactivité, sa place devient un bot et le premier humain restant selon l’ordre P0→P3 devient chef. Si aucun humain ne reste, il n’y a pas de chef et la table attend.
 
-- Après le lancement, le départ de l’ancien chef n’interrompt pas la partie. Le nouveau chef peut demander F5 en fin de manche ; il ne relance pas la partie en cours.
+- Après le lancement, le départ de l’ancien chef n’interrompt pas la partie. Le nouveau chef peut lancer une nouvelle partie (F5) en fin de partie ; il ne relance pas la partie en cours.
 
 - La limite est de quatre connexions humaines. Une cinquième connexion (et les suivantes) est refusée par ERR TABLE PLEINE, puis fermée par le serveur ; le C64 affiche « TABLE PLEINE (4 JOUEURS) : PLUS TARD » sur l’écran de connexion. Les bots ne comptent pas comme connexions humaines.
 
 ### 4.3 Pseudos, remplacement et présence
 
-- Nom affiché : 5 caractères maximum, lettres A–Z et chiffres ; pseudo unique parmi les joueurs. En cas de doublon, le dernier caractère est remplacé par un suffixe numérique (ex. JEAN → JEA2), de 1 à 9 ; sinon la connexion est refusée. Le nom final est renvoyé dans BIENVENUE.
+- Nom affiché : 6 caractères maximum, lettres A–Z et chiffres ; pseudo unique parmi les joueurs. En cas de doublon, le dernier caractère est remplacé par un suffixe numérique (ex. JEAN → JEA2), de 1 à 9 ; sinon la connexion est refusée. Le nom final est renvoyé dans BIENVENUE.
 
 - Noms réservés : BOT et BOT suivi de chiffres (BOT1 à BOT4 nomment les bots à l’écran). Le C64 les refuse avant de se connecter ; le serveur répond ERR NOM RESERVE sans fermer la connexion, et un suffixe de doublon ne produit jamais un tel nom. Le C64 affiche « NOM RESERVE AUX BOTS : CHOISIR UN AUTRE » et replace le curseur sur le champ NOM.
 
@@ -304,7 +310,7 @@ Le score de la manche (MANCHE) et le score cumulé (SCORE) sont transmis après 
 
 - **Serveur** — Python 3 asyncio sous Linux : asyncio.start_server sur le port 6464, une coroutine par client, état de partie centralisé, protocole texte ligne par ligne (StreamReader.readline()).
 
-- **Client** — C pour C64 compilé avec cc65 (cl65 -t c64) ; écran 40×25 en mode couleur étendue (ECM) écrit directement en mémoire ($C000, caractères en $C800) ; boucle principale non bloquante alternant clavier (GETIN du KERNAL, cbm_k_getin) et réseau, afin de continuer à recevoir pendant la saisie. Deux sprites pour la carte qui glisse (8.1) ; écran titre en bitmap multicolore ; musique et bruitages sur le SID (8.3).
+- **Client** — C pour C64 compilé avec cc65 (cl65 -t c64) ; écran 40×25 en mode couleur étendue (ECM) écrit directement en mémoire ($C000, caractères en $C800) ; boucle principale non bloquante alternant clavier (GETIN du KERNAL, cbm_k_getin) et réseau, afin de continuer à recevoir pendant la saisie. Deux sprites pour la carte qui glisse et le pli ramassé (8.1) ; écran titre en bitmap multicolore ; musique et bruitages sur le SID (8.3).
 
 - **Réseau C64** *(v3)* — Ultimate Command Interface du C64 Ultimate, cible réseau : ouverture d’une connexion TCP, puis lectures non bloquantes à chaque passage de boucle. Le client accumule les octets jusqu’au LF, puis traite la ligne.
 
@@ -328,7 +334,7 @@ Le serveur est l’autorité unique ; les mains adverses ne sont jamais envoyée
 | ATTENTE | Table ouverte ; humains rejoignent/quittent ; bots immobiles ; seul le chef peut lancer. |
 | LANCEE | Lancement accepté ; la première manche démarre. |
 | EN COURS | Enchères ou jeu d’une manche en cours. |
-| FIN MANCHE | Résultat publié ; attente de F5 du chef. |
+| FIN MANCHE | Résultat publié ; la manche suivante démarre seule après 10 secondes (SUITE), ou plus tôt sur F5 de n’importe quel joueur. Sans humain à la table, elle attend le prochain arrivé. |
 | FIN PARTIE *(v3)* | La cible est atteinte en fin de manche ; gagnant affiché. F5 (chef) démarre une nouvelle partie, scores remis à zéro. |
 
 ### 6.4 Données conceptuelles historiques
@@ -373,7 +379,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 | NBCARTES N0 N1 N2 N3 *(v3)* | Tous | Nombre de cartes de chaque place (après distribution et à la reconnexion). |
 | RETOURNE C *(v3)* | Tous | Carte retournée pour les enchères. |
 | ENCHERES T *(v3)* | Tous | Début du tour d’enchères T (1 ou 2). |
-| TOUR P *(v3)* | Tous | C’est à la place P d’agir (enchère ou carte selon la phase). Diffusé à tous pour le marqueur *. |
+| TOUR P *(v3)* | Tous | C’est à la place P d’agir (enchère ou carte selon la phase). Diffusé à tous. |
 | PREND P C *(v3)* | Tous | La place P prend ; l’atout est la couleur C. |
 | PASSE P *(v3)* | Tous | La place P passe. |
 | REDONNE *(v3)* | Tous | Tout le monde a passé : donne annulée. |
@@ -386,6 +392,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 | LITIGE N *(v3)* | Tous | N points mis en réserve (litige). |
 | SCORE E0 E1 | Tous | Score cumulé par équipe absolue ; le client affiche NOUS/EUX selon sa place. |
 | GAGNANT E *(v3)* | Tous | Équipe gagnante de la partie. |
+| SUITE S | Tous | Après ETAT FIN MANCHE (et à la reconnexion pendant la pause) : la manche suivante démarre dans S secondes. Un client qui ne connaît pas ce message l’ignore. |
 | TCHAT NOM TXT | Tous | Message public, nom et contenu. |
 | INFO TXT *(v3)* | Client ou tous | Information affichée dans le journal (pseudo modifié, joueur remplacé par un bot, etc.). Textes fixes, que le client reconnaît pour les traduire : NOM CHANGE EN NOM, NOM RECONNECTE, NOM REMPLACE PAR UN BOT, NOM INACTIF REMPLACE PAR UN BOT, INACTIF : PLACE RENDUE AU BOT, PARTIE EFFACEE, RESERVE N POUR EQUIPE E. |
 | ERR TEXTE | Client | ERR CHEF SEUL, ERR TABLE PLEINE, ERR PAS TON TOUR, ERR COUP REFUSE, ERR DEJA LANCEE, ERR PAS LANCEE, ERR NOM, ERR NOM RESERVE, ERR PARAM, ERR INCONNU, ERR TROP LONG (détail dans protocol.fr.md). Le client les affiche traduits dans le journal (« REFUS : … »). |
@@ -394,7 +401,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 
 | Message | Déclencheur | Sens / contrôle serveur |
 |---|---|---|
-| JOIN NOM | RETURN après saisie du nom | Rejoindre ; nom de 5 caractères maximum, unicité appliquée côté serveur. |
+| JOIN NOM | RETURN après saisie du nom | Rejoindre ; nom de 6 caractères maximum, unicité appliquée côté serveur. |
 | LANCER | F2 | Chef seulement, en ATTENTE ; sinon ERR CHEF SEUL ou ERR DEJA LANCEE. |
 | PARAM CIBLE N *(v3)* | F1 puis réglage | Chef seulement, en ATTENTE ; N de 500 à 5000. |
 | PARAM INACTIF M *(v4)* | F1 puis réglage | Chef seulement, en ATTENTE ; M de 1 à 10 minutes. |
@@ -402,7 +409,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 | PASSE | Touche d’enchère PASSE | Passer. |
 | COUP C *(v3)* | Touche 1–8 | Jouer la carte de code C (le client traduit le numéro affiché en code). Valide seulement à son tour. Au dernier pli, le client l’envoie seul (8.1). |
 | TCHAT TXT | F3, saisie, RETURN | Message public, tronqué à 30 caractères par le client et le serveur ; au plus 3 messages par 10 s, les suivants sont ignorés. |
-| REJOUER | F5 | Chef seulement : manche suivante en FIN MANCHE, nouvelle partie en FIN PARTIE. |
+| REJOUER | F5 | Tout joueur en FIN MANCHE : manche suivante sans attendre la fin de la pause. Chef seulement en FIN PARTIE : nouvelle partie. |
 | RAZ | F4 puis O (Y, J, S selon la langue) | Chef seulement, partie lancée : efface la partie (scores, réserve, places réservées) et revient en ATTENTE ; les clients reçoivent INFO PARTIE EFFACEE, SCORE 0 0, ETAT ATTENTE. Sinon ERR CHEF SEUL ou ERR PAS LANCEE. |
 | LEAVE | F7 | Quitter ; la place est transférée à un bot. |
 
@@ -432,8 +439,9 @@ P1  -> srv : COUP 14
 srv -> tous: JOUE 1 14 / TOUR 2 ...
             (srv -> P1 : MAIN ...)
 srv -> tous: PLI 3 / TOUR 3 ...   (x 8 plis)
-srv -> tous: MANCHE 72 110 / SCORE 72 110 / ETAT FIN MANCHE
-chef-> srv : REJOUER
+srv -> tous: MANCHE 72 110 / SCORE 72 110 / ETAT FIN MANCHE / SUITE 10
+            (10 s plus tard, ou plus tôt : P2 -> srv : REJOUER)
+srv -> tous: ETAT EN COURS / DONNEUR 1 ...
 ```
 
 **Reconnexion** — après BIENVENUE, le serveur envoie l’état complet : SIEGE ×4, CHEF, ETAT, PARAM, SCORE, DONNEUR, GAGNANT en FIN PARTIE, puis selon la phase RETOURNE ou PREND, MAIN, NBCARTES, PLICOURS et TOUR.
@@ -474,15 +482,17 @@ L23  1    2    3    4    5    6
 L24 1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE
 ```
 
-**Zone de jeu (L2–L10)** : nom de chaque joueur à sa position relative (NORD = partenaire, EST = à droite, OUEST = à gauche, SUD = soi), précédé de * pour le joueur dont c’est le tour. Sous chaque nom, la carte qu’il a jouée dans le pli en cours, ou rien. Les cartes d’un pli terminé restent affichées jusqu’à la première carte du pli suivant. Les mains adverses ne sont pas dessinées. Les humains sont désignés par leur nom (suivi de « (CHEF) » en attente), les bots par BOT1 à BOT4 selon leur place réelle (P0 à P3), identique pour tous les joueurs. Au centre (L5–L7) : pendant les enchères, la carte retournée sous « RETOURNEE » ; après la prise, la carte prise sous « PRISE », jusqu’à la première carte jouée.
+**Zone de jeu (L2–L10)** : nom de chaque joueur à sa position relative (NORD = partenaire, EST = à droite, OUEST = à gauche, SUD = soi). Sous chaque nom, la carte qu’il a jouée dans le pli en cours, ou rien ; un pli terminé est ramassé vers son gagnant (8.1). Le tour se lit à la carte qui arrive et à la ligne d’état (plus d’astérisque devant le nom). Les mains adverses ne sont pas dessinées. Les humains sont désignés par leur nom (suivi de « (CHEF) » en attente), les bots par BOT1 à BOT4 selon leur place réelle (P0 à P3), identique pour tous les joueurs. Au centre (L5–L7) : pendant les enchères, la carte retournée sous « RETOURNEE » ; après la prise, la carte prise sous « PRISE », jusqu’à la première carte jouée.
 
 **Journal (L12–L17)** : six lignes pour les enchères, belote-rebelote, plis, tchat et INFO ; un événement de joueur tient en 33 caractères après « NOM  : », un message du serveur prend toute la ligne (40) ; les nouveaux événements remplacent les plus anciens. **L18** sert à la saisie du tchat.
 
-**L19** est la ligne d’état. En attente : « CHEF : <NOM>   CIBLE : 1000 POINTS ». Au jeu, à son tour : « A VOUS DE JOUER : 1-8 ». En fin de manche : « MANCHE TERMINEE : F5 POUR LA SUIVANTE » (chef) ou « … : ON ATTEND LE CHEF ». Pendant les enchères, premier tour : « [1 PRENDRE <couleur retournée>] [2 PASSE] ». Second tour : les 3 autres couleurs puis PASSE (ex. « [1 ♠] [2 ♣] [3 ♦] [4 PASSE] »). Au tour d’un autre joueur : « ENCHERES : AU TOUR DE <NOM>... ». À droite de la ligne, le tour d’enchères en cours (« 1ER TOUR » ou « 2E TOUR »), car le journal ne montre pas toujours les passes du premier tour. Le joueur concerné utilise les touches 1 à 4.
+**L19** est la ligne d’état. En attente : « CHEF : <NOM>   CIBLE : 1000 POINTS ». Au jeu, à son tour : « A VOUS DE JOUER : 1-8 ». En fin de manche : « MANCHE POUR NOUS - SUITE DANS 10 S » ou « MANCHE POUR EUX - … », selon l’équipe qui a marqué le plus de points, dans la couleur claire de cette équipe (bleu clair ou rouge clair), décompté chaque seconde (avec un serveur sans SUITE, plus ancien : « MANCHE TERMINEE : F5 POUR LA SUIVANTE » pour le chef, « … : ON ATTEND LE CHEF » pour les autres). Pendant les enchères, premier tour : « [1 PRENDRE <couleur retournée>] [2 PASSE] ». Second tour : les 3 autres couleurs puis PASSE (ex. « [1 ♠] [2 ♣] [3 ♦] [4 PASSE] »). Au tour d’un autre joueur : « ENCHERES : AU TOUR DE <NOM>... ». À droite de la ligne, le tour d’enchères en cours (« 1ER TOUR » ou « 2E TOUR »), car le journal ne montre pas toujours les passes du premier tour. Le joueur concerné utilise les touches 1 à 4.
 
 **Main (L21–L23)** : jusqu’à 8 cartes numérotées de 1 à 8, triées pique-cœur-trèfle-carreau ; les numéros sont jaunes quand c’est à soi de jouer une carte, gris foncé sinon. L0 affiche ATOUT:? jusqu’à la fin des enchères ; NOUS et EUX montrent le score cumulé sur 4 chiffres maximum.
 
 **Carte qui glisse** : chaque carte jouée (JOUE) glisse jusqu’à sa place sur le tapis en 14 images (environ un quart de seconde), dessinée par deux sprites : le corps blanc aux coins arrondis (sprite 1, élargi) et, devant, le rang et le symbole dans la couleur de la carte (sprite 0) ; données en $C400. Sa propre carte part de son emplacement dans la main (retenu à la réception de JOUE, avant la MAIN qui suit) ; celle du partenaire du haut de l’écran, celles des adversaires du bord droit (EST) ou gauche (OUEST). Pendant ce quart de seconde, le client ne lit pas le réseau : les messages attendent dans l’Ultimate. La table et la main sont redessinées sur place, sans être effacées d’abord : rien ne clignote.
+
+**Pli ramassé** : à la réception de PLI, le pli complet reste visible une demi-seconde, puis les cartes rejoignent le centre du tapis une par une (5 images chacune), dans l’ordre des places qui suivent le gagnant, la sienne en dernier, sur le dessus du paquet. Le paquet part ensuite en accélérant vers le gagnant : jusqu’à son nom pour soi (8 images), hors de l’écran par le haut pour le partenaire, par la droite (EST) ou la gauche (OUEST) pour les adversaires (14 images). Une seule carte bouge à la fois, avec les deux sprites de la carte qui glisse ; les cartes déjà réunies sont en texte au centre. Le bruitage du pli (un glissement) part avec le paquet. Le client ne lit pas le réseau pendant ces 1,5 s environ ; les bots attendent au moins 1 s avant de jouer.
 
 **Dernier pli** : la dernière carte est jouée automatiquement une demi-seconde après le TOUR du joueur (un seul COUP par carte).
 
@@ -504,9 +514,9 @@ Le client joue la musique et les bruitages sur le SID, uniquement à partir des 
 
 | Moment | Déclencheur | Son |
 |---|---|---|
-| Écran titre | affichage de l’image, jusqu’à la touche | Valse musette originale à 3 voix, en boucle. |
+| Écran titre | affichage de l’image, jusqu’à la touche | Valse musette originale à 3 voix, en boucle : mélodie d’accordéon (impulsion qui respire, léger vibrato rapide qui imite le battement des anches musette), basse grave, accords arpégés. |
 | Carte posée | JOUE (tout joueur) | Claquement court (bruit). |
-| Pli ramassé | PLI | Glissement de cartes, après le claquement de la dernière carte. |
+| Pli ramassé | PLI | Toc grave et feutré (triangle) pour chaque carte réunie au centre, puis glissement de cartes quand le paquet part vers le gagnant (8.1). |
 | Tchat | TCHAT (tout message de joueur) | Deux notes claires. |
 | Partie gagnée | GAGNANT, équipe du joueur | Fanfare montante. |
 | Partie perdue | GAGNANT, équipe adverse | Descente qui finit en mineur. |
@@ -517,7 +527,7 @@ Le lecteur (c64/son.s) tourne dans l’interruption du KERNAL, 60 fois par secon
 
 - Public uniquement : aucun tchat privé. Ouverture par F3, envoi par RETURN.
 
-- Nom affiché limité à 5 caractères. Texte limité à 30 caractères : le client limite la saisie et le serveur tronque par sécurité.
+- Nom affiché limité à 6 caractères (5 jusqu’à la v1.5, dont le client tronque un nom plus long). Texte limité à 30 caractères : le client limite la saisie et le serveur tronque par sécurité.
 
 - Anti-inondation : au plus 3 messages par joueur sur 10 secondes ; le serveur ignore les suivants, sans réponse.
 
@@ -525,7 +535,7 @@ Le lecteur (c64/son.s) tourne dans l’interruption du KERNAL, 60 fois par secon
 
 - La saisie du tchat n’interrompt pas la réception réseau : la boucle principale vérifie le clavier de façon non bloquante (GETIN du KERNAL) et traite les données réseau en alternance.
 
-- Couleur du nom, sur la table et dans le journal : une couleur fixe par place, la même sur tous les écrans, en deux nuances par équipe : P0 cyan (3) et P2 bleu (6) pour l’équipe P0+P2 ; P1 orange (8) et P3 rouge (2) pour l’équipe P1+P3. Le rouge clair (10), trop proche du vert en luminosité, est écarté. Le texte du message reste blanc ; INFO et messages du serveur en gris clair (15).
+- Couleur du nom, sur la table et dans le journal : une couleur fixe par place, la même sur tous les écrans, en deux nuances par équipe : P0 bleu clair (14) et P2 bleu (6) pour l’équipe P0+P2 ; P1 rouge clair (10) et P3 rouge (2) pour l’équipe P1+P3. Le rouge clair, écarté en v1.3 car proche du vert en luminosité, est repris à la demande de Stéphan pour des équipes bleue et rouge. Le texte du message reste blanc ; INFO et messages du serveur en gris clair (15).
 
 - Les bots sont nommés BOT1 à BOT4 d’après leur place réelle (P0 à P3) : dans le tchat, « BOT2 » désigne le même bot pour tout le monde.
 
@@ -572,7 +582,7 @@ BOT        : toujours un coup legal (section 5.3)
 ```
 c64-online/
   c64/         client C (cc65), compilé par le Makefile de la racine (cl65 -t c64)
-  c64/vice/    réseau simulé pour VICE (make vice-demo SCENARIO=1..6)
+  c64/vice/    réseau simulé pour VICE (make vice-demo SCENARIO=1..7)
   server/      serveur Python asyncio + tests pytest
   protocol.md  extrait de la section 7 (protocol.fr.md en français)
   tools/       générateurs : textes (4 langues), musique, écran titre ; belote.service
@@ -590,7 +600,7 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 
 | Sujet | Décision consolidée | État |
 |---|---|---|
-| Touches | F1 paramètres (chef) ; F2 lancer (chef) ; F3 tchat ; F4 effacer la partie (chef) ; F5 suite / nouvelle partie (chef) ; F7 quitter ; F8 règles ; 1–4 enchères ; 1–8 cartes ; RETURN valider. | Retenu ; F8 *(v3)* |
+| Touches | F1 paramètres (chef) ; F2 lancer (chef) ; F3 tchat ; F4 effacer la partie (chef) ; F5 suite (tout joueur) / nouvelle partie (chef) ; F7 quitter ; F8 règles ; 1–4 enchères ; 1–8 cartes ; RETURN valider. | Retenu ; F8 *(v3)* |
 | Places / partenaires | P0=SUD, P1=EST, P2=NORD, P3=OUEST ; ordre P0→P1→P2→P3, sens inverse des aiguilles d’une montre ; équipes P0+P2 contre P1+P3 ; affichage relatif, chacun en SUD. | Retenu ; sens *(v4)* |
 | Donne et enchères | Belote classique : 3 + 2 cartes + retournée, deux tours d’enchères, puis 3 cartes (preneur : retournée + 2). Tous passent : redistribution, donneur suivant. | Retenu ; donne *(v3)* |
 | Jeu *(v4)* | Fournir ; à l’atout monter toujours ; couper si adversaire maître, surcouper si possible ; sous-coupe interdite sauf s’il ne reste que de l’atout ; libre si partenaire maître. | Retenu *(v4)* |
@@ -598,11 +608,11 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | Points | 162 par manche (152 + dix de der), belote-rebelote +20 ; cible 1000 par défaut, paramétrable ; la première équipe à atteindre la cible gagne (contrôle en fin de manche) ; les deux la même manche : la plus haute ; égalité parfaite = nouvelle manche ; réserve non attribuée perdue. | Retenu ; fin *(v4)* |
 | Contrat | Preneur : strictement plus que la défense, belote comprise. Dedans : 162 à la défense, la belote reste à l’équipe qui l’a annoncée. Litige : points du preneur en réserve. Capot : 252. Points bruts. | Retenu *(v3)* ; capot *(v4)* |
 | Présence | Pas de spectateurs. Inactivité 3 min par défaut (F1 : 1 à 10 min) : bot. Retour possible sur sa place si libre. Déconnexion pendant son tour : le bot joue immédiatement. | Retenu |
-| Tchat | Public ; nom 5 caractères ; message 30 caractères ; boucle non bloquante ; couleur de nom par place, deux nuances par équipe (cyan et bleu, orange et rouge) ; bots BOT1 à BOT4. | Retenu ; couleurs et noms des bots (client v1.3) |
+| Tchat | Public ; nom 6 caractères ; message 30 caractères ; boucle non bloquante ; couleur de nom par place, deux nuances par équipe (bleu clair et bleu, rouge clair et rouge) ; bots BOT1 à BOT4. | Retenu ; couleurs et noms des bots (client v1.3) |
 | Graphisme | Plateau/bordure vert 5 avec motif de feutre ; cartes blanches aux coins arrondis, rang et symbole rouge 2 / noir 0 ; RAM couleur $D800 ; carte jouée qui glisse (deux sprites). | Retenu ; cartes blanches (client v1.3) ; coins et glissement (client v1.5) |
 | Sons | Musique sur l’écran titre ; bruitages carte posée, pli, tchat ; jingles victoire et défaite. Côté client seulement (section 8.3). | Retenu |
 | Langues | Français, anglais, allemand, espagnol, choisis par F1 sur l’écran de connexion ; majuscules sans accents ; protocole inchangé, ERR et INFO traduits par le client (section 2.1). | Retenu (client v1.5) |
-| Écran | Grille 40 × 25 (L0–L24), sans tapis central : carte jouée sous le nom de chaque joueur ; mains adverses non affichées ; journal 6 lignes ; barre de touches ≤ 39 caractères en L24 ; * devant le joueur au tour. | Retenu ; sans tapis *(v4)* |
+| Écran | Grille 40 × 25 (L0–L24), sans tapis central : carte jouée sous le nom de chaque joueur ; mains adverses non affichées ; journal 6 lignes ; barre de touches ≤ 39 caractères en L24 ; * devant le joueur au tour (retiré à l’étape 30). | Retenu ; sans tapis *(v4)* |
 | Serveur | Python asyncio sur Linux (VPS en production), port 6464 ; adresse saisie sur le C64 ; distribue, valide, compte, joue les bots (délai 1 s) ; 4 humains max. | Retenu ; adresse *(v4)* |
 | Paramètres F1 *(v4)* | Score cible (500–5000, défaut 1000) et délai d’inactivité (1–10 min, défaut 3). | Retenu *(v4)* |
 | Matériel réseau *(v3)* | C64 Ultimate, Ultimate Command Interface, TCP direct. | Retenu *(v3)* |
@@ -645,3 +655,10 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 23 | Relecture complète du client : pendant les enchères, la ligne d’état affichait « AU TOUR DE BOT » au lieu de BOT1 à BOT4 ; une seule fonction (nom_place) nomme désormais les places sur la table, dans le journal et sur la ligne d’état. Captures refaites. Un GIF animé de la carte qui glisse (une capture VICE par image d’écran, 19 656 cycles d’écart en PAL, images déchirées écartées) a été ajouté au README puis retiré, jugé trop gros. | Client v1.5, mise à jour (14 novembre 2026) : PRG de la release remplacé (41 902 octets), tag inchangé ; notes de la release complétées avec cette correction et celles du serveur (étapes 21 et 22). |
 | 24 | Écran titre : coins des cartes légèrement arrondis (3 pixels par coin, bord noir qui suit la courbe) ; dans l’éventail, le coin laisse voir la carte de derrière au lieu d’un pixel vert qui la trouait. Image regénérée par tools/titre.py, capture docs/titre.png refaite (celle de GitHub vérifiée identique ; une ancienne image affichée vient du cache du navigateur). | Client v1.5, mise à jour (14 novembre 2026) : PRG de la release remplacé, tag inchangé, notes de la release complétées. |
 | 25 | Une seule table pour l’instant ; un serveur à plusieurs tables pourrait devenir un projet si le jeu trouve son public. Section « Et après ? » dans les README et les notes de la release ; onglet Discussions activé et annonce bilingue publiée (https://github.com/Stephan83c/belote-lan-c64/discussions/1), épinglée. | 14 novembre 2026. |
+| 26 | Pli ramassé animé : les cartes rejoignent le centre une par une, celle du gagnant en dernier sur le dessus, puis le paquet part vers le gagnant (jusqu’à son nom pour soi, comme Stéphan l’a proposé, plutôt que jusqu’au bas de l’écran) ; bruitage du pli au départ du paquet (il partait avant, à la réception de PLI, pendant que la dernière carte glissait encore, et pouvait même effacer son claquement). Une première version réunissait les quatre cartes d’un coup avec huit sprites ; une carte à la fois, avec les deux sprites existants, ressemble davantage au geste de ramasser et garde le code plus simple. Vérifié dans VICE (démo 6, gagnants SUD, EST, NORD, OUEST). Aucun changement de protocole ni de serveur. | Client v1.6 (14 novembre 2026). |
+| 27 | Fin de manche sans F5 du chef : la manche suivante démarre seule après 10 secondes, le temps de lire le résultat, avec un compte à rebours sur la ligne d’état (« SUITE DANS 9 S (F5) ») ; F5 l’écourte et est ouvert à tous les joueurs ; une nouvelle partie reste l’affaire du chef. Le chef n’est plus évincé pour inactivité en fin de manche (il bloquait la table s’il s’absentait). Nouveau message SUITE S, ignoré par les anciens clients (ils affichent « ON ATTEND LE CHEF », la manche repart quand même) ; option --delai-manche du serveur. 7 tests ajoutés ; démo 7 (compte à rebours vérifié dans VICE). Idée proposée par Claude, retenue par Stéphan. | Client et serveur v1.6 (14 novembre 2026) ; serveur public à mettre à jour. |
+| 28 | Même présentation partout. Écran de connexion : curseur d’abord sur NOM quand le serveur est rempli ; en-tête comme les autres écrans (version à droite), tirets, l’éventail de l’écran titre en cartes de la table distribuées une à une (carte qui glisse et claquement), une ligne d’information, les langues et une barre de touches en bas comme en jeu ; figures redessinées au changement de langue. Écran titre : touche SPACE plus discrète (cadre fin de 48×17 pixels au lieu de 64×27, lettres de 12 lignes au lieu de 16, centré entre l’éventail et la ligne d’auteur), capture docs/titre.png refaite. Pile C de cc65 ramenée de 2 à 1,5 Ko (__STACKSIZE__ dans le Makefile) : le programme dépassait $C000 de 216 octets. Vérifié dans VICE (FR, EN, DE). | Client v1.6 (14 novembre 2026). |
+| 29 | Musique moins « bip bip » : chaque note restait figée (même largeur d’impulsion, même hauteur). Le lecteur SID fait maintenant varier la largeur d’impulsion voix par voix (aller-retour entre $300 et $800, le son s’épaissit) et ajoute un vibrato rapide (7,5 Hz, une douzaine de cents) qui imite le battement des anches d’un accordéon musette ; mélodie un peu plus tenue, accords moins étroits. Après écoute (« trop d’effet ») : effets réduits de moitié ; basse une octave plus bas, en carré au lieu du triangle (qui porte mal dans le grave) et un peu tenue : deux fois plus d’énergie sur sa fondamentale. Mêmes notes, sauf la basse transposée. Réglages par voix dans tools/musique.py (deux octets de plus par voix). Vérifié sur un enregistrement VICE : bandes latérales à ±7,5 Hz autour du do aigu (39 et 36 contre 5 et 1 avant). | Client v1.6 (14 novembre 2026). |
+| 30 | Retouches : plus d’astérisque devant le nom du joueur au tour (la carte qui arrive et la ligne d’état suffisent) ; toc grave et feutré pour chaque carte réunie au centre quand le pli est ramassé (nouveau bruitage RAMASSE ; un premier essai jouait par erreur le ding du tchat : bruitage inséré au mauvais rang dans tools/musique.py, dont l’ordre doit suivre les numéros FX_ de c64/son.h) ; pendant le compte à rebours, « MANCHE POUR NOUS » en jaune ou « MANCHE POUR EUX » en gris, « (F5) » retiré de la ligne puisque la barre l’affiche. Textes NOUS et EUX réutilisés (mémoire). Vérifié dans VICE (démos 6 et 7). | Client v1.6 (14 novembre 2026). |
+| 31 | Équipes en couleurs : noms de l’équipe P0+P2 en bleu clair et bleu, de l’équipe P1+P3 en rouge clair et rouge (au lieu de cyan et bleu, orange et rouge), toujours fixes par place et identiques sur tous les écrans ; la ligne de fin de manche prend la couleur claire de l’équipe gagnante. Noms de 6 caractères au lieu de 5 (serveur et client ; journal : nom sur 6 colonnes, message sur 32) ; un client v1.5 tronque ces noms à 5. Mémoire : l’image titre est compressée (cases de feutre identiques : un bit par case au lieu de 10 octets), décodée en assembleur (c64/titre_dec.s) pour s’afficher aussi vite qu’avant ; le PRG passe de 44 382 à 38 892 octets (environ 5,5 Ko de marge sous $C000). Image vérifiée identique au pixel près dans VICE. 1 test serveur ajouté. | Client et serveur v1.6 (14 novembre 2026). |
+| 32 | Relecture du code avant la v1.6 : noms de l’EST et de l’OUEST remis aux colonnes 27 et 1 (décalés d’une case avec le retrait de l’étoile, un nom de 13 caractères à l’EST débordait sur la ligne suivante et celui de l’OUEST était rogné par l’effacement du centre) ; SUITE ignoré si son nombre n’est pas valable ; glisser() réutilise deplacer() ; commentaires mis à jour. Captures FR et EN refaites (couleurs d’équipe). Release GitHub v1.6. | Client et serveur v1.6 (14 novembre 2026) ; serveur public à mettre à jour par Stéphan. |

@@ -3,6 +3,11 @@
 Sortie : c64/titre_img.c (bitmap $E000, matrice écran, RAM couleur) et, en option,
 un aperçu PNG :  python3 tools/titre.py [apercu.png]
 
+Compression : plus de la moitié des 1000 cases (8x8 pixels) sont du feutre pur,
+toutes identiques (mêmes octets, mêmes couleurs). titre_cases a un bit par case
+(1 = feutre) ; les autres cases suivent dans titre_autres, 10 octets chacune :
+8 octets de bitmap, l'octet de la matrice écran, celui de la RAM couleur.
+
 En multicolore, chaque bloc de 4x8 pixels (larges) a le fond commun ($D021, vert)
 et trois couleurs à lui : le dessin les respecte presque partout, la conversion
 remplace l'éventuelle quatrième par la plus proche.
@@ -37,18 +42,24 @@ def glyphe(c):
 
 
 def texte(img, x, y, s, coul, sx=1, sy=2, ombre=None):
+    """sy peut être fractionnaire (1.5 : lignes du caractère hautes de 2, 1, 2, 1...)."""
+    def ligne(gy):
+        y0 = y + int(gy * sy)
+        return y0, y + int((gy + 1) * sy) - y0
+
     for i, c in enumerate(s):
         g = glyphe(c)
         for gy in range(8):
             for gx in range(8):
                 if g[gy] & (0x80 >> gx):
-                    px, py = x + (i * 8 + gx) * sx, y + gy * sy
+                    (py, h), px = ligne(gy), x + (i * 8 + gx) * sx
                     if ombre is not None:
-                        rect(img, px + 1, py + 1, sx, sy, ombre)
+                        rect(img, px + 1, py + 1, sx, h, ombre)
         for gy in range(8):
             for gx in range(8):
                 if g[gy] & (0x80 >> gx):
-                    rect(img, x + (i * 8 + gx) * sx, y + gy * sy, sx, sy, coul)
+                    py, h = ligne(gy)
+                    rect(img, x + (i * 8 + gx) * sx, py, sx, h, coul)
 
 
 # Mini-police 3x5 pour la ligne d'auteur (la ROM ne fait que du 8x8).
@@ -172,12 +183,15 @@ def image():
 
     # Touche « SPACE » plutôt qu'une phrase : l'écran titre vaut pour toutes les
     # langues (la langue se choisit ensuite, par F1 sur l'écran de connexion).
-    kx, ky, kw, kh = (W - 64) // 2, 152, 64, 27
+    # Touche discrète, centrée entre l'éventail et la ligne d'auteur : un cadre
+    # fin aux coins arrondis, juste autour du mot.
+    # Lettres moins hautes (12 lignes au lieu de 16) pour une barre plus fine.
+    kx, ky, kw, kh = (W - 48) // 2, 159, 48, 17
     rect(img, kx, ky, kw, kh, BLANC)
-    rect(img, kx + 1, ky + 2, kw - 2, kh - 4, FOND)
+    rect(img, kx + 1, ky + 1, kw - 2, kh - 2, FOND)
     for cx, cy in ((kx, ky), (kx + kw - 1, ky), (kx, ky + kh - 1), (kx + kw - 1, ky + kh - 1)):
         rect(img, cx, cy, 1, 1, FOND)
-    texte(img, (W - 5 * 8) // 2, ky + 6, "SPACE", JAUNE, sx=1, sy=2)
+    texte(img, (W - 5 * 8) // 2, ky + 3, "SPACE", JAUNE, sx=1, sy=1.5)
     mini(img, 187, "(C) 2026 STEPHAN - LICENCE GPL V3", BLANC)
     return img
 
@@ -237,14 +251,39 @@ def tableau(nom, data):
     return "\n".join(lignes)
 
 
+def compresser(bitmap, ecran, couleur):
+    cases = [(tuple(bitmap[i * 8:i * 8 + 8]), ecran[i], couleur[i]) for i in range(1000)]
+    feutre = max(set(cases), key=cases.count)
+    drapeaux, autres = [0] * 125, []
+    for i, c in enumerate(cases):
+        if c == feutre:
+            drapeaux[i >> 3] |= 0x80 >> (i & 7)
+        else:
+            autres += list(c[0]) + [c[1], c[2]]
+    # relecture, comme le décodeur de c64/titre.c
+    b, e, k, j = [], [], [], 0
+    for i in range(1000):
+        if drapeaux[i >> 3] & (0x80 >> (i & 7)):
+            c = feutre
+        else:
+            c = (tuple(autres[j:j + 8]), autres[j + 8], autres[j + 9])
+            j += 10
+        b += c[0]
+        e.append(c[1])
+        k.append(c[2])
+    assert (b, e, k) == (bitmap, ecran, couleur)
+    return list(feutre[0]) + [feutre[1], feutre[2]], drapeaux, autres
+
+
 def main():
     img = image()
     bitmap, ecran, couleur = convertir(img)
+    feutre, drapeaux, autres = compresser(bitmap, ecran, couleur)
     src = "\n\n".join([
         "/* Écran titre (bitmap multicolore), généré par tools/titre.py : ne pas éditer. */",
-        tableau("titre_bitmap", bitmap),
-        tableau("titre_ecran", ecran),
-        tableau("titre_couleur", couleur),
+        tableau("titre_feutre", feutre),
+        tableau("titre_cases", drapeaux),
+        tableau("titre_autres", autres),
     ]) + "\n"
     (RACINE / "c64/titre_img.c").write_text(src)
     if len(sys.argv) > 1:
