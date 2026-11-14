@@ -91,14 +91,20 @@ static void entete(void)
     ecrire(19, 0, t, BLANC, FOND_VERT);
 }
 
+/* Table redessinée sur place, sans effacer d'abord : chaque nom (13 cases, avec
+ * « (CHEF) ») et chaque emplacement de carte est réécrit tel quel, rien ne
+ * disparaît le temps du dessin (pas de clignotement). */
+#define LARGEUR_NOM 13
+
 static void zone_table(void)
 {
     unsigned char y, p, r;
+    const char *libelle = 0;
 
-    for (y = 2; y <= 10; ++y) {
-        effacer(0, y, 40);
-    }
     if (moi < 0) {
+        for (y = 2; y <= 10; ++y) {
+            effacer(0, y, 40);
+        }
         return;
     }
     for (p = 0; p < 4; ++p) {
@@ -116,16 +122,76 @@ static void zone_table(void)
                 strcat(t, ")");
             }
         }
-        ecrire(nom_x[r], nom_y[r], t, coul_place[p], FOND_VERT);
+        ecrire_n(nom_x[r], nom_y[r], t, LARGEUR_NOM, coul_place[p], FOND_VERT);
         carte(carte_x[r], carte_y[r], pli[p]);
     }
+    /* Centre : carte retournée (enchères) ou prise, avec son libellé. Les cases 14
+     * à 26 de la ligne 5 sont entre le nom de l'OUEST et celui de l'EST. */
+    effacer(14, 5, 13);
     if (etat == E_COURS && retournee >= 0) {
-        ecrire(20 - (strlen(T(T_V_RETOURNEE)) + 1) / 2, 5, T(T_V_RETOURNEE), GRIS_CLAIR, FOND_VERT);
+        libelle = T(T_V_RETOURNEE);
         carte(18, 6, retournee);
     } else if (etat == E_COURS && prise >= 0) {
-        ecrire(20 - (strlen(T(T_V_PRISE)) + 1) / 2, 5, T(T_V_PRISE), GRIS_CLAIR, FOND_VERT);
+        libelle = T(T_V_PRISE);
         carte(18, 6, prise);
+    } else {
+        carte(18, 6, -1);
     }
+    if (libelle) {
+        ecrire(20 - (strlen(libelle) + 1) / 2, 5, libelle, GRIS_CLAIR, FOND_VERT);
+    }
+}
+
+#define PEEK(a) (*(volatile unsigned char *)(a))
+#define GLISSE_ETAPES 14
+
+/* Attend le bas de l'écran (ligne 251) : une étape par image, sans scintillement. */
+static void image_suivante(void)
+{
+    while (PEEK(0xD012) != 251) {
+    }
+    while (PEEK(0xD012) == 251) {
+    }
+}
+
+/* Point k (sur GLISSE_ETAPES) entre a et b. Sans différence négative : cc65 la
+ * multipliait mal par k et la carte montait en zigzag. */
+static int etape(int a, int b, unsigned char k)
+{
+    if (b >= a) {
+        return a + (unsigned)(b - a) * k / GLISSE_ETAPES;
+    }
+    return a - (unsigned)(a - b) * k / GLISSE_ETAPES;
+}
+
+/* La carte jouée par la place p glisse de sa main jusqu'à sa place sur le tapis :
+ * depuis la main pour soi, depuis le bord de l'écran pour les autres. */
+static void glisser(signed char p)
+{
+    unsigned char r = REL(p), i, k;
+    int sx, sy, dx = 24 + carte_x[r] * 8, dy = 50 + carte_y[r] * 8;
+
+    switch (r) {
+    case 0:                                 /* soi : depuis la carte choisie */
+        sx = dx;
+        sy = 50 + 21 * 8;
+        if (glisse_case >= 0) {
+            i = (unsigned char)glisse_case;
+            sx = 24 + i * 5 * 8;
+            effacer(i * 5, 21, 4);          /* la carte quitte la main */
+            effacer(i * 5, 22, 4);
+        }
+        break;
+    case 1:  sx = 344; sy = dy; break;      /* EST : bord droit */
+    case 2:  sx = dx;  sy = 20; break;      /* NORD : bord haut */
+    default: sx = 0;   sy = dy; break;      /* OUEST : bord gauche */
+    }
+    sprite_carte(pli[p]);
+    for (k = 1; k <= GLISSE_ETAPES; ++k) {
+        image_suivante();
+        sprite_position(etape(sx, dx, k), etape(sy, dy, k));
+    }
+    image_suivante();
 }
 
 static void zone_journal(void)
@@ -212,15 +278,18 @@ static void zone_main(void)
 {
     unsigned char i, coul;
 
-    for (i = 21; i <= 23; ++i) {
-        effacer(0, i, 40);
-    }
+    /* Sur place, emplacement par emplacement (pas de clignotement). */
     coul = (etat == E_COURS && atout >= 0 && tour == moi) ? JAUNE : GRIS_FONCE;
-    for (i = 0; i < nmain; ++i) {
-        carte(i * 5, 21, main_c[i]);
-        t[0] = '1' + i;
-        t[1] = 0;
-        ecrire(i * 5 + 1, 23, t, coul, FOND_VERT);
+    for (i = 0; i < 8; ++i) {
+        if (i < nmain) {
+            carte(i * 5, 21, main_c[i]);
+            t[0] = '1' + i;
+            t[1] = 0;
+            ecrire(i * 5 + 1, 23, t, coul, FOND_VERT);
+        } else {
+            carte(i * 5, 21, -1);
+            effacer(i * 5 + 1, 23, 1);
+        }
     }
 }
 
@@ -235,7 +304,19 @@ static void vue_table(void)
         entete();
     }
     if (sale & D_TABLE) {
-        zone_table();
+        if (glisse >= 0 && pli[glisse] >= 0) {
+            /* tapis sans la carte, glissement, puis la carte en texte */
+            signed char c = pli[glisse];
+            pli[glisse] = -1;
+            zone_table();
+            pli[glisse] = c;
+            glisser(glisse);
+            carte(carte_x[REL(glisse)], carte_y[REL(glisse)], c);   /* seule la carte arrivée */
+            sprite_cacher();
+        } else {
+            zone_table();
+        }
+        glisse = -1;
     }
     if (sale & D_JOURNAL) {
         zone_journal();
@@ -317,6 +398,9 @@ void dessiner(void)
     }
     if (!sale) {
         return;
+    }
+    if (v != V_TABLE) {
+        glisse = -1;
     }
     switch (v) {
     case V_TABLE:  vue_table();  break;

@@ -48,6 +48,11 @@ void ecrire_n(unsigned char x, unsigned char y, const char *s, unsigned char n,
               unsigned char coul, unsigned char fond);
 void ligne_tirets(unsigned char y);
 void carte(unsigned char x, unsigned char y, signed char c);
+/* Carte qui glisse (sprites 0 et 1) : dessin de la carte c, position en pixels
+ * sprite du coin haut gauche (case x, y de l'écran = 24 + 8x, 50 + 8y), effacement. */
+void sprite_carte(signed char c);
+void sprite_position(int x, int y);
+void sprite_cacher(void);
 /* Case de curseur (fond gris). */
 void curseur(unsigned char x, unsigned char y);
 

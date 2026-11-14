@@ -492,12 +492,31 @@ static unsigned char touche(void)
     return 1;
 }
 
+/* Dernier pli : une seule carte possible, le C64 la joue seul après une
+ * demi-seconde (le temps de voir que c'est à soi). Une fois par carte. */
+static void derniere_carte(void)
+{
+    static signed char jouee = -1;
+    static unsigned depuis;
+
+    if (etat != E_COURS || atout < 0 || tour != moi || nmain != 1) {
+        jouee = -1;
+        depuis = jiffies();
+        return;
+    }
+    if (jouee != main_c[0] && jiffies() - depuis >= 30) {
+        jouee = main_c[0];
+        envoyer_nombre("COUP ", jouee);
+    }
+}
+
 static void partie(void)
 {
     regles = param = tchat = raz_conf = 0;
     vue_forcer();
     for (;;) {
         reseau();
+        derniere_carte();
         if (uci_bloquee) {
             uci_bloquee = 0;
             perdu = 1;

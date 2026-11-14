@@ -37,7 +37,7 @@ static const char *const lignes[] = {
 static const char *const lignes[] = {
  "BIENVENUE JEAN 0", "SIEGE 0 H JEAN", "SIEGE 1 B BOT", "SIEGE 2 H LEA", "SIEGE 3 B BOT",
  "CHEF 0", "ETAT EN COURS", "SCORE 900 700", "DONNEUR 3", "MAIN 3 5 6 11 15",
- "NBCARTES 5 5 5 5", "PREND 0 1", "JOUE 0 3", "JOUE 1 9", "JOUE 2 12", "JOUE 3 2",
+ "NBCARTES 5 5 5 5", "PREND 0 1", "JOUE 0 11", "MAIN 3 5 6 15", "JOUE 1 9", "JOUE 2 12", "JOUE 3 2",
  "PLI 0", "TCHAT LEA BIEN JOUE", "MANCHE 120 42", "SCORE 1020 742", "GAGNANT 0",
  "ETAT FIN PARTIE", 0 };
 #define RYTHME 30

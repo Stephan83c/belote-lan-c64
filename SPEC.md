@@ -482,6 +482,10 @@ L24 1-8 CARD F3 CHAT F7 QUIT F8 HELP
 
 **Hand (L21–L23)**: up to 8 cards numbered 1 to 8, sorted spades-hearts-clubs-diamonds. L0 shows TRUMP:? until the end of the bidding; US and THEM show the cumulative score on 4 digits at most.
 
+**Sliding card**: each card played (JOUE) slides to its place on the table in 14 frames (about a quarter of a second), drawn with two sprites: the white body with rounded corners (sprite 1, X-expanded) and, in front, the rank and suit in the card's colour (sprite 0); data at $C400. Your own card starts from its slot in the hand (remembered when JOUE arrives, before the MAIN that follows); the partner's from the top of the screen, the opponents' from the right (EAST) or left (WEST) edge. The table and the hand are redrawn in place, without being cleared first: nothing flickers.
+
+**Last trick**: the last card is played automatically half a second after the player's TOUR (a single COUP per card).
+
 ### 8.2 C64 colours
 
 | Area / item | Value | Rendering |
@@ -629,4 +633,5 @@ These decisions override contradictory or older wording.
 | 16 | Names BOT and BOT + digits refused to players (ERR NOM RESERVE); refusal messages in plain words on the connection screen (table full, name reserved or refused). | Server and client v1.4. |
 | 17 | Client in four languages (French, English, German, Spanish), chosen with F1 on the connection screen; face cards of the language; ERR and INFO translated by the client; on the title screen, a drawn SPACE key replaces "ESPACE POUR JOUER". No protocol or server change (see 2.1). English translation of the documentation (SPEC.md, README.md, protocol.md, docs/server-service.md), French kept as *.fr.md. GitHub release v1.5 (notes in English and French), repository description in English. | Client v1.5 (14 November 2026). Public server updated. |
 | 18 | Bots, after a full game on the public server (Stéphan against Claude, 1115 to 687) and an analysis of its log: the 10s the bots gave away were forced moves, not mistakes. Memory of the cards played; lead with the highest card left in a suit (master 10 once the ace has fallen), +1 % points over 40,000 deals simulated against the former strategy. Trumping or winning with a master card rather than the lowest winning card was tried and dropped (−6.8 %). | Server v1.5, fix after the release (14 November 2026): release notes completed, tag unchanged, public server updated. |
-| 19 | Cards with rounded corners (2-pixel arc, preferred to 3 after trying it on the C64); the characters " $ % & become the corners and show as "?" in the chat. | Client (branch cartes-arrondies, 14 November 2026). |
+| 19 | Cards with rounded corners (2-pixel arc, preferred to 3 after trying it on the C64); the characters " $ % & become the corners and show as "?" in the chat. | Client v1.5, update (14 November 2026). |
+| 20 | Sliding card (two sprites) from the hand or the screen edge to the table; table and hand redrawn in place, without flicker; your card starts from the chosen slot; last card played automatically. No protocol or server change. | Client v1.5, update (14 November 2026): release PRG replaced, tag unchanged. |

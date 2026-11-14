@@ -171,3 +171,60 @@ void curseur(unsigned char x, unsigned char y)
     unsigned o = off[y] + x;
     ECRAN[o] = 32 | FOND_GRIS;
 }
+
+/* ---- Carte qui glisse : deux sprites --------------------------------------
+ * Sprite 1 : corps blanc de la carte, élargi (16 points doublés = 32 pixels),
+ * 16 lignes, coins arrondis. Sprite 0, devant : rang et symbole dans la couleur
+ * de la carte, copiés du jeu de caractères, une case à droite du bord comme la
+ * carte en texte. Données en $C400 et $C440 (blocs 16 et 17 de la banque 3). */
+#define SPR_DATA   ((unsigned char *)0xC400)
+#define SPR_PTR    ((unsigned char *)0xC3F8)
+#define VIC        ((unsigned char *)0xD000)
+
+void sprite_carte(signed char c)
+{
+    unsigned char i, coul = c >> 3;
+    const char *rang = nom_rang(c & 7);
+    const unsigned char *g1, *g2, *gs;
+    unsigned char *corps = SPR_DATA + 64, *dessus = SPR_DATA;
+
+    memset(SPR_DATA, 0, 128);
+    for (i = 0; i < 16; ++i) {
+        corps[i * 3] = (i == 0 || i == 15) ? 0x7F : 0xFF;
+        corps[i * 3 + 1] = (i == 0 || i == 15) ? 0xFE : 0xFF;
+    }
+    /* Codes écran : chiffres tels quels, lettres A-Z = 1-26 */
+    g1 = CARS + (unsigned)(rang[0] >= 'A' ? rang[0] - 64 : rang[0]) * 8;
+    g2 = CARS + (unsigned)(rang[1] ? (rang[1] >= 'A' ? rang[1] - 64 : rang[1]) : 32) * 8;
+    gs = CARS + (unsigned)code_sym[coul] * 8;
+    for (i = 0; i < 8; ++i) {
+        dessus[i * 3] = g1[i];
+        dessus[i * 3 + 1] = g2[i];
+        dessus[(i + 8) * 3] = gs[i];
+    }
+    SPR_PTR[0] = 16;
+    SPR_PTR[1] = 17;
+    VIC[0x27] = FC(coul);               /* couleur du sprite 0 */
+    VIC[0x28] = BLANC;                  /* sprite 1 */
+    VIC[0x1D] = 0x02;                   /* sprite 1 élargi */
+    VIC[0x17] = 0;
+    VIC[0x1C] = 0;                      /* deux sprites haute résolution */
+    VIC[0x1B] = 0;                      /* devant le texte */
+}
+
+/* Position en pixels du coin haut gauche de la carte (coordonnées des sprites). */
+void sprite_position(int x, int y)
+{
+    int x0 = x + 8;
+    VIC[0x02] = (unsigned char)x;
+    VIC[0x03] = (unsigned char)y;
+    VIC[0x00] = (unsigned char)x0;
+    VIC[0x01] = (unsigned char)y;
+    VIC[0x10] = (x0 > 255 ? 0x01 : 0) | (x > 255 ? 0x02 : 0);
+    VIC[0x15] = 0x03;
+}
+
+void sprite_cacher(void)
+{
+    VIC[0x15] = 0;
+}

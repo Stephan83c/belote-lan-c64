@@ -35,6 +35,10 @@ extern unsigned char nmain;
 extern unsigned char nbcartes[4];
 extern signed char pli[4];
 extern unsigned char pli_fini;
+/* Place dont la carte vient d'être jouée, à faire glisser au prochain dessin ; -1 sinon. */
+extern signed char glisse;
+/* Pour sa propre carte : emplacement qu'elle occupait dans la main ; -1 sinon. */
+extern signed char glisse_case;
 extern unsigned char sale;         /* drapeaux D_* */
 extern char erreur[41];            /* dernier ERR reçu (connexion) */
 

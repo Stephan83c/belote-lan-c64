@@ -22,6 +22,8 @@ unsigned char nmain;
 unsigned char nbcartes[4];
 signed char pli[4];
 unsigned char pli_fini;
+signed char glisse = -1;
+signed char glisse_case = -1;
 unsigned char sale;
 char erreur[41];
 struct entree journal[JOURNAL_N];
@@ -227,6 +229,17 @@ void traiter_ligne(char *ligne)
                 pli_fini = 0;
             }
             pli[p] = (signed char)n;
+            glisse = p;
+            /* Sa propre carte : son emplacement dans la main, avant que MAIN
+             * (qui suit aussitôt) ne la retire. */
+            glisse_case = -1;
+            if (p == moi) {
+                for (i = 0; i < nmain; ++i) {
+                    if (main_c[i] == (signed char)n) {
+                        glisse_case = (signed char)i;
+                    }
+                }
+            }
             son_effet(FX_CARTE);
             if (nbcartes[p]) {
                 --nbcartes[p];
