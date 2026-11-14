@@ -350,7 +350,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 
 | Point | Règle |
 |---|---|
-| Transport | TCP, port 6464. Une connexion par client. |
+| Transport | TCP, port 6464. Une connexion par client. Une connexion sans place à la table 60 s après son ouverture (pas de JOIN accepté) est fermée par le serveur. |
 | Trame | Une ligne par message, terminée par LF (code 10). Un CR éventuel avant le LF est ignoré. |
 | Champs | Mot-clé en majuscules, puis paramètres séparés par une espace. Pour TCHAT, INFO et ERR, le texte est le reste de la ligne. |
 | Encodage | ASCII 32–95 (majuscules, chiffres, ponctuation). Le serveur met en majuscules et remplace tout autre caractère par « ? ». |
@@ -401,7 +401,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 | ENCH C | Touches 1–4 en enchères | Prendre à la couleur C. Au tour 1, C doit être la couleur retournée ; au tour 2, une autre couleur. |
 | PASSE | Touche d’enchère PASSE | Passer. |
 | COUP C *(v3)* | Touche 1–8 | Jouer la carte de code C (le client traduit le numéro affiché en code). Valide seulement à son tour. Au dernier pli, le client l’envoie seul (8.1). |
-| TCHAT TXT | F3, saisie, RETURN | Message public, tronqué à 30 caractères par le client et le serveur. |
+| TCHAT TXT | F3, saisie, RETURN | Message public, tronqué à 30 caractères par le client et le serveur ; au plus 3 messages par 10 s, les suivants sont ignorés. |
 | REJOUER | F5 | Chef seulement : manche suivante en FIN MANCHE, nouvelle partie en FIN PARTIE. |
 | RAZ | F4 puis O (Y, J, S selon la langue) | Chef seulement, partie lancée : efface la partie (scores, réserve, places réservées) et revient en ATTENTE ; les clients reçoivent INFO PARTIE EFFACEE, SCORE 0 0, ETAT ATTENTE. Sinon ERR CHEF SEUL ou ERR PAS LANCEE. |
 | LEAVE | F7 | Quitter ; la place est transférée à un bot. |
@@ -518,6 +518,8 @@ Le lecteur (c64/son.s) tourne dans l’interruption du KERNAL, 60 fois par secon
 - Public uniquement : aucun tchat privé. Ouverture par F3, envoi par RETURN.
 
 - Nom affiché limité à 5 caractères. Texte limité à 30 caractères : le client limite la saisie et le serveur tronque par sécurité.
+
+- Anti-inondation : au plus 3 messages par joueur sur 10 secondes ; le serveur ignore les suivants, sans réponse.
 
 - Le message est diffusé à tous via TCHAT NOM TXT et affiché dans le journal L12–L17 ; saisie en L18.
 
@@ -639,3 +641,4 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 19 | Cartes aux coins arrondis (arc de 2 pixels, préféré à 3 après essai sur le C64) ; les caractères " $ % & deviennent les coins et s’affichent « ? » dans le tchat ; tools/textes.py les refuse dans les traductions ; captures de la documentation refaites (FR et EN). | Client v1.5, mise à jour (14 novembre 2026) : PRG de la release remplacé, tag inchangé. |
 | 20 | Carte qui glisse (deux sprites) de la main ou du bord de l’écran jusqu’au tapis ; table et main redessinées sur place, sans clignotement ; sa carte part de l’emplacement choisi ; dernière carte jouée automatiquement. Mis au point par essais sur le C64 : la première version clignotait (la table et la main étaient effacées puis redessinées, deux fois par carte) ; la carte montait en zigzag (cc65 calculait mal une différence négative multipliée par l’étape) ; elle partait de sous le tapis (la MAIN arrive avec le JOUE et retirait déjà la carte : son emplacement est retenu dès le JOUE). Démo 6 conforme au serveur (MAIN après JOUE). Aucun changement de protocole ni de serveur. | Client v1.5, mise à jour (14 novembre 2026) : PRG de la release remplacé, tag inchangé. |
 | 21 | Relecture complète du serveur : un joueur qui se reconnecte en FIN PARTIE reçoit maintenant GAGNANT (son écran de fin affichait le score sans le vainqueur). | Serveur v1.5, correction (14 novembre 2026). |
+| 22 | Protections du serveur public : une connexion sans place à la table au bout de 60 s est fermée ; tchat limité à 3 messages par joueur sur 10 s (les suivants sont ignorés, sans nouveau message d’erreur pour ne pas changer le client). | Serveur v1.5, correction (14 novembre 2026). |

@@ -31,9 +31,9 @@ class Joueur:
                 return
 
 
-async def serveur(graine=3, delai=0.0):
+async def serveur(graine=3, delai=0.0, delai_join=60.0):
     table = Table(rng=random.Random(graine), delai_bot=delai)
-    srv = await demarrer(table, "127.0.0.1", 0)
+    srv = await demarrer(table, "127.0.0.1", 0, delai_join)
     port = srv.sockets[0].getsockname()[1]
     return table, srv, port
 
@@ -161,3 +161,20 @@ def test_c64_redemarre_reprend_sa_place_sur_vraie_socket():
             assert table.sieges[0].humain is not None and table.chef == 0
             nouveau.writer.close()
     asyncio.run(principal())
+
+
+def test_connexion_sans_join_fermee_apres_le_delai():
+    async def corps():
+        _, srv, port = await serveur(delai_join=0.2)
+        muet = await connecter(port)
+        assise = await connecter(port)
+        await assise.envoyer("JOIN A")
+        await assise.lire_jusqu_a("PARAM INACTIF 3")
+        # Le muet est coupé ; la connexion assise reste ouverte et répond.
+        assert await asyncio.wait_for(muet.reader.read(), 5) == b""
+        await asyncio.sleep(0.3)
+        await assise.envoyer("TCHAT TOUJOURS LA")
+        assert await assise.lire() == "TCHAT A TOUJOURS LA"
+        assise.writer.close()
+        srv.close()
+    asyncio.run(corps())

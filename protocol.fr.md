@@ -66,6 +66,9 @@ Autres cas :
   `REBELOTE` éventuels), en général dans le même paquet TCP : un client qui a besoin de l'ancienne
   main (par exemple l'emplacement de la carte jouée) doit la lire dès la réception de `JOUE`.
 - La main vide en fin de manche s'écrit `MAIN` sans paramètre.
+- Une connexion qui n'a pas de place à la table 60 s après son ouverture est fermée (avec `nc`,
+  envoyer `JOIN` dans la minute). Le tchat accepte au plus 3 messages par joueur sur 10 s : les
+  suivants sont ignorés, sans réponse.
 - Après `PREND`, si le premier à jouer est un bot, il attend trois fois son délai habituel
   (3 s par défaut) : le temps de voir la carte prise.
 - PETSCII : tout ce que le serveur envoie (majuscules, chiffres, espace, `-`) a le même code en

@@ -114,6 +114,9 @@ port TCP 6464 également.
 - un joueur est reconnu à son nom : choisir le nom d'un absent permet de reprendre sa place ;
 - le protocole n'est pas chiffré (c'est du texte simple, comme sur le réseau local).
 
+Deux protections limitent les abus : une connexion qui ne rejoint pas la table dans la minute est
+fermée, et le tchat accepte au plus 3 messages par joueur sur 10 secondes.
+
 C'est sans enjeu pour une partie de belote entre amis. Pour limiter les visiteurs, vous pouvez
 utiliser un autre port que 6464 (dans `config.mk` et dans le service), ou n'ouvrir le pare-feu
 qu'aux adresses de vos joueurs :

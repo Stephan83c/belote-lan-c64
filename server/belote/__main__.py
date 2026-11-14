@@ -14,6 +14,9 @@ from .table import DELAI_BOT, Table
 log = logging.getLogger("belote")
 
 TAMPON_ENVOI_MAX = 64 * 1024
+# Une connexion sans place à la table au bout de ce délai est fermée : sur un serveur
+# public, des connexions vides ne s'accumulent pas. Le C64 envoie JOIN aussitôt connecté.
+DELAI_JOIN = 60.0
 
 
 class ConnexionTCP:
@@ -34,11 +37,19 @@ class ConnexionTCP:
         self.writer.close()
 
 
-async def gerer_client(table: Table, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+async def gerer_client(table: Table, reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
+                       delai_join: float = DELAI_JOIN) -> None:
     pair = writer.get_extra_info("peername")
     log.info("connexion %s", pair)
     client = ConnexionTCP(writer)
     cadreur = Cadreur()
+
+    def sans_place() -> None:
+        if not table.est_assis(client):
+            log.info("sans JOIN depuis %.0f s, fermee %s", delai_join, pair)
+            client.fermer()
+
+    minuteur = asyncio.get_running_loop().call_later(delai_join, sans_place)
     try:
         while not writer.is_closing():
             bloc = await reader.read(256)
@@ -54,6 +65,7 @@ async def gerer_client(table: Table, reader: asyncio.StreamReader, writer: async
     except ConnectionError:
         pass
     finally:
+        minuteur.cancel()
         table.deconnexion(client)
         client.fermer()
         log.info("deconnexion %s", pair)
@@ -90,9 +102,10 @@ def ecouter_console(table: Table) -> None:
         log.info("console indisponible")
 
 
-async def demarrer(table: Table, host: str | None, port: int) -> asyncio.Server:
+async def demarrer(table: Table, host: str | None, port: int,
+                   delai_join: float = DELAI_JOIN) -> asyncio.Server:
     async def rappel(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
-        await gerer_client(table, reader, writer)
+        await gerer_client(table, reader, writer, delai_join)
 
     return await asyncio.start_server(rappel, host, port)
 

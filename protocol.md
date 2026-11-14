@@ -72,6 +72,9 @@ Other cases:
   `REBELOTE`), usually in the same TCP packet: a client that needs the former hand (for example
   the slot of the card played) must read it as soon as `JOUE` arrives.
 - The empty hand at the end of a round is written `MAIN` with no parameter.
+- A connection without a seat at the table 60 s after opening is closed (with `nc`, send `JOIN`
+  within a minute). The chat accepts at most 3 messages per player over 10 s: the next ones are
+  ignored, without answering.
 - After `PREND`, if the first player is a bot, it waits three times its usual delay (3 s by
   default): time to see the card taken.
 - PETSCII: everything the server sends (upper case, digits, space, `-`) has the same code in ASCII

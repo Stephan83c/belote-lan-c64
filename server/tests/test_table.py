@@ -916,3 +916,24 @@ def test_meme_adresse_autre_nom_prend_une_nouvelle_place():
     b = rejoindre_depuis(t, "B", "192.168.1.27")
     assert not a.ferme
     assert "BIENVENUE B 1" in b.lignes
+
+
+def test_tchat_limite_a_trois_messages_par_dix_secondes(monkeypatch):
+    import belote.table as module
+    instant = [1000.0]
+    monkeypatch.setattr(module.time, "monotonic", lambda: instant[0])
+    t = table_ne_jouant_pas()
+    a = rejoindre(t, "A")
+    b = rejoindre(t, "B")
+    b.vider()
+    for i in range(5):
+        t.recevoir(a, f"TCHAT MESSAGE {i}")
+    assert b.lignes == ["TCHAT A MESSAGE 0", "TCHAT A MESSAGE 1", "TCHAT A MESSAGE 2"]
+    # Chaque joueur a son propre compte.
+    t.recevoir(b, "TCHAT MOI AUSSI")
+    assert b.dernier("TCHAT") == "TCHAT B MOI AUSSI"
+    # Dix secondes plus tard, A peut de nouveau parler.
+    instant[0] += 10.0
+    b.vider()
+    t.recevoir(a, "TCHAT ME REVOILA")
+    assert b.lignes == ["TCHAT A ME REVOILA"]

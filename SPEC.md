@@ -352,7 +352,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 
 | Point | Rule |
 |---|---|
-| Transport | TCP, port 6464. One connection per client. |
+| Transport | TCP, port 6464. One connection per client. A connection without a seat at the table 60 s after opening (no JOIN accepted) is closed by the server. |
 | Frame | One line per message, ending in LF (code 10). A CR before the LF is ignored. |
 | Fields | Upper case keyword, then parameters separated by a space. For TCHAT, INFO and ERR, the text is the rest of the line. |
 | Encoding | ASCII 32–95 (upper case, digits, punctuation). The server converts to upper case and replaces any other character with "?". |
@@ -403,7 +403,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 | ENCH C | Keys 1–4 during bidding | Take with suit C. In round 1, C must be the turned-up suit; in round 2, another suit. |
 | PASSE | PASS bidding key | Pass. |
 | COUP C *(v3)* | Key 1–8 | Play the card with code C (the client turns the displayed number into a code). Valid only on your turn. On the last trick, the client sends it by itself (8.1). |
-| TCHAT TXT | F3, typing, RETURN | Public message, cut to 30 characters by the client and the server. |
+| TCHAT TXT | F3, typing, RETURN | Public message, cut to 30 characters by the client and the server; at most 3 messages per 10 s, the next ones are ignored. |
 | REJOUER | F5 | Host only: next round in FIN MANCHE, new game in FIN PARTIE. |
 | RAZ | F4 then Y (O, J, S) | Host only, game started: wipes the game (scores, reserve, reserved seats) and goes back to ATTENTE; clients receive INFO PARTIE EFFACEE, SCORE 0 0, ETAT ATTENTE. Otherwise ERR CHEF SEUL or ERR PAS LANCEE. |
 | LEAVE | F7 | Leave; the seat goes to a bot. |
@@ -520,6 +520,8 @@ The player (c64/son.s) runs in the KERNAL interrupt, 60 times a second, so also 
 - Public only: no private chat. Opened with F3, sent with RETURN.
 
 - Displayed name limited to 5 characters. Text limited to 30 characters: the client limits typing and the server cuts for safety.
+
+- Flood protection: at most 3 messages per player over 10 seconds; the server ignores the next ones, without answering.
 
 - The message is broadcast to all with TCHAT NAME TXT and shown in the log L12–L17; typed in L18.
 
@@ -641,3 +643,4 @@ These decisions override contradictory or older wording.
 | 19 | Cards with rounded corners (2-pixel arc, preferred to 3 after trying it on the C64); the characters " $ % & become the corners and show as "?" in the chat; tools/textes.py refuses them in translations; documentation screenshots redone (FR and EN). | Client v1.5, update (14 November 2026): release PRG replaced, tag unchanged. |
 | 20 | Sliding card (two sprites) from the hand or the screen edge to the table; table and hand redrawn in place, without flicker; your card starts from the chosen slot; last card played automatically. Tuned by trying it on the C64: the first version flickered (table and hand were cleared then redrawn, twice per card); the card rose in a zigzag (cc65 got a negative difference multiplied by the step wrong); it started from under the table (MAIN arrives with JOUE and had already removed the card: its slot is now remembered as soon as JOUE arrives). Demo 6 matches the server (MAIN after JOUE). No protocol or server change. | Client v1.5, update (14 November 2026): release PRG replaced, tag unchanged. |
 | 21 | Full review of the server: a player reconnecting in FIN PARTIE now receives GAGNANT (their end screen showed the score without the winner). | Server v1.5, fix (14 November 2026). |
+| 22 | Public server protections: a connection without a seat at the table after 60 s is closed; chat limited to 3 messages per player over 10 s (the next ones are ignored, with no new error message so the client does not change). | Server v1.5, fix (14 November 2026). |

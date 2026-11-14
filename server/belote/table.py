@@ -11,7 +11,7 @@ import asyncio
 import random
 import re
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from .bots import choisir_carte, choisir_enchere
@@ -28,6 +28,10 @@ NOM_VALIDE = re.compile(r"[A-Z0-9]{1,5}")
 # Les clients nomment les bots BOT1 à BOT4 : ces noms (et BOT) sont refusés aux humains.
 NOM_RESERVE = re.compile(r"BOT[0-9]*")
 TCHAT_MAX = 30
+# Anti-inondation du tchat : au plus TCHAT_RAFALE messages par joueur sur TCHAT_FENETRE
+# secondes ; les suivants sont ignorés (sur C64, personne ne tape aussi vite).
+TCHAT_RAFALE = 3
+TCHAT_FENETRE = 10.0
 DELAI_BOT = 1.0
 # Après une prise, le premier bot attend plus longtemps : le temps de voir la carte prise.
 FACTEUR_PAUSE_PRISE = 3
@@ -47,6 +51,7 @@ class Siege:
     nom: str = NOM_BOT
     nom_reserve: str | None = None  # ancien occupant pouvant revenir (4.3)
     actif_a: float = 0.0
+    tchat: list[float] = field(default_factory=list)  # instants des derniers messages
 
 
 def _entier(texte: str) -> int | None:
@@ -91,6 +96,9 @@ class Table:
         s = self.sieges[place]
         return f"SIEGE {place} {'H' if s.humain is not None else 'B'} {s.nom}"
 
+    def est_assis(self, client: Client) -> bool:
+        return self._place_de(client) is not None
+
     def _place_de(self, client: Client) -> int | None:
         for place, siege in enumerate(self.sieges):
             if siege.humain is client:
@@ -120,7 +128,7 @@ class Table:
     def _commande(self, client: Client, place: int, mot: str, reste: str) -> None:
         if mot == "TCHAT":
             texte = reste.strip(" ")[:TCHAT_MAX].rstrip(" ")
-            if texte:
+            if texte and self._tchat_permis(self.sieges[place]):
                 self._diffuser(f"TCHAT {self.sieges[place].nom} {texte}")
         elif mot == "LANCER":
             self._cmd_lancer(client, place)
@@ -143,6 +151,15 @@ class Table:
             self._action(client, lambda d: d.jouer(place, -1 if c is None else c))
         else:
             client.envoyer("ERR INCONNU")
+
+    @staticmethod
+    def _tchat_permis(siege: Siege) -> bool:
+        maintenant = time.monotonic()
+        siege.tchat = [t for t in siege.tchat if maintenant - t < TCHAT_FENETRE]
+        if len(siege.tchat) >= TCHAT_RAFALE:
+            return False
+        siege.tchat.append(maintenant)
+        return True
 
     def _action(self, client: Client, faire) -> None:
         if self.etat != EN_COURS:
@@ -208,6 +225,7 @@ class Table:
         siege = self.sieges[place]
         siege.humain, siege.nom, siege.nom_reserve = client, nom, None
         siege.actif_a = time.monotonic()
+        siege.tchat = []
 
         ancien_chef = self.chef
         self._maj_chef()

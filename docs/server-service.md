@@ -111,6 +111,9 @@ TCP port 6464 there too.
 - a player is recognised by name: choosing the name of an absent player takes over their seat;
 - the protocol is not encrypted (plain text, as on the local network).
 
+Two protections limit abuse: a connection that does not join the table within a minute is closed,
+and the chat accepts at most 3 messages per player over 10 seconds.
+
 That is harmless for a friendly game of belote. To limit visitors, you can use a port other than
 6464 (in `config.mk` and in the service), or open the firewall only to your players' addresses:
 
