@@ -2,7 +2,7 @@ VENV := server/.venv
 # Python du serveur (bibliothèque standard seulement) : python3 suffit, ex. sur Fedora.
 PYTHON ?= python3.13
 
-# Adresses du réseau local : voir config.mk.
+# Adresses (serveur appelé par le C64, Ultimate pour make deploy) : voir config.mk.
 include config.mk
 
 # Client C64 (cc65). Adresse pré-remplie dans le champ SERVEUR (SPEC 2.1).
@@ -12,16 +12,23 @@ VERSION := 1.5
 # Langue au démarrage (F1 la change sur l'écran de connexion) : 0 FR, 1 EN, 2 DE, 3 ES.
 LANGUE ?= 0
 PRG := build/belote_lan.prg
-SOURCES := $(sort $(wildcard c64/*.c c64/*.s) c64/titre_img.c c64/son_donnees.s)
-ENTETES := $(wildcard c64/*.h)
-# Le programme s'arrête sous $C000 : écran et caractères vivent en $C000-$CFFF.
+# Les fichiers générés (versionnés) sont nommés pour être refaits s'ils manquent.
+SOURCES := $(sort $(wildcard c64/*.c c64/*.s) c64/titre_img.c c64/son_donnees.s c64/textes.c)
+ENTETES := $(sort $(wildcard c64/*.h) c64/textes.h)
+# Le programme s'arrête sous $C000 : écran, sprites et caractères vivent en $C000-$CFFF,
+# l'image titre en $E000 (voir CLAUDE.md, mémoire du client).
 CFLAGS := -t c64 -O -Or -DSERVEUR_DEFAUT='"$(SERVEUR_DEFAUT)"' -DVERSION='"$(VERSION)"' -DLANGUE_DEFAUT=$(LANGUE) -Wl -D,__HIMEM__=0xC000
 
 .PHONY: all deploy vice demo vice-demo test server clean
 
 all: $(PRG)
 
-$(PRG): $(SOURCES) $(ENTETES) Makefile config.mk
+# Réglages compilés dans le PRG : s'ils changent (make LANGUE=1, SERVEUR_IP=...), build/options
+# change et le PRG est refait, sans avoir à l'effacer.
+OPTIONS := $(SERVEUR_DEFAUT) $(VERSION) $(LANGUE)
+$(shell mkdir -p build; echo '$(OPTIONS)' | cmp -s - build/options || echo '$(OPTIONS)' > build/options)
+
+$(PRG): $(SOURCES) $(ENTETES) Makefile config.mk build/options
 	@mkdir -p build
 	cl65 $(CFLAGS) -m build/belote_lan.map -o $@ $(SOURCES)
 	@rm -f c64/*.o

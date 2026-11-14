@@ -12,7 +12,8 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
   VPS que Stéphan met à jour lui-même (git pull, make test PYTHON=python3, systemctl --user
   restart belote ; voir docs/serveur-service.md)
 - Serveur de test sur ce PC : 192.168.1.55:6464 (`make server`, puis
-  `make deploy SERVEUR_IP=192.168.1.55` après `rm build/belote_lan.prg`)
+  `make deploy SERVEUR_IP=192.168.1.55` ; le PRG est refait de lui-même quand SERVEUR_IP, LANGUE
+  ou VERSION changent, voir build/options) ; redéployer ensuite le PRG normal (`make deploy`)
 
 ## Outils
 - Client C64 : cc65 (cl65), cible c64 ; les .s (lecteur SID) sont assemblés par ca65 via cl65
