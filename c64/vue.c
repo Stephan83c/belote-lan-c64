@@ -4,6 +4,7 @@
 #include <string.h>
 #include "ecran.h"
 #include "jeu.h"
+#include "textes.h"
 #include "ui.h"
 
 unsigned char raz_conf, regles, param, param_sel, tchat, tchat_n;
@@ -44,35 +45,41 @@ static void barre(const char *s)
 
 static void barre_table(void)
 {
-    const char *s = "F3 TCHAT F7 QUIT F8 AIDE";
+    unsigned char s = T_B_BASE;
     if (raz_conf) {
-        s = "EFFACER LA PARTIE ? O OUI, AUTRE NON";
+        s = T_B_RAZ;
     } else if (tchat) {
-        s = "RETURN ENVOYER  DEL EFFACER  F3 ANNULER";
+        s = T_B_TCHAT;
     } else if (etat == E_ATTENTE || etat == E_AUCUN) {
         if (suis_chef()) {
-            s = "F1 PARAM F2 GO F3 TCHAT F7 QUIT F8 AIDE";
+            s = T_B_CHEF_ATTENTE;
         }
     } else if (suis_chef()) {
         /* Partie lancée : le chef a F4 RAZ ; TCHAT devient MSG faute de place. */
         if (etat == E_COURS && tour == moi) {
-            s = atout < 0 ? "1-4 CHOIX F3 MSG F4 RAZ F7 QUIT F8 AIDE"
-                          : "1-8 CARTE F3 MSG F4 RAZ F7 QUIT F8 AIDE";
+            s = atout < 0 ? T_B_CHEF_ENCH : T_B_CHEF_CARTE;
         } else if (etat == E_FIN_MANCHE) {
-            s = "F3 MSG F4 RAZ F5 SUITE F7 QUIT F8 AIDE";
+            s = T_B_CHEF_MANCHE;
         } else {
-            s = "F3 TCHAT F4 RAZ F7 QUIT F8 AIDE";
+            s = T_B_CHEF;
         }
     } else if (etat == E_COURS && tour == moi) {
-        s = atout < 0 ? "1-4 CHOIX F3 TCHAT F7 QUIT F8 AIDE"
-                      : "1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE";
+        s = atout < 0 ? T_B_ENCH : T_B_CARTE;
     }
-    barre(s);
+    barre(T(s));
+}
+
+/* Titre d'un écran, aligné à droite de « BELOTE LAN C64 ». */
+static void titre_ecran(unsigned char id)
+{
+    ecrire(0, 0, "BELOTE LAN C64", BLANC, FOND_VERT);
+    ecrire(38 - strlen(T(id)), 0, T(id), BLANC, FOND_VERT);
+    ligne_tirets(1);
 }
 
 static void entete(void)
 {
-    ecrire(0, 0, "BELOTE   ATOUT:", BLANC, FOND_VERT);
+    ecrire(0, 0, T(T_V_ATOUT), BLANC, FOND_VERT);
     if (atout >= 0) {
         t[0] = SYM(atout);
         t[1] = 0;
@@ -80,7 +87,7 @@ static void entete(void)
         strcpy(t, "?");
     }
     ecrire_n(15, 0, t, 4, BLANC, FOND_VERT);
-    sprintf(t, "NOUS:%04u   EUX:%04u", scores[moi & 1], scores[(moi & 1) ^ 1]);
+    sprintf(t, T(T_V_SCORES), scores[moi & 1], scores[(moi & 1) ^ 1]);
     ecrire(19, 0, t, BLANC, FOND_VERT);
 }
 
@@ -104,17 +111,19 @@ static void zone_table(void)
         } else {
             strcpy(t + 1, noms[p][0] ? noms[p] : "-");
             if ((etat == E_ATTENTE || etat == E_AUCUN) && chef == (signed char)p) {
-                strcat(t, " (CHEF)");
+                strcat(t, " (");
+                strcat(t, T(T_V_CHEF));
+                strcat(t, ")");
             }
         }
         ecrire(nom_x[r], nom_y[r], t, coul_place[p], FOND_VERT);
         carte(carte_x[r], carte_y[r], pli[p]);
     }
     if (etat == E_COURS && retournee >= 0) {
-        ecrire(15, 5, "RETOURNEE", GRIS_CLAIR, FOND_VERT);
+        ecrire(20 - (strlen(T(T_V_RETOURNEE)) + 1) / 2, 5, T(T_V_RETOURNEE), GRIS_CLAIR, FOND_VERT);
         carte(18, 6, retournee);
     } else if (etat == E_COURS && prise >= 0) {
-        ecrire(17, 5, "PRISE", GRIS_CLAIR, FOND_VERT);
+        ecrire(20 - (strlen(T(T_V_PRISE)) + 1) / 2, 5, T(T_V_PRISE), GRIS_CLAIR, FOND_VERT);
         carte(18, 6, prise);
     }
 }
@@ -141,7 +150,8 @@ static void zone_saisie(void)
 {
     effacer(0, 18, 40);
     if (tchat) {
-        ecrire(0, 18, "VOUS : ", BLANC, FOND_VERT);
+        ecrire(0, 18, T(T_V_VOUS), BLANC, FOND_VERT);
+        ecrire(5, 18, ": ", BLANC, FOND_VERT);
         ecrire(7, 18, tchat_txt, BLANC, FOND_VERT);
         curseur(7 + tchat_n, 18);
     }
@@ -153,15 +163,20 @@ static void zone_encheres(void)
 
     effacer(0, 19, 40);
     if (etat == E_ATTENTE) {
-        sprintf(t, "CHEF : %s   CIBLE : %u POINTS", chef >= 0 ? noms[chef] : "-", cible);
+        sprintf(t, T(T_V_ATTENTE), chef >= 0 ? noms[chef] : "-", cible);
         ecrire(0, 19, t, GRIS_CLAIR, FOND_VERT);
     } else if (etat == E_COURS && atout < 0 && retournee >= 0) {
         if (tour != moi) {
-            sprintf(t, "ENCHERES : AU TOUR DE %s...", tour >= 0 ? noms[tour] : "-");
+            sprintf(t, T(T_V_AU_TOUR), tour >= 0 ? noms[tour] : "-");
             ecrire(0, 19, t, GRIS_CLAIR, FOND_VERT);
         } else if (tour_ench == 1) {
-            strcpy(t, "[1 PRENDRE  ] [2 PASSE]");
-            t[11] = SYM(retournee >> 3);
+            /* [1 PRENDRE ♠] [2 PASSE] */
+            strcpy(t, "[1 ");
+            strcat(t, T(T_V_PRENDRE));
+            strcat(t, "  ] [2 ");
+            strcat(t, T(T_V_PASSER));
+            strcat(t, "]");
+            t[4 + strlen(T(T_V_PRENDRE))] = SYM(retournee >> 3);
             ecrire(0, 19, t, JAUNE, FOND_VERT);
         } else {
             x = 0;
@@ -178,16 +193,18 @@ static void zone_encheres(void)
                     x += 6;
                 }
             }
-            ecrire(x, 19, "[4 PASSE]", JAUNE, FOND_VERT);
+            strcpy(t, "[4 ");
+            strcat(t, T(T_V_PASSER));
+            strcat(t, "]");
+            ecrire(x, 19, t, JAUNE, FOND_VERT);
         }
         /* Le journal ne montre pas toujours les passes du 1er tour. */
-        ecrire(32, 19, tour_ench == 1 ? "1ER TOUR" : " 2E TOUR", BLANC, FOND_VERT);
+        k = tour_ench == 1 ? T_V_TOUR1 : T_V_TOUR2;
+        ecrire(40 - strlen(T(k)), 19, T(k), BLANC, FOND_VERT);
     } else if (etat == E_COURS && atout >= 0 && tour == moi) {
-        ecrire(0, 19, "A VOUS DE JOUER : 1-8", JAUNE, FOND_VERT);
+        ecrire(0, 19, T(T_V_A_VOUS), JAUNE, FOND_VERT);
     } else if (etat == E_FIN_MANCHE) {
-        ecrire(0, 19, suis_chef() ? "MANCHE TERMINEE : F5 POUR LA SUIVANTE"
-                                  : "MANCHE TERMINEE : ON ATTEND LE CHEF",
-               GRIS_CLAIR, FOND_VERT);
+        ecrire(0, 19, T(suis_chef() ? T_V_FIN_CHEF : T_V_FIN_AUTRE), GRIS_CLAIR, FOND_VERT);
     }
 }
 
@@ -237,55 +254,29 @@ static void vue_table(void)
     }
 }
 
-static const char *const texte_regles[] = {
-    "32 CARTES. VOUS ET NORD CONTRE EST ET",
-    "OUEST. ON JOUE VERS LA DROITE.",
-    "ENCHERES, TOUR 1 : PRENDRE A LA COULEUR",
-    "RETOURNEE (1) OU PASSER (2). TOUR 2 :",
-    "UNE AUTRE COULEUR (1-3) OU PASSER (4).",
-    "",
-    "FOURNIR LA COULEUR DEMANDEE. A L'ATOUT,",
-    "MONTER SI POSSIBLE. SANS LA COULEUR :",
-    "COUPER SI L'ADVERSAIRE EST MAITRE, ET",
-    "SURCOUPER SI POSSIBLE. PARTENAIRE",
-    "MAITRE : JEU LIBRE.",
-    "",
-    "ATOUT : V 20, 9 14, A 11, 10 10, R 4,",
-    "D 3. HORS ATOUT : A 11, 10 10, R 4,",
-    "D 3, V 2. DIX DE DER 10, BELOTE 20.",
-    "",
-    "LE PRENEUR DOIT FAIRE PLUS QUE LA",
-    "DEFENSE, SINON IL EST DEDANS : 162 A",
-    "LA DEFENSE. CAPOT : 252.",
-    "",
-    "CHEF : F4 EFFACE LA PARTIE EN COURS.",
-};
-
 static void vue_regles(void)
 {
     unsigned char i;
     if (sale != D_TOUT) {
         return;
     }
-    ecrire(0, 0, "BELOTE LAN C64          REGLES DU JEU", BLANC, FOND_VERT);
-    ligne_tirets(1);
-    for (i = 0; i < sizeof(texte_regles) / sizeof(texte_regles[0]); ++i) {
-        ecrire(0, 3 + i, texte_regles[i], BLANC, FOND_VERT);
+    titre_ecran(T_T_REGLES);
+    for (i = 0; i < NB_REGLES; ++i) {
+        ecrire(0, 3 + i, T(T_REGLES + i), BLANC, FOND_VERT);
     }
-    barre("F8 RETOUR AU JEU");
+    barre(T(T_B_RETOUR));
 }
 
 static void vue_param(void)
 {
-    ecrire(0, 0, "BELOTE LAN C64             PARAMETRES", BLANC, FOND_VERT);
-    ligne_tirets(1);
-    sprintf(t, "%c SCORE CIBLE : %u", param_sel == 0 ? '>' : ' ', param_cible);
+    titre_ecran(T_T_PARAM);
+    sprintf(t, T(T_P_CIBLE), param_sel == 0 ? '>' : ' ', param_cible);
     ecrire_n(0, 4, t, 40, param_sel == 0 ? JAUNE : BLANC, FOND_VERT);
-    sprintf(t, "%c INACTIVITE  : %u MIN", param_sel == 1 ? '>' : ' ', param_inactif);
+    sprintf(t, T(T_P_INACTIF), param_sel == 1 ? '>' : ' ', param_inactif);
     ecrire_n(0, 6, t, 40, param_sel == 1 ? JAUNE : BLANC, FOND_VERT);
-    ecrire(0, 9, "CRSR HAUT/BAS : CHOISIR", GRIS_CLAIR, FOND_VERT);
-    ecrire(0, 10, "+ / -         : MODIFIER", GRIS_CLAIR, FOND_VERT);
-    barre("RETURN VALIDER  F1 ANNULER");
+    ecrire(0, 9, T(T_P_CHOISIR), GRIS_CLAIR, FOND_VERT);
+    ecrire(0, 10, T(T_P_MODIFIER), GRIS_CLAIR, FOND_VERT);
+    barre(T(T_B_PARAM));
 }
 
 static void vue_fin(void)
@@ -294,19 +285,17 @@ static void vue_fin(void)
     if (sale != D_TOUT) {
         return;
     }
-    ecrire(0, 0, "BELOTE LAN C64         PARTIE TERMINEE", BLANC, FOND_VERT);
-    ligne_tirets(1);
-    sprintf(t, "NOUS : %4u", nous);
+    titre_ecran(T_T_FIN);
+    sprintf(t, "%-5s: %4u", T(T_NOUS), nous);
     ecrire(0, 4, t, BLANC, FOND_VERT);
-    sprintf(t, "EUX  : %4u", eux);
+    sprintf(t, "%-5s: %4u", T(T_EUX), eux);
     ecrire(0, 5, t, BLANC, FOND_VERT);
     if (gagnant >= 0) {
-        ecrire(0, 7, gagnant == (moi & 1) ? "VICTOIRE DE NOUS !" : "VICTOIRE DE EUX !",
-               JAUNE, FOND_VERT);
+        ecrire(0, 7, T(gagnant == (moi & 1) ? T_F_VICT_NOUS : T_F_VICT_EUX), JAUNE, FOND_VERT);
     }
-    ecrire(0, 11, "F5 = NOUVELLE PARTIE   (CHEF SEULEMENT)", BLANC, FOND_VERT);
-    ecrire(0, 12, "F7 = QUITTER", BLANC, FOND_VERT);
-    barre(suis_chef() ? "F5 NOUVELLE PARTIE F7 QUIT" : "F7 QUIT");
+    ecrire(0, 11, T(T_F_NOUVELLE), BLANC, FOND_VERT);
+    ecrire(0, 12, T(T_F_QUITTER), BLANC, FOND_VERT);
+    barre(T(suis_chef() ? T_B_FIN_CHEF : T_B_FIN));
 }
 
 static unsigned char derniere = 0xFF;

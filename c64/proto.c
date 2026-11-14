@@ -5,6 +5,7 @@
 #include "ecran.h"
 #include "jeu.h"
 #include "son.h"
+#include "textes.h"
 
 signed char moi = -1;
 char noms[4][NOM_MAX + 1];
@@ -55,7 +56,34 @@ static signed char place(void)
     return (p >= 0 && p <= 3) ? (signed char)p : -1;
 }
 
-static const char *const nom_rang[8] = { "7", "8", "9", "10", "V", "D", "R", "A" };
+/* Rang d'une carte : 7 8 9 10, figures de la langue (V D R, J Q K...), A. */
+const char *nom_rang(unsigned char r)
+{
+    static const char *const chiffres[4] = { "7", "8", "9", "10" };
+    static char fig[2];
+    if (r < 4) {
+        return chiffres[r];
+    }
+    fig[0] = r == 7 ? 'A' : T(T_FIGURES)[r - 4];
+    return fig;
+}
+
+/* Motifs des refus (ERR) : mot-clé du protocole, puis son texte. */
+static const char *const codes_err[] = {
+    "TROP LONG", "NOM", "CHEF SEUL", "PAS LANCEE", "INCONNU", "PAS TON TOUR",
+    "COUP REFUSE", "NOM RESERVE", "TABLE PLEINE", "DEJA LANCEE", "PARAM"
+};
+
+const char *motif_refus(const char *code)
+{
+    unsigned char i;
+    for (i = 0; i < sizeof(codes_err) / sizeof(codes_err[0]); ++i) {
+        if (!strcmp(code, codes_err[i])) {
+            return T(T_E_TROP_LONG + i);
+        }
+    }
+    return code;                    /* motif inconnu (serveur plus récent) : tel quel */
+}
 
 static void manche_raz(void)
 {
@@ -118,12 +146,59 @@ static void journal_place(signed char p, const char *texte)
     journal_ajouter(humain[p] ? (const char *)noms[p] : noms_bots[p], coul_place[p], texte, BLANC);
 }
 
-static const char *equipe(int e)
+static char tampon[41];
+
+/* s est-il « NOM fin » ? Si oui, renvoie la longueur du nom plus l'espace, sinon 0. */
+static unsigned char finit_par(const char *s, const char *fin)
 {
-    return (moi >= 0 && e == (moi & 1)) ? "NOUS" : "EUX";
+    unsigned char ls = strlen(s), lf = strlen(fin);
+    return (ls > lf && ls - lf <= NOM_MAX + 1 && !strcmp(s + ls - lf, fin) &&
+            s[ls - lf - 1] == ' ') ? ls - lf : 0;
 }
 
-static char tampon[41];
+/* Les INFO du serveur ont un texte fixe (voir server/belote/table.py) : on
+ * reconnaît chacun pour le traduire ; un INFO inconnu s'affiche tel quel. */
+static void info(char *s)
+{
+    unsigned char n;
+    unsigned pts;
+    int e;
+
+    if (!strcmp(s, "PARTIE EFFACEE")) {
+        journal_info(T(T_I_EFFACEE));
+    } else if (!strcmp(s, "INACTIF : PLACE RENDUE AU BOT")) {
+        journal_info(T(T_I_INACTIF));
+    } else if (!strncmp(s, "NOM CHANGE EN ", 14) && strlen(s + 14) <= NOM_MAX) {
+        sprintf(tampon, T(T_I_NOM_CHANGE), s + 14);
+        journal_info(tampon);
+    } else if (!strncmp(s, "RESERVE ", 8)) {
+        /* RESERVE N POUR EQUIPE E */
+        reste = s + 8;
+        pts = nombre();
+        if (!strncmp(reste, " POUR EQUIPE ", 13)) {
+            reste += 13;
+            e = nombre();
+            sprintf(tampon, T(moi >= 0 && e == (moi & 1) ? T_I_RESERVE_NOUS : T_I_RESERVE_EUX), pts);
+            journal_info(tampon);
+        } else {
+            journal_info(s);
+        }
+    } else if ((n = finit_par(s, "RECONNECTE")) != 0) {
+        s[n - 1] = 0;
+        sprintf(tampon, T(T_I_RECONNECTE), s);
+        journal_info(tampon);
+    } else if ((n = finit_par(s, "INACTIF REMPLACE PAR UN BOT")) != 0) {
+        s[n - 1] = 0;
+        sprintf(tampon, T(T_I_INACTIF_BOT), s);
+        journal_info(tampon);
+    } else if ((n = finit_par(s, "REMPLACE PAR UN BOT")) != 0) {
+        s[n - 1] = 0;
+        sprintf(tampon, T(T_I_BOT), s);
+        journal_info(tampon);
+    } else {
+        journal_info(s);
+    }
+}
 
 void traiter_ligne(char *ligne)
 {
@@ -168,7 +243,7 @@ void traiter_ligne(char *ligne)
         p = place();
         pli_fini = 1;
         son_effet(FX_PLI);
-        journal_place(p, "REMPORTE LE PLI");
+        journal_place(p, T(T_J_PLI));
     } else if (!strcmp(mot, "TCHAT")) {
         /* TCHAT NOM TEXTE */
         char *texte = strchr(reste, ' ');
@@ -186,15 +261,15 @@ void traiter_ligne(char *ligne)
         journal_ajouter(reste, coul, texte, BLANC);
         son_effet(FX_TCHAT);
     } else if (!strcmp(mot, "INFO")) {
-        journal_info(reste);
+        info(reste);
     } else if (!strcmp(mot, "ERR")) {
         strncpy(erreur, reste, 40);
         erreur[40] = 0;
-        strcpy(tampon, "REFUS : ");
-        strncat(tampon, reste, 30);
+        strcpy(tampon, T(T_REFUS));
+        strncat(tampon, motif_refus(erreur), 39 - strlen(tampon));
         journal_info(tampon);
     } else if (!strcmp(mot, "PASSE")) {
-        journal_place(place(), "PASSE");
+        journal_place(place(), T(T_J_PASSE));
     } else if (!strcmp(mot, "PREND")) {
         preneur = place();
         n = nombre();
@@ -203,15 +278,15 @@ void traiter_ligne(char *ligne)
         retournee = -1;
         /* « PREND A V♠ », et l'atout s'il est choisi au second tour :
          * « PREND A V♠ ATOUT ♥ » (le preneur ramasse toujours la retournée). */
-        strcpy(tampon, "PREND A ");
+        strcpy(tampon, T(T_J_PREND));
         i = strlen(tampon);
         if (prise >= 0) {
-            strcpy(tampon + i, nom_rang[prise & 7]);
+            strcpy(tampon + i, nom_rang(prise & 7));
             i = strlen(tampon);
             tampon[i++] = SYM(prise >> 3);
             if ((prise >> 3) != atout) {
-                strcpy(tampon + i, " ATOUT ");
-                i += 7;
+                strcpy(tampon + i, T(T_J_ATOUT));
+                i = strlen(tampon);
                 tampon[i++] = SYM(atout);
             }
         } else {
@@ -226,7 +301,7 @@ void traiter_ligne(char *ligne)
     } else if (!strcmp(mot, "ENCHERES")) {
         tour_ench = (unsigned char)nombre();
         if (tour_ench == 2) {
-            journal_info("SECOND TOUR D'ENCHERES");
+            journal_info(T(T_J_SECOND));
         }
         sale |= D_ENCH;
     } else if (!strcmp(mot, "NBCARTES")) {
@@ -271,7 +346,7 @@ void traiter_ligne(char *ligne)
         } else if (!strcmp(reste, "LANCEE")) {
             etat = E_LANCEE;
             gagnant = -1;
-            journal_info("LA PARTIE COMMENCE");
+            journal_info(T(T_J_COMMENCE));
         } else if (!strcmp(reste, "EN COURS")) {
             etat = E_COURS;
             manche_raz();
@@ -305,17 +380,16 @@ void traiter_ligne(char *ligne)
         /* MANCHE E0 E1 : on affiche NOUS puis EUX */
         if (i) {
             int e1 = nombre();
-            sprintf(tampon, "MANCHE : NOUS %d  EUX %d", e1, n);
+            sprintf(tampon, T(T_J_MANCHE), e1, n);
         } else {
-            sprintf(tampon, "MANCHE : NOUS %d  EUX %d", n, nombre());
+            sprintf(tampon, T(T_J_MANCHE), n, nombre());
         }
         journal_info(tampon);
     } else if (!strcmp(mot, "CAPOT")) {
-        strcpy(tampon, "CAPOT POUR ");
-        strcat(tampon, equipe(nombre()));
-        journal_info(tampon);
+        n = nombre();
+        journal_info(T(moi >= 0 && n == (moi & 1) ? T_J_CAPOT_NOUS : T_J_CAPOT_EUX));
     } else if (!strcmp(mot, "LITIGE")) {
-        sprintf(tampon, "LITIGE : %d POINTS EN RESERVE", nombre());
+        sprintf(tampon, T(T_J_LITIGE), nombre());
         journal_info(tampon);
     } else if (!strcmp(mot, "GAGNANT")) {
         gagnant = (signed char)nombre();
@@ -324,7 +398,7 @@ void traiter_ligne(char *ligne)
         }
         sale = D_TOUT;
     } else if (!strcmp(mot, "REDONNE")) {
-        journal_info("TOUT LE MONDE PASSE : ON REDONNE");
+        journal_info(T(T_J_REDONNE));
     } else if (!strcmp(mot, "BIENVENUE")) {
         /* BIENVENUE NOM P */
         char *esp = strchr(reste, ' ');

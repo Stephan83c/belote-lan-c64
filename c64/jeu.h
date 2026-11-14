@@ -51,6 +51,10 @@ extern struct entree journal[JOURNAL_N];
 void jeu_raz(void);
 void traiter_ligne(char *ligne);
 void journal_info(const char *texte);
+/* Texte d'un motif de refus (ERR) dans la langue choisie. */
+const char *motif_refus(const char *code);
+/* Rang d'une carte (0 = 7 ... 7 = A), figures de la langue choisie. */
+const char *nom_rang(unsigned char r);
 /* Position à l'écran (0 SUD, 1 EST, 2 NORD, 3 OUEST) d'une place absolue. */
 #define REL(p) ((unsigned char)(((p) - moi + 4) & 3))
 /* Couleur du nom d'une place dans le tchat */

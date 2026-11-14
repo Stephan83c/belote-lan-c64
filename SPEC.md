@@ -96,12 +96,16 @@ Le projet est un jeu de belote à quatre places, en réseau, avec un client Comm
 Au démarrage, le client affiche l’écran de connexion. Le champ SERVEUR est pré-rempli avec l’adresse par défaut (SERVEUR_IP et SERVEUR_PORT dans config.mk) ; le joueur peut la modifier (DEL pour effacer) puis valide par RETURN. Format : hôte ou IP, suivi éventuellement de :port (6464 si absent), 31 caractères maximum. Le C64 Ultimate résout lui-même le nom d’hôte. En cas d’échec, le message « CONNEXION IMPOSSIBLE » s’affiche et le champ est proposé de nouveau.
 
 ```
-L0  BELOTE LAN C64
+L0  BELOTE LAN C64  V1.5
 L1  ----------------------------------------
-L3  SERVEUR : 51.38.50.79:6464
-L5  NOM     : JEAN_
+L3  SERVEUR :51.38.50.79:6464
+L5  NOM     :JEAN_
 L7  RETURN = VALIDER
+L22 F1 = LANGUE
+L24 FRANCAIS  ENGLISH  DEUTSCH  ESPANOL
 ```
+
+**Langue** : F1 passe à la langue suivante (français, anglais, allemand, espagnol) ; chaque nom est écrit dans sa langue, celle en cours en jaune, et les textes de l’écran changent aussitôt. Le choix vaut pour toute la session ; la langue au démarrage se règle à la compilation (`make LANGUE=0..3`). Tout est en majuscules sans accents : le mode couleur étendue n’a que 64 caractères (UE pour Ü, N pour Ñ). Les figures suivent la langue : V D R, J Q K (anglais, espagnol), B D K (allemand). Le protocole ne change pas : ses mots-clés restent en français et le client traduit à l’affichage les messages ERR et INFO qu’il reconnaît (un texte inconnu s’affiche tel quel). Les textes sont dans tools/textes.py, qui génère c64/textes.c et vérifie leurs largeurs.
 
 Ensuite, le client demande un nom de 5 caractères maximum (A–Z, 0–9) puis rejoint la table. Le serveur attribue une place et la confirme par BIENVENUE. Le premier humain connecté devient chef de table et premier donneur. Les bots occupent les places libres mais ne jouent pas tant que le chef n’a pas lancé la partie avec F2.
 
@@ -379,7 +383,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 | SCORE E0 E1 | Tous | Score cumulé par équipe absolue ; le client affiche NOUS/EUX selon sa place. |
 | GAGNANT E *(v3)* | Tous | Équipe gagnante de la partie. |
 | TCHAT NOM TXT | Tous | Message public, nom et contenu. |
-| INFO TXT *(v3)* | Client ou tous | Information affichée dans le journal (pseudo modifié, joueur remplacé par un bot, etc.). |
+| INFO TXT *(v3)* | Client ou tous | Information affichée dans le journal (pseudo modifié, joueur remplacé par un bot, etc.). Textes fixes, que le client reconnaît pour les traduire : NOM CHANGE EN NOM, NOM RECONNECTE, NOM REMPLACE PAR UN BOT, NOM INACTIF REMPLACE PAR UN BOT, INACTIF : PLACE RENDUE AU BOT, PARTIE EFFACEE, RESERVE N POUR EQUIPE E. |
 | ERR TEXTE | Client | ERR CHEF SEUL, ERR TABLE PLEINE, ERR PAS TON TOUR, ERR COUP REFUSE, ERR DEJA LANCEE, ERR NOM, ERR NOM RESERVE, ERR TROP LONG. |
 
 ### 7.3 Client → serveur
@@ -616,3 +620,4 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 14 | Bots nommés BOT1 à BOT4 par place réelle (et non plus par position relative, qui différait d’un écran à l’autre) ; couleurs des noms par équipe : cyan et bleu, orange et rouge. | Client v1.3. |
 | 15 | Cartes blanches, rang et symbole dans la couleur de la carte (rouge ou noir), au lieu de cartes rouges ou noires à texte blanc. | Client v1.3. |
 | 16 | Noms BOT et BOT + chiffres refusés aux joueurs (ERR NOM RESERVE) ; messages de refus en clair sur l’écran de connexion (table pleine, nom réservé ou refusé). | Serveur et client v1.4. |
+| 17 | Client en quatre langues (français, anglais, allemand, espagnol), choisie par F1 sur l’écran de connexion ; figures de la langue ; ERR et INFO traduits par le client ; sur l’écran titre, une touche SPACE dessinée remplace « ESPACE POUR JOUER ». Aucun changement de protocole ni de serveur (voir 2.1). | Client v1.5. |

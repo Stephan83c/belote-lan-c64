@@ -24,6 +24,8 @@ La spécification complète du jeu est dans SPEC.md : elle fait foi (règles, pr
   `make demo` compile sans lancer VICE
 - `python3 tools/musique.py` : régénère la musique et les bruitages (c64/son_donnees.s, versionné ;
   lecteur SID dans c64/son.s, branché sur l'IRQ du KERNAL, page zéro $FB-$FE)
+- `python3 tools/textes.py` : régénère les textes du client en 4 langues (c64/textes.c et .h,
+  versionnés ; refuse un texte trop large ou un caractère hors des 64 de l'ECM)
 - `python3 tools/titre.py [apercu.png]` : régénère l'écran titre (c64/titre_img.c, versionné ;
   demande Pillow et la ROM caractères de VICE)
 

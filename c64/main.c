@@ -6,6 +6,7 @@
 #include "ecran.h"
 #include "jeu.h"
 #include "son.h"
+#include "textes.h"
 #include "uci.h"
 #include "ui.h"
 
@@ -129,7 +130,7 @@ static unsigned char saisir(unsigned char y, char *buf, unsigned char max, unsig
         }
         while (!(c = cbm_k_getin())) {
         }
-        if (c == K_RETURN || c == K_HAUT || c == K_BAS) {
+        if (c == K_RETURN || c == K_HAUT || c == K_BAS || c == K_F1) {
             ecrire_n(9, y, buf, 40 - 9, BLANC, FOND_VERT);
             return c;
         }
@@ -167,19 +168,19 @@ static unsigned char nom_de_bot(const char *s)
 static unsigned char refus(void)
 {
     if (!strcmp(erreur, "TABLE PLEINE")) {
-        message("TABLE PLEINE (4 JOUEURS) : PLUS TARD");
+        message(T(T_M_PLEINE));
         return 0;
     }
     if (!strcmp(erreur, "NOM RESERVE")) {
-        message("NOM RESERVE AUX BOTS : CHOISIR UN AUTRE");
+        message(T(T_M_NOM_BOT));
         return 1;
     }
     if (!strcmp(erreur, "NOM")) {
-        message("NOM REFUSE : EN CHOISIR UN AUTRE");
+        message(T(T_M_NOM_REFUSE));
         return 1;
     }
-    strcpy(tx, "REFUS : ");
-    strcat(tx, erreur);
+    strcpy(tx, T(T_REFUS));
+    strncat(tx, motif_refus(erreur), 40 - strlen(tx));
     message(tx);
     return 0;
 }
@@ -189,6 +190,24 @@ static void ferme(void)
     if (sock >= 0) {
         net_fermer(sock);
         sock = -1;
+    }
+}
+
+/* Libellés de l'écran de connexion dans la langue choisie ; en bas, les
+ * langues dans la leur, celle en cours en jaune (F1 passe à la suivante). */
+static void textes_connexion(void)
+{
+    unsigned char i, x = 0;
+
+    ecrire_n(0, 3, T(T_C_SERVEUR), 8, BLANC, FOND_VERT);
+    ecrire(8, 3, ":", BLANC, FOND_VERT);
+    ecrire_n(0, 5, T(T_C_NOM), 8, BLANC, FOND_VERT);
+    ecrire(8, 5, ":", BLANC, FOND_VERT);
+    ecrire_n(0, 7, T(T_C_VALIDER), 40, GRIS_CLAIR, FOND_VERT);
+    ecrire_n(0, 22, T(T_C_LANGUE), 39, GRIS_CLAIR, FOND_VERT);
+    for (i = 0; i < NB_LANGUES; ++i) {
+        ecrire(x, 24, textes[i][T_LANGUE], i == langue ? JAUNE : GRIS_FONCE, FOND_VERT);
+        x += strlen(textes[i][T_LANGUE]) + 2;
     }
 }
 
@@ -202,28 +221,32 @@ static void connexion(void)
     ecran_effacer();
     ecrire(0, 0, "BELOTE LAN C64  V" VERSION, BLANC, FOND_VERT);
     ligne_tirets(1);
-    ecrire(0, 3, "SERVEUR:", BLANC, FOND_VERT);
-    ecrire(0, 5, "NOM    :", BLANC, FOND_VERT);
-    ecrire(0, 7, "RETURN = VALIDER", GRIS_CLAIR, FOND_VERT);
+    textes_connexion();
     ecrire_n(9, 3, serveur, 31, BLANC, FOND_VERT);
     ecrire_n(9, 5, nom, 31, BLANC, FOND_VERT);
     if (perdu) {
-        message("CONNEXION PERDUE");
+        message(T(T_M_PERDUE));
         perdu = 0;
     }
 
     for (;;) {
         k = champ == 0 ? saisir(3, serveur, SERVEUR_MAX, 1) : saisir(5, nom, NOM_MAX, 0);
+        if (k == K_F1) {
+            langue_choisir(langue + 1);
+            textes_connexion();
+            effacer(0, 9, 40);
+            continue;
+        }
         if (k == K_HAUT || k == K_BAS || (k == K_RETURN && champ == 0)) {
             champ ^= 1;
             continue;
         }
         if (!nom[0]) {
-            message("ENTREZ UN NOM (5 LETTRES OU CHIFFRES)");
+            message(T(T_M_ENTREZ_NOM));
             continue;
         }
         if (nom_de_bot(nom)) {
-            message("NOM RESERVE AUX BOTS : CHOISIR UN AUTRE");
+            message(T(T_M_NOM_BOT));
             champ = 1;
             continue;
         }
@@ -232,7 +255,7 @@ static void connexion(void)
             continue;
         }
         if (!uci_present()) {
-            message("COMMAND INTERFACE ABSENTE OU INACTIVE");
+            message(T(T_M_UCI));
             continue;
         }
 
@@ -246,16 +269,16 @@ static void connexion(void)
                 port = PORT_DEFAUT;
             }
         }
-        message("CONNEXION...");
+        message(T(T_M_CONNEXION));
         sock = net_ouvrir(hote, port);
         if (uci_bloquee) {
-            message("ULTIMATE BLOQUE : ETEINDRE ET RALLUMER");
+            message(T(T_M_BLOQUE));
             uci_bloquee = 0;
             sock = -1;
             continue;
         }
         if (sock < 0) {
-            message("CONNEXION IMPOSSIBLE");
+            message(T(T_M_IMPOSSIBLE));
             champ = 0;
             continue;
         }
@@ -277,9 +300,9 @@ static void connexion(void)
         if (erreur[0]) {
             champ = refus();
         } else if (perdu) {
-            message("CONNEXION FERMEE PAR LE SERVEUR");
+            message(T(T_M_FERMEE));
         } else {
-            message("LE SERVEUR NE REPOND PAS");
+            message(T(T_M_MUET));
         }
         perdu = 0;
         ferme();
@@ -395,8 +418,8 @@ static unsigned char touche(void)
         ferme();
         return 0;
     }
-    if (raz_conf) {                 /* F4 : O confirme, toute autre touche annule */
-        if (c == 'O') {
+    if (raz_conf) {                 /* F4 : O (Y, J, S) confirme, toute autre touche annule */
+        if (c == T(T_TOUCHE_OUI)[0]) {
             envoyer("RAZ");
         }
         raz_conf = 0;
@@ -497,6 +520,7 @@ static void partie(void)
 
 int main(void)
 {
+    langue_choisir(langue);
     ecran_init();
     son_init();
     titre();

@@ -15,7 +15,9 @@ son C64. Les places libres sont tenues par des bots. Un serveur Python sur le PC
   blanches (rang et symbole rouges ou noirs) sur un tapis de feutre vert. Le réseau passe par la
   *Ultimate Command Interface* ($DF1C-$DF1F). Un écran titre en bitmap multicolore est généré par
   `tools/titre.py`. Musique sur l'écran titre et bruitages en partie (carte posée, pli, tchat,
-  victoire, défaite), joués sur le SID ; ils sont écrits dans `tools/musique.py`.
+  victoire, défaite), joués sur le SID ; ils sont écrits dans `tools/musique.py`. Quatre langues
+  (français, anglais, allemand, espagnol), choisies par F1 sur l'écran de connexion ; les textes
+  sont dans `tools/textes.py`.
 - **Serveur** (`server/`, Python 3.13 asyncio) : il applique les règles de la belote classique, gère
   les bots, la reconnexion, l'inactivité et le tchat.
 - **Protocole** : texte ASCII, une ligne par message terminée par LF (64 octets au maximum), sur le
@@ -83,7 +85,8 @@ Pour que le serveur démarre tout seul avec le PC, installez-le en service syste
 | F1 | Chef, en attente : réglages (points pour gagner, délai d'inactivité) |
 | F2 | Chef : lancer la partie |
 | F3 | Tchat (30 caractères) |
-| F4 | Chef : effacer la partie en cours (confirmation par O) |
+| F1 | Écran de connexion : changer de langue |
+| F4 | Chef : effacer la partie en cours (confirmation par O, ou Y, J, S selon la langue) |
 | F5 | Chef : manche suivante, ou nouvelle partie |
 | F7 | Quitter la table (un bot prend la place) |
 | F8 | Règles du jeu |
@@ -97,6 +100,8 @@ make vice                    # écran de connexion dans VICE (VICE n'émule pas 
 make vice-demo SCENARIO=1..6 # client avec un réseau simulé (6 : écouter les sons)
 python3 tools/titre.py       # régénère l'écran titre (Pillow)
 python3 tools/musique.py     # régénère la musique et les bruitages
+python3 tools/textes.py      # régénère les textes des 4 langues (vérifie les largeurs)
+make LANGUE=1                # langue au démarrage : 0 FR, 1 EN, 2 DE, 3 ES
 ```
 
 Dans le terminal du serveur, `RAZ` efface la partie en cours. Les particularités de l'Ultimate

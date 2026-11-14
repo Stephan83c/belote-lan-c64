@@ -1,6 +1,7 @@
 #include "ascii.h"
 #include <string.h>
 #include "ecran.h"
+#include "jeu.h"
 
 #define ECRAN   ((unsigned char *)0xC000)
 #define CARS    ((unsigned char *)0xC800)
@@ -21,8 +22,6 @@ static const unsigned char rom_sym[4] = { 65, 83, 88, 90 };
 static const unsigned char motif_feutre[8] = {
     0x80, 0x00, 0x08, 0x00, 0x80, 0x00, 0x08, 0x00
 };
-
-static const char *const rangs[8] = { "7 ", "8 ", "9 ", "10", "V ", "D ", "R ", "A " };
 
 static unsigned off[25];
 
@@ -127,6 +126,7 @@ void carte(unsigned char x, unsigned char y, signed char c)
 {
     char haut[5] = "    ";
     char bas[5] = "    ";
+    const char *rang;
     unsigned char coul;
 
     if (c < 0) {
@@ -135,8 +135,9 @@ void carte(unsigned char x, unsigned char y, signed char c)
         return;
     }
     coul = c >> 3;
-    haut[1] = rangs[c & 7][0];
-    haut[2] = rangs[c & 7][1];
+    rang = nom_rang(c & 7);           /* figures de la langue choisie */
+    haut[1] = rang[0];
+    haut[2] = rang[1] ? rang[1] : ' ';
     bas[1] = SYM(coul);
     ecrire(x, y, haut, FC(coul), FOND_BLANC);
     ecrire(x, y + 1, bas, FC(coul), FOND_BLANC);

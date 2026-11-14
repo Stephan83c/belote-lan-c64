@@ -9,11 +9,13 @@ include config.mk
 SERVEUR_DEFAUT := $(SERVEUR_IP):$(SERVEUR_PORT)
 # Version affichée sur l'écran de connexion (celle de la release GitHub).
 VERSION := 1.4
+# Langue au démarrage (F1 la change sur l'écran de connexion) : 0 FR, 1 EN, 2 DE, 3 ES.
+LANGUE ?= 0
 PRG := build/belote_lan.prg
 SOURCES := $(sort $(wildcard c64/*.c c64/*.s) c64/titre_img.c c64/son_donnees.s)
 ENTETES := $(wildcard c64/*.h)
 # Le programme s'arrête sous $C000 : écran et caractères vivent en $C000-$CFFF.
-CFLAGS := -t c64 -O -Or -DSERVEUR_DEFAUT='"$(SERVEUR_DEFAUT)"' -DVERSION='"$(VERSION)"' -Wl -D,__HIMEM__=0xC000
+CFLAGS := -t c64 -O -Or -DSERVEUR_DEFAUT='"$(SERVEUR_DEFAUT)"' -DVERSION='"$(VERSION)"' -DLANGUE_DEFAUT=$(LANGUE) -Wl -D,__HIMEM__=0xC000
 
 .PHONY: all deploy vice demo vice-demo test server clean
 
@@ -36,6 +38,10 @@ deploy: $(PRG) test
 c64/son_donnees.s: tools/musique.py
 	python3 tools/musique.py
 
+# Textes du client en quatre langues ; le .c généré est versionné.
+c64/textes.c c64/textes.h: tools/textes.py
+	python3 tools/textes.py
+
 # Image de l'écran titre (Pillow) ; le .c généré est versionné.
 c64/titre_img.c: tools/titre.py
 	python3 tools/titre.py
@@ -49,7 +55,7 @@ DEMO := build/demo$(SCENARIO).prg
 
 demo: $(SOURCES) $(ENTETES) c64/vice/faux_uci.c Makefile
 	@mkdir -p build
-	cl65 -t c64 -O -Or -Ic64 -DSCENARIO=$(SCENARIO) -Wl -D,__HIMEM__=0xC000 \
+	cl65 -t c64 -O -Or -Ic64 -DSCENARIO=$(SCENARIO) -DLANGUE_DEFAUT=$(LANGUE) -Wl -D,__HIMEM__=0xC000 \
 	  -o $(DEMO) $(filter-out c64/uci.c,$(SOURCES)) c64/vice/faux_uci.c
 	@rm -f c64/*.o c64/vice/*.o
 

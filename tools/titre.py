@@ -160,7 +160,14 @@ def image():
         dy = abs(i * 2 - 3) * 3      # éventail : les cartes du bord plus bas
         carte(img, x0 + i * pas, 66 + dy, r, c, w=cw, h=ch)
 
-    texte(img, (W - 17 * 8) // 2, 160, "ESPACE POUR JOUER", JAUNE, sx=1, sy=2)
+    # Touche « SPACE » plutôt qu'une phrase : l'écran titre vaut pour toutes les
+    # langues (la langue se choisit ensuite, par F1 sur l'écran de connexion).
+    kx, ky, kw, kh = (W - 64) // 2, 152, 64, 27
+    rect(img, kx, ky, kw, kh, BLANC)
+    rect(img, kx + 1, ky + 2, kw - 2, kh - 4, FOND)
+    for cx, cy in ((kx, ky), (kx + kw - 1, ky), (kx, ky + kh - 1), (kx + kw - 1, ky + kh - 1)):
+        rect(img, cx, cy, 1, 1, FOND)
+    texte(img, (W - 5 * 8) // 2, ky + 6, "SPACE", JAUNE, sx=1, sy=2)
     mini(img, 187, "(C) 2026 STEPHAN - LICENCE GPL V3", BLANC)
     return img
 
