@@ -39,7 +39,7 @@ retournée. Les règles sont intégrées (F8 les affiche sur le C64).
 ## Jouer tout de suite
 
 Téléchargez **`belote_lan.prg`** dans les [Releases](https://github.com/Stephan83c/belote-lan-c64/releases).
-Il se connecte par défaut au serveur public `51.38.50.79:6464` (adresse modifiable sur l'écran de
+Il se connecte par défaut au serveur public (adresse pré-remplie, modifiable sur l'écran de
 connexion). Il faut un C64 Ultimate (ou Ultimate 64 / Ultimate-II+) dont la **Command Interface** est
 activée dans les réglages, et branché sur un réseau qui a accès à Internet.
 
@@ -106,7 +106,7 @@ Ouvrez `config.mk` et mettez les adresses de votre réseau :
 
 | Variable | Rôle | Défaut |
 |---|---|---|
-| `SERVEUR_IP` | IP (ou nom) du serveur, pré-remplie sur le C64 | `51.38.50.79` |
+| `SERVEUR_IP` | IP (ou nom) du serveur, pré-remplie sur le C64 | `203.0.113.42` |
 | `SERVEUR_PORT` | Port TCP du serveur, côté PC et côté C64 | `6464` |
 | `ULTIMATE` | IP du C64 Ultimate, pour envoyer le programme (`make deploy`) | `192.168.1.27` |
 

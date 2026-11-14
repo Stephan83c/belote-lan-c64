@@ -100,7 +100,7 @@ Au démarrage, le client affiche l’écran de connexion. Le champ SERVEUR est p
 
 ```
 L0  BELOTE LAN C64                          V1.7
-L3  SERVEUR :51.38.50.79:6464
+L3  SERVEUR :203.0.113.42:6464
 L5  NOM     :JEAN_
 L7  (messages : CONNEXION..., CONNEXION IMPOSSIBLE...)
 L11            [A♠] [D♥]

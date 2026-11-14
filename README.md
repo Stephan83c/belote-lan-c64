@@ -40,7 +40,7 @@ bidding on a turned-up card. The rules are built in (F8 shows them on the C64).
 ## Play right away
 
 Download **`belote_lan.prg`** from the [Releases](https://github.com/Stephan83c/belote-lan-c64/releases).
-By default it connects to the public server `51.38.50.79:6464` (the address can be changed on the
+By default it connects to the public server (its address is pre-filled and can be changed on the
 connection screen). You need a C64 Ultimate (or Ultimate 64 / Ultimate-II+) with the **Command
 Interface** enabled in its settings, on a network with Internet access.
 
@@ -104,7 +104,7 @@ Open `config.mk` and enter your network addresses:
 
 | Variable | Purpose | Default |
 |---|---|---|
-| `SERVEUR_IP` | Server IP (or host name), pre-filled on the C64 | `51.38.50.79` |
+| `SERVEUR_IP` | Server IP (or host name), pre-filled on the C64 | `203.0.113.42` |
 | `SERVEUR_PORT` | Server TCP port, on both the PC and the C64 | `6464` |
 | `ULTIMATE` | IP of the C64 Ultimate, to send the program (`make deploy`) | `192.168.1.27` |
 

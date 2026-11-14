@@ -102,7 +102,7 @@ At startup, the client shows the connection screen. The SERVER field is pre-fill
 
 ```
 L0  BELOTE LAN C64                          V1.7
-L3  SERVER  :51.38.50.79:6464
+L3  SERVER  :203.0.113.42:6464
 L5  NAME    :JEAN_
 L7  (messages: CONNECTING..., CANNOT CONNECT...)
 L11            [A♠] [Q♥]
