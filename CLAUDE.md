@@ -1,6 +1,10 @@
 # Projet : BELOTE LAN C64 (jeu de belote en réseau pour C64)
 
-La spécification complète du jeu est dans SPEC.md : elle fait foi (règles, protocole, écran).
+La spécification complète du jeu est dans SPEC.fr.md : elle fait foi (règles, protocole, écran).
+
+Documentation en double : français (`*.fr.md`, `docs/serveur-service.md`) pour Stéphan et les
+francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
+`docs/server-service.md`) pour GitHub. Toute modification de l'une se reporte dans l'autre.
 
 ## Matériel
 - C64 Ultimate sur le LAN : 192.168.1.27 (API REST active, Command Interface activée)
@@ -31,7 +35,7 @@ La spécification complète du jeu est dans SPEC.md : elle fait foi (règles, pr
 
 ## Règles
 - Réseau côté C64 via l'Ultimate Command Interface ($DF1C-$DF1F), cible réseau.
-- Protocole texte ASCII, une ligne par message terminée par LF (64 octets max), documenté dans SPEC.md section 7 et protocol.md : il doit rester débogable avec nc.
+- Protocole texte ASCII, une ligne par message terminée par LF (64 octets max), documenté dans SPEC.fr.md section 7 et protocol.fr.md (traductions SPEC.md, protocol.md) : il doit rester débogable avec nc.
 - Toujours tester le serveur avec pytest avant de déployer.
 
 ## Pièges de l'Ultimate (constatés)

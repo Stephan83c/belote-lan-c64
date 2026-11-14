@@ -1,5 +1,7 @@
 # Faire tourner le serveur en service (Linux, systemd)
 
+*[English](server-service.md) · Français*
+
 Avec `make server`, le serveur s'arrête quand on ferme le terminal. En **service**, il démarre tout
 seul avec le PC, redémarre s'il plante et tourne sans fenêtre ouverte. Cette fiche utilise un
 **service utilisateur** systemd : pas besoin d'être root pour le faire tourner, et il s'exécute avec

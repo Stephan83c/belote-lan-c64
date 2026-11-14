@@ -8,7 +8,7 @@ include config.mk
 # Client C64 (cc65). Adresse pré-remplie dans le champ SERVEUR (SPEC 2.1).
 SERVEUR_DEFAUT := $(SERVEUR_IP):$(SERVEUR_PORT)
 # Version affichée sur l'écran de connexion (celle de la release GitHub).
-VERSION := 1.4
+VERSION := 1.5
 # Langue au démarrage (F1 la change sur l'écran de connexion) : 0 FR, 1 EN, 2 DE, 3 ES.
 LANGUE ?= 0
 PRG := build/belote_lan.prg

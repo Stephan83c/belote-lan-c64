@@ -1,90 +1,97 @@
-# Protocole du serveur de belote
+# Belote server protocol
 
-La référence est `SPEC.md` section 7 : texte ASCII, une ligne par message terminée par LF,
-64 octets maximum, port TCP 6464. Ce fichier résume comment jouer à la main et consigne ce
-que la spec laisse ouvert.
+*English · [Français](protocol.fr.md)*
 
-## Jouer avec nc
+The reference is `SPEC.md` section 7: ASCII text, one message per line ending in LF, 64 bytes at
+most, TCP port 6464. This file sums up how to play by hand and records what the spec leaves open.
 
-    make server            # dans un terminal
-    nc localhost 6464      # dans un autre
+Keywords are French and stay so in every language of the client, which translates what it shows.
+Glossary: JOIN join, LANCER start, ENCH bid, PASSE pass, COUP play a card, REJOUER play again,
+RAZ reset, TCHAT chat, BIENVENUE welcome, SIEGE seat, CHEF host, ETAT state, ATTENTE waiting,
+EN COURS in progress, FIN MANCHE end of round, FIN PARTIE end of game, DONNEUR dealer, MAIN hand,
+RETOURNE turned-up card, ENCHERES bidding round, TOUR turn, PREND takes, JOUE plays, PLI trick,
+MANCHE round score, LITIGE tie, GAGNANT winner, CIBLE target score, INACTIF idle timeout.
 
-    JOIN JEAN              rejoindre (place P0, chef)
-    PARAM CIBLE 500        optionnel, chef, avant le lancement
-    LANCER                 démarrer
-    ENCH 1 / PASSE         à son TOUR, pendant les enchères (couleur 1 = coeur)
-    COUP 14                à son TOUR, pendant le jeu (carte 14 = roi de coeur)
-    REJOUER                chef : à ETAT FIN MANCHE ou FIN PARTIE
-    RAZ                    chef : efface la partie en cours (comme RAZ en console)
-    TCHAT BONJOUR          à tout moment après JOIN
-    LEAVE                  quitter
+## Playing with nc
 
-Carte = couleur × 8 + rang.
+    make server            # in one terminal
+    nc localhost 6464      # in another
 
-    Couleur \ rang   7   8   9  10   V   D   R   A
-    0 pique          0   1   2   3   4   5   6   7
-    1 coeur          8   9  10  11  12  13  14  15
-    2 trefle        16  17  18  19  20  21  22  23
-    3 carreau       24  25  26  27  28  29  30  31
+    JOIN JEAN              join (seat P0, host)
+    PARAM CIBLE 500        optional, host, before the start
+    LANCER                 start
+    ENCH 1 / PASSE         on your TOUR, during bidding (suit 1 = hearts)
+    COUP 14                on your TOUR, during play (card 14 = king of hearts)
+    REJOUER                host: at ETAT FIN MANCHE or FIN PARTIE
+    RAZ                    host: wipes the game in progress (like RAZ on the console)
+    TCHAT HELLO            any time after JOIN
+    LEAVE                  leave
 
-## Console du serveur
+Card = suit × 8 + rank.
 
-Dans le terminal de `make server` (le chef peut aussi envoyer `RAZ`, voir plus bas) :
+    Suit \ rank      7   8   9  10   J   Q   K   A
+    0 spades         0   1   2   3   4   5   6   7
+    1 hearts         8   9  10  11  12  13  14  15
+    2 clubs         16  17  18  19  20  21  22  23
+    3 diamonds      24  25  26  27  28  29  30  31
 
-    RAZ                    efface la partie en cours et revient en ATTENTE
+## Server console
 
-Scores, réserve et places réservées sont effacés ; les humains connectés et les paramètres
-restent. Les clients reçoivent `INFO PARTIE EFFACEE`, `SCORE 0 0`, `ETAT ATTENTE`.
+In the terminal of `make server` (the host can also send `RAZ`, see below):
 
-## Précisions par rapport à la spec
+    RAZ                    wipes the game in progress and goes back to ATTENTE
 
-Erreurs ajoutées au format `ERR TEXTE` :
+Scores, reserve and reserved seats are cleared; connected humans and settings stay. Clients
+receive `INFO PARTIE EFFACEE`, `SCORE 0 0`, `ETAT ATTENTE`.
 
-| Message | Cas |
+## Details beyond the spec
+
+Errors added, in the form `ERR TEXT`:
+
+| Message | Case |
 |---|---|
-| `ERR INCONNU` | Mot-clé inconnu. |
-| `ERR PARAM` | PARAM mal formé ou hors plage. |
-| `ERR PAS LANCEE` | REJOUER ou RAZ en ATTENTE. |
-| `ERR NOM RESERVE` | JOIN avec BOT ou BOT suivi de chiffres (noms des bots à l'écran). La connexion reste ouverte : le client peut renvoyer JOIN avec un autre nom. |
+| `ERR INCONNU` | Unknown keyword. |
+| `ERR PARAM` | PARAM malformed or out of range. |
+| `ERR PAS LANCEE` | REJOUER or RAZ while in ATTENTE (game not started). |
+| `ERR NOM RESERVE` | JOIN with BOT or BOT followed by digits (the bots' names on screen). The connection stays open: the client may send JOIN again with another name. |
 
-Autres cas :
+Other cases:
 
-- Toute commande avant JOIN, ou un second JOIN, reçoit `ERR NOM`.
-- Enchère mal placée à son tour (mauvaise couleur, ou ENCH pendant le jeu) et COUP pendant les
-  enchères reçoivent `ERR COUP REFUSE`.
-- Après REDONNE, le serveur enchaîne `ETAT EN COURS` et `DONNEUR P`, comme pour toute donne.
-- `MANCHE` inclut la réserve remportée, pour que `SCORE` reste la somme des `MANCHE` ; un
-  `INFO RESERVE N POUR EQUIPE E` le signale.
-- Ordre en fin de manche : `PLI`, `CAPOT`, `LITIGE`, `INFO RESERVE`, `MANCHE`, `SCORE`, puis
-  `GAGNANT` et `ETAT`. Chaque message n'est présent que si le cas s'applique.
-- À la reconnexion pendant les enchères, `ENCHERES T` suit `RETOURNE`, pour que le client sache
-  quel tour afficher.
-- La main vide en fin de manche s'écrit `MAIN` sans paramètre.
-- Après `PREND`, si le premier à jouer est un bot, il attend trois fois son délai habituel
-  (3 s par défaut) : le temps de voir la carte prise.
-- PETSCII : tout ce que le serveur envoie (majuscules, chiffres, espace, `-`) a le même code en
-  ASCII et en PETSCII majuscules/graphiques. En réception, les majuscules PETSCII du mode
-  minuscules ($C1-$DA) valent A-Z, sauf si l'octet suivant est $80-$BF (caractère UTF-8 envoyé
-  par nc, qui reste `?`). Le terminateur reste LF : un client C64 ne doit pas finir ses lignes
-  par le seul CR du PETSCII.
+- Any command before JOIN, or a second JOIN, gets `ERR NOM`.
+- A misplaced bid on your turn (wrong suit, or ENCH during play) and COUP during bidding get
+  `ERR COUP REFUSE`.
+- After REDONNE (redeal), the server follows with `ETAT EN COURS` and `DONNEUR P`, as for any deal.
+- `MANCHE` includes the reserve won, so that `SCORE` stays the sum of the `MANCHE` lines; an
+  `INFO RESERVE N POUR EQUIPE E` reports it.
+- Order at the end of a round: `PLI`, `CAPOT`, `LITIGE`, `INFO RESERVE`, `MANCHE`, `SCORE`, then
+  `GAGNANT` and `ETAT`. Each message is present only when it applies.
+- On reconnection during bidding, `ENCHERES T` follows `RETOURNE`, so that the client knows which
+  round to show.
+- The empty hand at the end of a round is written `MAIN` with no parameter.
+- After `PREND`, if the first player is a bot, it waits three times its usual delay (3 s by
+  default): time to see the card taken.
+- PETSCII: everything the server sends (upper case, digits, space, `-`) has the same code in ASCII
+  and in upper case/graphics PETSCII. On input, the lower-case-mode PETSCII capitals ($C1-$DA)
+  count as A-Z, unless the next byte is $80-$BF (a UTF-8 character sent by nc, which stays `?`).
+  The terminator stays LF: a C64 client must not end its lines with PETSCII's lone CR.
+- `INFO` texts are fixed (see SPEC.md 7.2): the client recognises them to translate them, and shows
+  any other text as is.
 
-## Décisions d'interprétation des règles
+## Rule interpretation decisions
 
-- **Partenaire maître (5.3)** : tout est permis, y compris un atout inférieur à celui du
-  partenaire qui a coupé.
-- **Litige avec belote du preneur (5.4, 5.5)** : la belote est marquée tout de suite, seuls ses
-  points de cartes vont en réserve. Une manche sans équipe gagnante (nouveau litige) cumule la
-  réserve.
-- **Inactivité (4.3)** : seul l'humain dont la table attend une action est jugé inactif (joueur
-  à son tour, chef en FIN MANCHE ou FIN PARTIE). Jamais en ATTENTE. Toute ligne reçue compte
-  comme activité.
-- **Reconnexion (4.3)** : le serveur reconnaît un joueur à son nom, sans authentification. Un
-  nouveau venu évite les places réservées tant qu'il en reste une autre.
-- **Connexion fantôme (4.3)** : un JOIN au nom d'un humain encore assis, venant de la même
-  adresse IP, remplace sa connexion (C64 redémarré sans LEAVE). Les autres reçoivent
-  `INFO NOM RECONNECTE`. Contrepartie : deux joueurs derrière la même IP (NAT) qui choisissent
-  le même nom ne sont plus départagés par un suffixe, le second prend la place du premier.
-- **Table vide (4.2)** : sans humain, les bots s'arrêtent et la partie reste en suspens ; le
-  prochain arrivant la reprend et devient chef.
-- **Doublons de nom (4.3)** : suffixes essayés de 2 à 9, puis 1, pour respecter l'exemple
-  JEAN → JEA2. Le nom BOT est réservé.
+- **Partner winning (5.3)**: anything goes, including a trump lower than the one the partner
+  trumped with.
+- **Tie with the taker's belote (5.4, 5.5)**: the belote is scored at once, only its card points go
+  to the reserve. A round with no winning team (a new tie) adds to the reserve.
+- **Idle players (4.3)**: only the human the table is waiting for can be idle (player on turn, host
+  at FIN MANCHE or FIN PARTIE). Never in ATTENTE. Any line received counts as activity.
+- **Reconnection (4.3)**: the server recognises a player by name, without authentication. A
+  newcomer avoids reserved seats as long as another one is free.
+- **Ghost connection (4.3)**: a JOIN with the name of a human still seated, from the same IP
+  address, replaces that connection (C64 restarted without LEAVE). The others receive
+  `INFO NOM RECONNECTE`. The trade-off: two players behind the same IP (NAT) choosing the same
+  name are no longer told apart by a suffix; the second takes the first one's seat.
+- **Empty table (4.2)**: with no human, the bots stop and the game is on hold; the next player in
+  picks it up and becomes host.
+- **Duplicate names (4.3)**: suffixes are tried from 2 to 9, then 1, following the example
+  JEAN → JEA2. The name BOT is reserved.
