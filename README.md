@@ -130,7 +130,8 @@ The source code, its comments and the project notes are in French.
 
 The public server has **a single 4-seat table**, and it will stay that way for now. If the game finds
 its players, a **server with several tables** could become a project. Feedback is welcome: open an
-*issue* on GitHub to say you play it, report a problem or suggest an idea.
+*issue* to report a problem or suggest an idea, or say you play it in
+[the announcement discussion](https://github.com/Stephan83c/belote-lan-c64/discussions/1).
 
 ## Authors
 

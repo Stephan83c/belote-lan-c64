@@ -129,8 +129,8 @@ constatées sur le matériel (sockets libérés, Command Interface bloquée) son
 
 Le serveur public n'a qu'**une table de 4 places**, et ça restera ainsi pour l'instant. Si le jeu trouve
 son public, un **serveur à plusieurs tables** pourrait devenir un projet. Vos retours sont les
-bienvenus : ouvrez une *issue* sur GitHub pour dire que vous y jouez, signaler un problème ou
-proposer une idée.
+bienvenus : dites que vous y jouez dans [la discussion d'annonce](https://github.com/Stephan83c/belote-lan-c64/discussions/1), ou ouvrez une *issue*
+pour signaler un problème ou proposer une idée.
 
 ## Auteurs
 
