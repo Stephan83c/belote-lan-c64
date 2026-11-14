@@ -232,7 +232,7 @@ L’ordre de parcours des places est P0 → P1 → P2 → P3 → P0, soit SUD �
 
 ### 4.4 Stratégie des bots
 
-Les bots sont calculés par le serveur et n’agissent qu’après le lancement. Stratégie simple : enchérir si la main contient au moins deux atouts potentiels, sinon passer ; jouer toujours un coup légal (section 5.3) ; jouer plutôt une carte faible si le partenaire est maître, et une carte permettant de gagner si l’adversaire est maître. Chaque action d’un bot (enchère ou carte) est jouée après un délai fixe de **1 seconde** *(v4)*, pour que les joueurs puissent suivre. La stratégie détaillée reste à affiner à l’usage.
+Les bots sont calculés par le serveur et n’agissent qu’après le lancement. Stratégie simple : enchérir si la main contient au moins deux atouts potentiels, sinon passer ; jouer toujours un coup légal (section 5.3) ; jouer plutôt une carte faible si le partenaire est maître, et une carte permettant de gagner si l’adversaire est maître. À l’entame, le bot joue la plus forte carte restante d’une couleur hors atout (l’as, ou le 10 une fois l’as tombé) : il se souvient des cartes déjà jouées dans la donne. Chaque action d’un bot (enchère ou carte) est jouée après un délai fixe de **1 seconde** *(v4)*, pour que les joueurs puissent suivre. La stratégie détaillée reste à affiner à l’usage.
 
 ## 5. Règles de belote
 
@@ -626,3 +626,4 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 15 | Cartes blanches, rang et symbole dans la couleur de la carte (rouge ou noir), au lieu de cartes rouges ou noires à texte blanc. | Client v1.3. |
 | 16 | Noms BOT et BOT + chiffres refusés aux joueurs (ERR NOM RESERVE) ; messages de refus en clair sur l’écran de connexion (table pleine, nom réservé ou refusé). | Serveur et client v1.4. |
 | 17 | Client en quatre langues (français, anglais, allemand, espagnol), choisie par F1 sur l’écran de connexion ; figures de la langue ; ERR et INFO traduits par le client ; sur l’écran titre, une touche SPACE dessinée remplace « ESPACE POUR JOUER ». Aucun changement de protocole ni de serveur (voir 2.1). Documentation traduite en anglais (SPEC.md, README.md, protocol.md, docs/server-service.md), le français gardé en *.fr.md. | Client v1.5. |
+| 18 | Bots : mémoire des cartes jouées ; entame de la plus forte carte restante d’une couleur (10 maître après la chute de l’as), +1 % de points sur 40 000 donnes simulées contre l’ancienne stratégie. Couper ou gagner avec une carte maîtresse plutôt qu’avec la plus petite carte gagnante a été essayé et écarté (−6,8 %). | Serveur v1.5 (correction après la release). |

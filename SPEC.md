@@ -234,7 +234,7 @@ Seats go round P0 → P1 → P2 → P3 → P0, that is SOUTH → EAST → NORTH 
 
 ### 4.4 Bot strategy
 
-Bots are computed by the server and only act after the start. Simple strategy: bid if the hand holds at least two potential trumps, otherwise pass; always play a legal move (section 5.3); rather play a low card if the partner is winning, and a card that can win if the opponent is winning. Each bot action (bid or card) is played after a fixed delay of **1 second** *(v4)*, so that players can follow. The detailed strategy remains to be refined with use.
+Bots are computed by the server and only act after the start. Simple strategy: bid if the hand holds at least two potential trumps, otherwise pass; always play a legal move (section 5.3); rather play a low card if the partner is winning, and a card that can win if the opponent is winning. When leading, the bot plays the highest card left in a non-trump suit (the ace, or the 10 once the ace has fallen): it remembers the cards already played in the deal. Each bot action (bid or card) is played after a fixed delay of **1 second** *(v4)*, so that players can follow. The detailed strategy remains to be refined with use.
 
 ## 5. Belote rules
 
@@ -628,3 +628,4 @@ These decisions override contradictory or older wording.
 | 15 | White cards, rank and suit in the card's colour (red or black), instead of red or black cards with white text. | Client v1.3. |
 | 16 | Names BOT and BOT + digits refused to players (ERR NOM RESERVE); refusal messages in plain words on the connection screen (table full, name reserved or refused). | Server and client v1.4. |
 | 17 | Client in four languages (French, English, German, Spanish), chosen with F1 on the connection screen; face cards of the language; ERR and INFO translated by the client; on the title screen, a drawn SPACE key replaces "ESPACE POUR JOUER". No protocol or server change (see 2.1). English translation of the documentation (SPEC.md, README.md, protocol.md, docs/server-service.md), French kept as *.fr.md. | Client v1.5. |
+| 18 | Bots: memory of the cards played; lead with the highest card left in a suit (master 10 once the ace has fallen), +1 % points over 40,000 deals simulated against the former strategy. Trumping or winning with a master card rather than the lowest winning card was tried and dropped (−6.8 %). | Server v1.5 (fix after the release). |

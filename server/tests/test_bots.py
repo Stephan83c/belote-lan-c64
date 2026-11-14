@@ -7,6 +7,8 @@ import pytest
 from belote.bots import choisir_carte, choisir_enchere
 from belote.moteur import (
     AS,
+    CARREAU,
+    DAME,
     COEUR,
     DIX,
     HUIT,
@@ -65,6 +67,21 @@ def test_coupe_au_plus_petit_atout_gagnant():
     assert choisir_carte(main, pli, PIQUE, 0) == carte(PIQUE, SEPT)
 
 
+def test_entame_un_dix_devenu_maitre():
+    main = [carte(TREFLE, DIX), carte(TREFLE, SEPT), carte(CARREAU, HUIT)]
+    jouees = [carte(TREFLE, AS)]
+    assert choisir_carte(main, [], PIQUE, 0, jouees) == carte(TREFLE, DIX)
+    # Tant que l'as n'est pas tombé, le 10 n'est pas entamé.
+    assert choisir_carte(main, [], PIQUE, 0) != carte(TREFLE, DIX)
+
+
+def test_entame_la_carte_maitresse_qui_rapporte_le_plus():
+    main = [carte(TREFLE, AS), carte(CARREAU, DIX), carte(COEUR, ROI)]
+    jouees = [carte(CARREAU, AS)]
+    # As de trèfle (11) plutôt que 10 de carreau (10), tous deux maîtres.
+    assert choisir_carte(main, [], PIQUE, 0, jouees) == carte(TREFLE, AS)
+
+
 @pytest.mark.parametrize("graine", range(300))
 def test_donne_complete_entre_bots(graine):
     rng = random.Random(graine)
@@ -85,7 +102,7 @@ def test_donne_complete_entre_bots(graine):
 
     while d.phase is Phase.JEU:
         p = d.joueur
-        c = choisir_carte(d.mains[p], d.pli, d.atout, p)
+        c = choisir_carte(d.mains[p], d.pli, d.atout, p, d.jouees)
         assert c in coups_legaux(d.mains[p], d.pli, d.atout, p)
         d.jouer(p, c)
 

@@ -464,7 +464,7 @@ class Table:
             choix = choisir_enchere(d.mains[place], d.tour_encheres, couleur(d.retournee))
             evenements = d.passer(place) if choix is None else d.prendre(place, choix)
         else:
-            evenements = d.jouer(place, choisir_carte(d.mains[place], d.pli, d.atout, place))
+            evenements = d.jouer(place, choisir_carte(d.mains[place], d.pli, d.atout, place, d.jouees))
         self._appliquer(evenements)
 
     def _place_attendue(self) -> int | None:

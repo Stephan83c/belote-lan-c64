@@ -208,6 +208,7 @@ class Donne:
         self.preneur: int | None = None
         self.atout: int | None = None
         self.pli: list[tuple[int, int]] = []
+        self.jouees: list[int] = []         # cartes posées, dans l'ordre (mémoire des bots)
         self.nb_plis = 0
         self.points_cartes = [0, 0]
         self.plis_gagnes = [0, 0]
@@ -287,6 +288,7 @@ class Donne:
 
         self.mains[place].remove(c)
         self.pli.append((place, c))
+        self.jouees.append(c)
         evts: list[tuple] = [("JOUE", place, c)]
 
         if place == self.place_belote and c in (carte(self.atout, ROI), carte(self.atout, DAME)):
