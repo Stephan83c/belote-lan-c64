@@ -38,7 +38,7 @@ C64 network hardware: C64 Ultimate (Ultimate Command Interface, TCP)
 
 9. Chat
 
-10. Existing code / code to write
+10. Code conventions
 
 11. Decisions
 
@@ -192,6 +192,8 @@ The bar shown depends on the state and the role. Each bar is 39 characters at mo
 | Other player, end of round | F3 CHAT F7 QUIT F8 HELP |
 | Host, end of game | F5 NEW GAME F7 QUIT |
 | Other player, end of game | F7 QUIT |
+| Host, after F4 | WIPE THE GAME? Y YES, OTHER KEY NO |
+| Typing the chat | RETURN SEND  DEL DELETE  F3 CANCEL |
 
 ## 4. Players, seats and bots
 
@@ -308,7 +310,7 @@ The round score (MANCHE) and the cumulative score (SCORE) are sent after the eig
 
 - **C64 network** *(v3)* — Ultimate Command Interface of the C64 Ultimate, network target: a TCP connection is opened, then non-blocking reads happen at each pass of the loop. The client gathers bytes up to LF, then handles the line.
 
-- **Encoding** *(v3)* — The network carries ASCII. In upper case/graphics mode, letters A–Z have the same codes in ASCII and PETSCII; beware, cc65 converts character literals for the c64 target: convert explicitly when sending and receiving.
+- **Encoding** *(v3)* — The network carries ASCII. In upper case/graphics mode, letters A–Z have the same codes in ASCII and PETSCII. cc65 would convert literals for the c64 target: c64/ascii.h forces the identity for $40–$5F, so literals, keyboard and network share the same code, with no conversion when sending or receiving.
 
 ### 6.2 Division of responsibilities
 
@@ -388,7 +390,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 | GAGNANT E *(v3)* | All | Winning team of the game. |
 | TCHAT NAME TXT | All | Public message, name and content. |
 | INFO TXT *(v3)* | Client or all | Information shown in the log (name changed, player replaced by a bot, etc.). Fixed texts, which the client recognises to translate them: NOM CHANGE EN NAME, NAME RECONNECTE, NAME REMPLACE PAR UN BOT, NAME INACTIF REMPLACE PAR UN BOT, INACTIF : PLACE RENDUE AU BOT, PARTIE EFFACEE, RESERVE N POUR EQUIPE E. |
-| ERR TEXT | Client | ERR CHEF SEUL, ERR TABLE PLEINE, ERR PAS TON TOUR, ERR COUP REFUSE, ERR DEJA LANCEE, ERR NOM, ERR NOM RESERVE, ERR TROP LONG. |
+| ERR TEXT | Client | ERR CHEF SEUL, ERR TABLE PLEINE, ERR PAS TON TOUR, ERR COUP REFUSE, ERR DEJA LANCEE, ERR PAS LANCEE, ERR NOM, ERR NOM RESERVE, ERR PARAM, ERR INCONNU, ERR TROP LONG (details in protocol.md). The client shows them translated in the log ("REFUSED: …"). |
 
 ### 7.3 Client → server
 
@@ -400,7 +402,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 | PARAM INACTIF M *(v4)* | F1 then setting | Host only, in ATTENTE; M from 1 to 10 minutes. |
 | ENCH C | Keys 1–4 during bidding | Take with suit C. In round 1, C must be the turned-up suit; in round 2, another suit. |
 | PASSE | PASS bidding key | Pass. |
-| COUP C *(v3)* | Key 1–8 | Play the card with code C (the client turns the displayed number into a code). Valid only on your turn. |
+| COUP C *(v3)* | Key 1–8 | Play the card with code C (the client turns the displayed number into a code). Valid only on your turn. On the last trick, the client sends it by itself (8.1). |
 | TCHAT TXT | F3, typing, RETURN | Public message, cut to 30 characters by the client and the server. |
 | REJOUER | F5 | Host only: next round in FIN MANCHE, new game in FIN PARTIE. |
 | RAZ | F4 then Y (O, J, S) | Host only, game started: wipes the game (scores, reserve, reserved seats) and goes back to ATTENTE; clients receive INFO PARTIE EFFACEE, SCORE 0 0, ETAT ATTENTE. Otherwise ERR CHEF SEUL or ERR PAS LANCEE. |
@@ -449,15 +451,15 @@ Grid of 40 columns (0–39) and 25 lines (L0–L24). The central mat is removed:
     0123456789012345678901234567890123456789
 L0  BELOTE   TRUMP:♥   US:0000    THEM:0000
 L1  ----------------------------------------
-L2                 *BOT3
-L3                  [Q ]
-L4                  [♥ ]
-L5    BOT4                     BOT2
+L2                    BOT3
+L3                    [Q ]
+L4                    [♥ ]
+L5    BOT4                      BOT2
 L6      [K ]                    [10]
 L7      [♣ ]                    [♦ ]
-L8                  [A ]
-L9                  [♠ ]
-L10                 JEAN
+L8  
+L9  
+L10                  *JEAN
 L11 ----------------------------------------
 L12 BOT3 : PASSES
 L13 BOT2 : TAKES Q♥
@@ -466,23 +468,23 @@ L15 LEA  : WELL PLAYED!
 L16 BOT2 : REBELOTE
 L17 BOT2 : WINS THE TRICK
 L18 YOU  : _
-L19 [1 TAKE ♥] [2 PASS]
+L19 YOUR TURN: 1-8
 L20 ----------------------------------------
 L21 [J ] [9 ] [Q ] [10] [7 ] [K ]
 L22 [♠ ] [♠ ] [♠ ] [♦ ] [♦ ] [♥ ]
-L23   1    2    3    4    5    6
+L23  1    2    3    4    5    6
 L24 1-8 CARD F3 CHAT F7 QUIT F8 HELP
 ```
 
-**Play area (L2–L10)**: each player's name at their relative position (NORTH = partner, EAST = on the right, WEST = on the left, SOUTH = yourself), preceded by * for the player whose turn it is. Under each name, the card they played in the current trick, or nothing. The cards of a finished trick stay shown until the first card of the next trick. Opposing hands are not drawn. Humans are shown by name (followed by "(HOST)" while waiting), bots as BOT1 to BOT4 after their real seat (P0 to P3), the same for all players.
+**Play area (L2–L10)**: each player's name at their relative position (NORTH = partner, EAST = on the right, WEST = on the left, SOUTH = yourself), preceded by * for the player whose turn it is. Under each name, the card they played in the current trick, or nothing. The cards of a finished trick stay shown until the first card of the next trick. Opposing hands are not drawn. Humans are shown by name (followed by "(HOST)" while waiting), bots as BOT1 to BOT4 after their real seat (P0 to P3), the same for all players. In the centre (L5–L7): during bidding, the turned-up card under "TURNED UP"; after the take, the card taken under "TAKEN", until the first card is played.
 
 **Log (L12–L17)**: six lines for bids, belote-rebelote, tricks, chat and INFO; a player event fits in 33 characters after "NAME : ", a server message takes the whole line (40); new events replace the oldest ones. **L18** is used to type the chat.
 
-**L19** is reserved for bidding and stays empty otherwise. First round: "[1 TAKE <turned-up suit>] [2 PASS]". Second round: the 3 other suits then PASS (e.g. "[1 ♠] [2 ♣] [3 ♦] [4 PASS]"). On another player's turn: "BIDDING: <NAME> TO PLAY...". On the right of the line, the current bidding round ("ROUND 1" or "ROUND 2"), as the log does not always show the passes of the first round. The player concerned uses keys 1 to 4.
+**L19** is the status line. While waiting: "HOST: <NAME>   TARGET: 1000 POINTS". During play, on your turn: "YOUR TURN: 1-8". At the end of a round: "ROUND OVER: F5 FOR THE NEXT ONE" (host) or "…: WAITING FOR THE HOST". During bidding, first round: "[1 TAKE <turned-up suit>] [2 PASS]". Second round: the 3 other suits then PASS (e.g. "[1 ♠] [2 ♣] [3 ♦] [4 PASS]"). On another player's turn: "BIDDING: <NAME> TO PLAY...". On the right of the line, the current bidding round ("ROUND 1" or "ROUND 2"), as the log does not always show the passes of the first round. The player concerned uses keys 1 to 4.
 
-**Hand (L21–L23)**: up to 8 cards numbered 1 to 8, sorted spades-hearts-clubs-diamonds. L0 shows TRUMP:? until the end of the bidding; US and THEM show the cumulative score on 4 digits at most.
+**Hand (L21–L23)**: up to 8 cards numbered 1 to 8, sorted spades-hearts-clubs-diamonds; the numbers are yellow when it is your turn to play a card, dark grey otherwise. L0 shows TRUMP:? until the end of the bidding; US and THEM show the cumulative score on 4 digits at most.
 
-**Sliding card**: each card played (JOUE) slides to its place on the table in 14 frames (about a quarter of a second), drawn with two sprites: the white body with rounded corners (sprite 1, X-expanded) and, in front, the rank and suit in the card's colour (sprite 0); data at $C400. Your own card starts from its slot in the hand (remembered when JOUE arrives, before the MAIN that follows); the partner's from the top of the screen, the opponents' from the right (EAST) or left (WEST) edge. The table and the hand are redrawn in place, without being cleared first: nothing flickers.
+**Sliding card**: each card played (JOUE) slides to its place on the table in 14 frames (about a quarter of a second), drawn with two sprites: the white body with rounded corners (sprite 1, X-expanded) and, in front, the rank and suit in the card's colour (sprite 0); data at $C400. Your own card starts from its slot in the hand (remembered when JOUE arrives, before the MAIN that follows); the partner's from the top of the screen, the opponents' from the right (EAST) or left (WEST) edge. During that quarter of a second, the client does not read the network: messages wait in the Ultimate. The table and the hand are redrawn in place, without being cleared first: nothing flickers.
 
 **Last trick**: the last card is played automatically half a second after the player's TOUR (a single COUP per card).
 
@@ -490,7 +492,7 @@ L24 1-8 CARD F3 CHAT F7 QUIT F8 HELP
 
 | Area / item | Value | Rendering |
 |---|---|---|
-| Board and border | C64 green = 5 | Green background. |
+| Board and border | C64 green = 5 | Green background; empty cells carry a felt pattern (light green dots = 13, the redrawn # character). |
 | Cards | White background (ECM, $D022 = 1), rounded corners | Rank and suit in the card's colour. The corners are four redrawn characters (" $ % &): a 2-pixel arc in the board's green. |
 | Hearts and diamonds | C64 red = 2 | Red rank and suit on the white card. |
 | Spades and clubs | C64 black = 0 | Black rank and suit on the white card. |
@@ -527,7 +529,7 @@ The player (c64/son.s) runs in the KERNAL interrupt, 60 times a second, so also 
 
 - Bots are named BOT1 to BOT4 after their real seat (P0 to P3): in the chat, "BOT2" means the same bot for everyone.
 
-## 10. Existing code / code to write
+## 10. Code conventions
 
 The C/cc65 client (c64/) and the Python server (server/) are written and in service. The BASIC extracts below come from the original design: their conventions (card codes, seats, colours) are still those of the code.
 
@@ -572,7 +574,9 @@ c64-online/
   c64/         C client (cc65), built by the Makefile at the root (cl65 -t c64)
   c64/vice/    simulated network for VICE (make vice-demo SCENARIO=1..6)
   server/      Python asyncio server + pytest tests
-  tools/       generators: texts (4 languages), music, title screen
+  tools/       generators: texts (4 languages), music, title screen; belote.service
+  docs/        screenshots (FR and EN), systemd service guide
+  config.mk    addresses: default server, C64 Ultimate
   protocol.md  extract of section 7 (protocol.fr.md in French)
   CLAUDE.md    build/deploy instructions (French)
   SPEC.md, README.md, protocol.md: English translations (*.fr.md: French)
@@ -595,10 +599,10 @@ These decisions override contradictory or older wording.
 | Contract | Taker: strictly more than the defence, belote included. Dedans: 162 to the defence, belote stays with the team that announced it. Tie: the taker's points in reserve. Capot: 252. Raw points. | Adopted *(v3)*; capot *(v4)* |
 | Presence | No spectators. Idle timeout 3 min by default (F1: 1 to 10 min): bot. Return to your seat possible if free. Disconnection on your turn: the bot plays at once. | Adopted |
 | Chat | Public; name 5 characters; message 30 characters; non-blocking loop; name colour per seat, two shades per team (cyan and blue, orange and red); bots BOT1 to BOT4. | Adopted; bot colours and names (client v1.3) |
-| Graphics | Board/border green 5; white cards, rank and suit red 2 / black 0; colour RAM $D800. | Adopted; white cards (client v1.3) |
+| Graphics | Board/border green 5 with felt pattern; white cards with rounded corners, rank and suit red 2 / black 0; colour RAM $D800; sliding played card (two sprites). | Adopted; white cards (client v1.3); corners and sliding (client v1.5) |
 | Sounds | Music on the title screen; sound effects for card played, trick, chat; win and loss jingles. Client side only (section 8.3). | Adopted |
 | Languages | French, English, German, Spanish, chosen with F1 on the connection screen; upper case without accents; protocol unchanged, ERR and INFO translated by the client (section 2.1). | Adopted (client v1.5) |
-| Screen | 40 × 25 grid (L0–L24), no central mat: card played under each player's name, number of opposing cards; 6-line log; key bar ≤ 39 characters on L24; * before the player on turn. | Adopted; no mat *(v4)* |
+| Screen | 40 × 25 grid (L0–L24), no central mat: card played under each player's name; opposing hands not shown; 6-line log; key bar ≤ 39 characters on L24; * before the player on turn. | Adopted; no mat *(v4)* |
 | Server | Python asyncio on Linux (VPS in production), port 6464; address typed on the C64; deals, validates, counts, plays the bots (1 s delay); 4 humans max. | Adopted; address *(v4)* |
 | F1 settings *(v4)* | Target score (500–5000, default 1000) and idle timeout (1–10 min, default 3). | Adopted *(v4)* |
 | Network hardware *(v3)* | C64 Ultimate, Ultimate Command Interface, direct TCP. | Adopted *(v3)* |
