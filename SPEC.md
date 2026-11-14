@@ -304,7 +304,7 @@ The round score (MANCHE) and the cumulative score (SCORE) are sent after the eig
 
 - **Server** — Python 3 asyncio on Linux: asyncio.start_server on port 6464, one coroutine per client, central game state, line-by-line text protocol (StreamReader.readline()).
 
-- **Client** — C for the C64 compiled with cc65 (cl65 -t c64); conio.h for the 40×25 screen; non-blocking main loop alternating keyboard (kbhit() before cgetc()) and network, so as to keep receiving while typing. No sprites.
+- **Client** — C for the C64 compiled with cc65 (cl65 -t c64); 40×25 screen in extended colour mode (ECM), written directly to memory ($C000, characters at $C800); non-blocking main loop alternating keyboard (KERNAL GETIN, cbm_k_getin) and network, so as to keep receiving while typing. Two sprites for the sliding card (8.1); multicolour bitmap title screen; music and sound effects on the SID (8.3).
 
 - **C64 network** *(v3)* — Ultimate Command Interface of the C64 Ultimate, network target: a TCP connection is opened, then non-blocking reads happen at each pass of the loop. The client gathers bytes up to LF, then handles the line.
 
@@ -476,9 +476,9 @@ L24 1-8 CARD F3 CHAT F7 QUIT F8 HELP
 
 **Play area (L2–L10)**: each player's name at their relative position (NORTH = partner, EAST = on the right, WEST = on the left, SOUTH = yourself), preceded by * for the player whose turn it is. Under each name, the card they played in the current trick, or nothing. The cards of a finished trick stay shown until the first card of the next trick. Opposing hands are not drawn. Humans are shown by name (followed by "(HOST)" while waiting), bots as BOT1 to BOT4 after their real seat (P0 to P3), the same for all players.
 
-**Log (L12–L17)**: six lines for bids, belote-rebelote, tricks, chat and INFO, 30 characters at most per message; new events replace the oldest ones. **L18** is used to type the chat.
+**Log (L12–L17)**: six lines for bids, belote-rebelote, tricks, chat and INFO; a player event fits in 33 characters after "NAME : ", a server message takes the whole line (40); new events replace the oldest ones. **L18** is used to type the chat.
 
-**L19** is reserved for bidding and stays empty otherwise. First round: "[1 TAKE <turned-up suit>] [2 PASS]". Second round: the 3 other suits then PASS (e.g. "[1 ♠] [2 ♣] [3 ♦] [4 PASS]"). On another player's turn: "BIDDING: <NAME> TO PLAY...". The player concerned uses keys 1 to 4.
+**L19** is reserved for bidding and stays empty otherwise. First round: "[1 TAKE <turned-up suit>] [2 PASS]". Second round: the 3 other suits then PASS (e.g. "[1 ♠] [2 ♣] [3 ♦] [4 PASS]"). On another player's turn: "BIDDING: <NAME> TO PLAY...". On the right of the line, the current bidding round ("ROUND 1" or "ROUND 2"), as the log does not always show the passes of the first round. The player concerned uses keys 1 to 4.
 
 **Hand (L21–L23)**: up to 8 cards numbered 1 to 8, sorted spades-hearts-clubs-diamonds. L0 shows TRUMP:? until the end of the bidding; US and THEM show the cumulative score on 4 digits at most.
 
@@ -521,7 +521,7 @@ The player (c64/son.s) runs in the KERNAL interrupt, 60 times a second, so also 
 
 - The message is broadcast to all with TCHAT NAME TXT and shown in the log L12–L17; typed in L18.
 
-- Typing the chat does not stop network reception: the main loop checks the keyboard without blocking (kbhit() before cgetc()) and handles network data in turn.
+- Typing the chat does not stop network reception: the main loop checks the keyboard without blocking (KERNAL GETIN) and handles network data in turn.
 
 - Name colour, on the table and in the log: one fixed colour per seat, the same on every screen, in two shades per team: P0 cyan (3) and P2 blue (6) for team P0+P2; P1 orange (8) and P3 red (2) for team P1+P3. Light red (10), too close to green in brightness, is left out. The message text stays white; INFO and server messages in light grey (15).
 
@@ -529,7 +529,7 @@ The player (c64/son.s) runs in the KERNAL interrupt, 60 times a second, so also 
 
 ## 10. Existing code / code to write
 
-The history contains design fragments and pseudocode, not a compilable C/cc65 client. The BASIC extracts below are references whose conventions are to be carried over to C.
+The C/cc65 client (c64/) and the Python server (server/) are written and in service. The BASIC extracts below come from the original design: their conventions (card codes, seats, colours) are still those of the code.
 
 ### 10.1 Card and seat coding
 
@@ -569,7 +569,8 @@ BOT        : always a legal move (section 5.3)
 
 ```
 c64-online/
-  c64/         C client (cc65) + Makefile (cl65 -t c64)
+  c64/         C client (cc65), built by the Makefile at the root (cl65 -t c64)
+  c64/vice/    simulated network for VICE (make vice-demo SCENARIO=1..6)
   server/      Python asyncio server + pytest tests
   tools/       generators: texts (4 languages), music, title screen
   protocol.md  extract of section 7 (protocol.fr.md in French)
@@ -605,11 +606,11 @@ These decisions override contradictory or older wording.
 
 ## 12. To do / open questions
 
-- **Bots** — Detailed strategy to refine after the first games (the 1 s delay and the BOT name are set).
+- **Bots** — Strategy to refine: bidding (count the jack, 9 and ace of trumps rather than the number of trumps), play with the partner, count the trumps played. The 1 s delay and the names BOT1 to BOT4 are set; see step 18 for what was measured.
 
-- **Default address** — Value pre-filled in the SERVER field (for example the production VPS address), to set in the Makefile.
+- **Several tables** — The server has a single 4-seat table: a fifth player gets TABLE PLEINE, and strangers can take the seats of a group of friends. To plan before a public announcement (protocol, server and C64 screen).
 
-- **Tests** — Keyboard/network alternation while typing the chat; 40-column display on the C64 Ultimate and in VICE.
+- **Accessibility** — A C64 Ultimate (or Ultimate 64 / Ultimate-II+) is needed: VICE does not emulate the Command Interface. A version using VICE's emulated network (RR-Net) would allow trying it without the hardware.
 
 ## 13. Decision history
 

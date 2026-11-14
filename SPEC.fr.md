@@ -141,7 +141,7 @@ L7  VICTOIRE DE NOUS !
 L8
 L9
 L10
-L11 F5 = NOUVELLE PARTIE   (chef seulement)
+L11 F5 = NOUVELLE PARTIE   (CHEF SEULEMENT)
 L12 F7 = QUITTER
 ```
 
@@ -302,7 +302,7 @@ Le score de la manche (MANCHE) et le score cumulé (SCORE) sont transmis après 
 
 - **Serveur** — Python 3 asyncio sous Linux : asyncio.start_server sur le port 6464, une coroutine par client, état de partie centralisé, protocole texte ligne par ligne (StreamReader.readline()).
 
-- **Client** — C pour C64 compilé avec cc65 (cl65 -t c64) ; conio.h pour l’écran 40×25 ; boucle principale non bloquante alternant clavier (kbhit() avant cgetc()) et réseau, afin de continuer à recevoir pendant la saisie. Aucun sprite.
+- **Client** — C pour C64 compilé avec cc65 (cl65 -t c64) ; écran 40×25 en mode couleur étendue (ECM) écrit directement en mémoire ($C000, caractères en $C800) ; boucle principale non bloquante alternant clavier (GETIN du KERNAL, cbm_k_getin) et réseau, afin de continuer à recevoir pendant la saisie. Deux sprites pour la carte qui glisse (8.1) ; écran titre en bitmap multicolore ; musique et bruitages sur le SID (8.3).
 
 - **Réseau C64** *(v3)* — Ultimate Command Interface du C64 Ultimate, cible réseau : ouverture d’une connexion TCP, puis lectures non bloquantes à chaque passage de boucle. Le client accumule les octets jusqu’au LF, puis traite la ligne.
 
@@ -474,9 +474,9 @@ L24 1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE
 
 **Zone de jeu (L2–L10)** : nom de chaque joueur à sa position relative (NORD = partenaire, EST = à droite, OUEST = à gauche, SUD = soi), précédé de * pour le joueur dont c’est le tour. Sous chaque nom, la carte qu’il a jouée dans le pli en cours, ou rien. Les cartes d’un pli terminé restent affichées jusqu’à la première carte du pli suivant. Les mains adverses ne sont pas dessinées. Les humains sont désignés par leur nom (suivi de « (CHEF) » en attente), les bots par BOT1 à BOT4 selon leur place réelle (P0 à P3), identique pour tous les joueurs.
 
-**Journal (L12–L17)** : six lignes pour les enchères, belote-rebelote, plis, tchat et INFO, 30 caractères maximum par message ; les nouveaux événements remplacent les plus anciens. **L18** sert à la saisie du tchat.
+**Journal (L12–L17)** : six lignes pour les enchères, belote-rebelote, plis, tchat et INFO ; un événement de joueur tient en 33 caractères après « NOM  : », un message du serveur prend toute la ligne (40) ; les nouveaux événements remplacent les plus anciens. **L18** sert à la saisie du tchat.
 
-**L19** est réservée aux enchères et reste vide sinon. Premier tour : « [1 PRENDRE <couleur retournée>] [2 PASSE] ». Second tour : les 3 autres couleurs puis PASSE (ex. « [1 ♠] [2 ♣] [3 ♦] [4 PASSE] »). Au tour d’un autre joueur : « EN ATTENTE... ». Le joueur concerné utilise les touches 1 à 4.
+**L19** est réservée aux enchères et reste vide sinon. Premier tour : « [1 PRENDRE <couleur retournée>] [2 PASSE] ». Second tour : les 3 autres couleurs puis PASSE (ex. « [1 ♠] [2 ♣] [3 ♦] [4 PASSE] »). Au tour d’un autre joueur : « ENCHERES : AU TOUR DE <NOM>... ». À droite de la ligne, le tour d’enchères en cours (« 1ER TOUR » ou « 2E TOUR »), car le journal ne montre pas toujours les passes du premier tour. Le joueur concerné utilise les touches 1 à 4.
 
 **Main (L21–L23)** : jusqu’à 8 cartes numérotées de 1 à 8, triées pique-cœur-trèfle-carreau. L0 affiche ATOUT:? jusqu’à la fin des enchères ; NOUS et EUX montrent le score cumulé sur 4 chiffres maximum.
 
@@ -519,7 +519,7 @@ Le lecteur (c64/son.s) tourne dans l’interruption du KERNAL, 60 fois par secon
 
 - Le message est diffusé à tous via TCHAT NOM TXT et affiché dans le journal L12–L17 ; saisie en L18.
 
-- La saisie du tchat n’interrompt pas la réception réseau : la boucle principale vérifie le clavier de façon non bloquante (kbhit() avant cgetc()) et traite les données réseau en alternance.
+- La saisie du tchat n’interrompt pas la réception réseau : la boucle principale vérifie le clavier de façon non bloquante (GETIN du KERNAL) et traite les données réseau en alternance.
 
 - Couleur du nom, sur la table et dans le journal : une couleur fixe par place, la même sur tous les écrans, en deux nuances par équipe : P0 cyan (3) et P2 bleu (6) pour l’équipe P0+P2 ; P1 orange (8) et P3 rouge (2) pour l’équipe P1+P3. Le rouge clair (10), trop proche du vert en luminosité, est écarté. Le texte du message reste blanc ; INFO et messages du serveur en gris clair (15).
 
@@ -527,7 +527,7 @@ Le lecteur (c64/son.s) tourne dans l’interruption du KERNAL, 60 fois par secon
 
 ## 10. Code existant / à écrire
 
-L’historique contient des fragments de conception et du pseudocode, pas un client C/cc65 compilable. Les extraits BASIC ci-dessous sont des références dont les conventions sont à porter en C.
+Le client C/cc65 (c64/) et le serveur Python (server/) sont écrits et en service. Les extraits BASIC ci-dessous viennent de la conception d’origine : leurs conventions (codes des cartes, places, couleurs) sont toujours celles du code.
 
 ### 10.1 Codage des cartes et places
 
@@ -567,7 +567,8 @@ BOT        : toujours un coup legal (section 5.3)
 
 ```
 c64-online/
-  c64/         client C (cc65) + Makefile (cl65 -t c64)
+  c64/         client C (cc65), compilé par le Makefile de la racine (cl65 -t c64)
+  c64/vice/    réseau simulé pour VICE (make vice-demo SCENARIO=1..6)
   server/      serveur Python asyncio + tests pytest
   protocol.md  extrait de la section 7 (protocol.fr.md en français)
   tools/       générateurs : textes (4 langues), musique, écran titre
@@ -603,11 +604,11 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 
 ## 12. Reste à faire / questions ouvertes
 
-- **Bots** — Stratégie détaillée à affiner après les premières parties (le délai de 1 s et le nom BOT sont fixés).
+- **Bots** — Stratégie à affiner : enchères (compter valet, 9 et as d’atout plutôt que le nombre d’atouts), jeu avec le partenaire, compte des atouts tombés. Le délai de 1 s et les noms BOT1 à BOT4 sont fixés ; voir l’étape 18 pour ce qui a été mesuré.
 
-- **Adresse par défaut** — Valeur pré-remplie dans le champ SERVEUR (par exemple l’adresse du VPS de production), à fixer dans le Makefile.
+- **Plusieurs tables** — Le serveur n’a qu’une table de 4 places : un cinquième joueur reçoit TABLE PLEINE, et des inconnus peuvent occuper les places d’un groupe d’amis. À prévoir avant une annonce publique (protocole, serveur et écran C64).
 
-- **Tests** — Alternance clavier/réseau pendant la saisie du tchat ; affichage 40 colonnes sur C64 Ultimate et sur VICE.
+- **Accessibilité** — Il faut un C64 Ultimate (ou Ultimate 64 / Ultimate-II+) : VICE n’émule pas la Command Interface. Une version passant par le réseau émulé de VICE (RR-Net) permettrait d’essayer sans matériel.
 
 ## 13. Historique des décisions
 
