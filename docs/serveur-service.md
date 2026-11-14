@@ -16,6 +16,9 @@ cd ~/c64-online
 make test        # crée server/.venv au besoin et vérifie que le serveur fonctionne
 ```
 
+Le Makefile utilise `python3.13` par défaut. Si la machine n'a que `python3` (Debian, Ubuntu,
+Fedora…), lancez `make test PYTHON=python3` la première fois : le venv est alors créé avec lui.
+
 Arrêtez un éventuel `make server` lancé à la main (Ctrl+C) : deux serveurs ne peuvent pas écouter le
 même port.
 
@@ -54,7 +57,11 @@ sudo loginctl enable-linger $USER
 systemctl --user status belote          # doit indiquer « active (running) »
 journalctl --user -u belote -f          # journal en direct (connexions, erreurs) ; Ctrl+C pour sortir
 ss -ltn | grep 6464                    # le port est bien en écoute
+printf 'JOIN BOT2\n' | nc -w 3 localhost 6464   # doit répondre ERR NOM RESERVE
 ```
+
+La dernière ligne parle vraiment au serveur sans prendre de place à la table : BOT2 est un nom
+réservé aux bots, le serveur le refuse.
 
 Sur le C64, connectez-vous comme d'habitude à `SERVEUR_IP:SERVEUR_PORT`.
 
@@ -98,7 +105,8 @@ sudo firewall-cmd --list-ports      # doit afficher 6464/tcp
 Si l'hébergeur a aussi un pare-feu dans son interface web (OVH : *Network Firewall*), ouvrez-y le
 port TCP 6464 également.
 
-**Vérifier depuis chez vous** : `nc -vz 51.38.50.79 6464` doit répondre *succeeded* (ou *open*).
+**Vérifier depuis chez vous** : `nc -vz <adresse-du-VPS> 6464` doit répondre *succeeded* (ou
+*open*), et `printf 'JOIN BOT2\n' | nc -w 3 <adresse-du-VPS> 6464` doit répondre `ERR NOM RESERVE`.
 
 **Exposé sur Internet**, le serveur accepte n'importe qui :
 
