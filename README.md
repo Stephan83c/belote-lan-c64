@@ -15,8 +15,6 @@ bidding on a turned-up card. The rules are built in (F8 shows them on the C64).
 |---|---|
 | ![Table](docs/table-en.png) | ![Bidding](docs/bidding-en.png) |
 
-![The card played slides from the hand to the table](docs/glisse-en.gif)
-
 ## What's inside
 
 - **C64 client** (`c64/`, C with cc65): the screen uses extended colour mode (ECM), with white
