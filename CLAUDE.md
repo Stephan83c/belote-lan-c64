@@ -38,6 +38,12 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
 - Protocole texte ASCII, une ligne par message terminée par LF (64 octets max), documenté dans SPEC.fr.md section 7 et protocol.fr.md (traductions SPEC.md, protocol.md) : il doit rester débogable avec nc.
 - Toujours tester le serveur avec pytest avant de déployer.
 
+## Pièges de cc65 (constatés)
+- `(b - a) * k / n` avec b < a (int) et k unsigned char donne un résultat faux : la carte qui glisse
+  montait en zigzag. Calculer sans différence négative (voir etape() dans c64/vue.c).
+- Le serveur envoie MAIN juste après JOUE et les deux sont traités avant le dessin : tout ce qui
+  dépend de l'ancienne main (emplacement de la carte jouée) doit être relevé à la réception de JOUE.
+
 ## Pièges de l'Ultimate (constatés)
 - Lecture réseau sans données : longueur -1 et statut « 02,NO DATA: 11 » (EAGAIN). Après
   fermeture par le serveur : « CONNECTION CLOSED BY HOST » puis « NO DATA: 9 » (EBADF),
