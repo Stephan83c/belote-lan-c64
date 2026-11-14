@@ -29,6 +29,8 @@ extern signed char donneur, tour, preneur, atout, retournee, gagnant;
 extern signed char prise;
 /* Noms des bots par place absolue : BOT1 à BOT4. */
 extern const char *const noms_bots[4];
+/* Nom affiché d'une place (BOT1 à BOT4 pour un bot, « - » si vide). */
+const char *nom_place(signed char p);
 extern unsigned char tour_ench;
 extern signed char main_c[8];
 extern unsigned char nmain;

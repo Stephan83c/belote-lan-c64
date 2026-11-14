@@ -138,14 +138,26 @@ void journal_info(const char *texte)
     journal_ajouter("", 0, texte, GRIS_CLAIR);
 }
 
+/* Nom affiché d'une place : celui du joueur, ou BOT1 à BOT4 pour un bot (ils
+ * s'appellent tous BOT pour le serveur), le même sur tous les écrans. */
+const char *nom_place(signed char p)
+{
+    if (p < 0 || !noms[p][0]) {
+        return "-";
+    }
+    if (!humain[p]) {
+        return noms_bots[p];
+    }
+    return noms[p];
+}
+
 /* Événement d'une place : nom en couleur de place, texte blanc. */
 static void journal_place(signed char p, const char *texte)
 {
     if (p < 0) {
         return;
     }
-    /* Les bots s'appellent tous BOT : on les désigne par leur place. */
-    journal_ajouter(humain[p] ? (const char *)noms[p] : noms_bots[p], coul_place[p], texte, BLANC);
+    journal_ajouter(nom_place(p), coul_place[p], texte, BLANC);
 }
 
 static char tampon[41];

@@ -15,6 +15,8 @@ retournée. Les règles sont intégrées (F8 les affiche sur le C64).
 |---|---|
 | ![Table](docs/table.png) | ![Enchères](docs/encheres.png) |
 
+![La carte jouée glisse de la main jusqu'au tapis](docs/glisse.gif)
+
 ## Ce qu'il y a dedans
 
 - **Client C64** (`c64/`, C avec cc65) : l'écran est en mode couleur étendue (ECM), avec des cartes

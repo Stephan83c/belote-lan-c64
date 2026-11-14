@@ -110,12 +110,8 @@ static void zone_table(void)
     for (p = 0; p < 4; ++p) {
         r = REL(p);
         t[0] = (etat == E_COURS && tour == (signed char)p) ? '*' : ' ';
-        /* Les bots s'appellent tous BOT : on les nomme par leur place,
-         * comme dans le journal, pareil sur tous les écrans. */
-        if (!humain[p] && noms[p][0]) {
-            strcpy(t + 1, noms_bots[p]);
-        } else {
-            strcpy(t + 1, noms[p][0] ? noms[p] : "-");
+        strcpy(t + 1, nom_place(p));
+        if (humain[p]) {
             if ((etat == E_ATTENTE || etat == E_AUCUN) && chef == (signed char)p) {
                 strcat(t, " (");
                 strcat(t, T(T_V_CHEF));
@@ -229,11 +225,11 @@ static void zone_encheres(void)
 
     effacer(0, 19, 40);
     if (etat == E_ATTENTE) {
-        sprintf(t, T(T_V_ATTENTE), chef >= 0 ? noms[chef] : "-", cible);
+        sprintf(t, T(T_V_ATTENTE), nom_place(chef), cible);
         ecrire(0, 19, t, GRIS_CLAIR, FOND_VERT);
     } else if (etat == E_COURS && atout < 0 && retournee >= 0) {
         if (tour != moi) {
-            sprintf(t, T(T_V_AU_TOUR), tour >= 0 ? noms[tour] : "-");
+            sprintf(t, T(T_V_AU_TOUR), nom_place(tour));
             ecrire(0, 19, t, GRIS_CLAIR, FOND_VERT);
         } else if (tour_ench == 1) {
             /* [1 PRENDRE ♠] [2 PASSE] */
