@@ -14,12 +14,14 @@ char tchat_txt[TCHAT_MAX + 1];
 
 static char t[41];
 
-/* Positions par place relative : 0 SUD, 1 EST, 2 NORD, 3 OUEST. Un nom occupe
- * LARGEUR_NOM cases (6 lettres et « (CHEF) ») : OUEST de 1 à 13, EST de 27 à 39,
- * le centre de la ligne 5 (14 à 26) reste libre ; SUD et NORD sur leur carte. */
-static const unsigned char nom_x[4] = { 18, 27, 18, 1 };
+/* Positions par place relative : 0 SUD, 1 EST, 2 NORD, 3 OUEST, symétriques
+ * autour du milieu de l'écran (entre les colonnes 19 et 20). nom_x : début de la
+ * case du nom (13 cases : 6 lettres et « (CHEF) » ; 14 pour SUD et NORD, centrés
+ * sur leur carte). OUEST de 1 à 13, EST de 27 à 39 : le centre de la ligne 5 (14
+ * à 26) reste libre. Les noms s'alignent sur le bord extérieur de leur carte. */
+static const unsigned char nom_x[4] = { 13, 27, 13, 1 };
 static const unsigned char nom_y[4] = { 10, 5, 2, 5 };
-static const unsigned char carte_x[4] = { 18, 28, 18, 4 };
+static const unsigned char carte_x[4] = { 18, 32, 18, 4 };
 static const unsigned char carte_y[4] = { 8, 6, 3, 6 };
 
 static unsigned char suis_chef(void)
@@ -125,7 +127,7 @@ static void entete(void)
 
 static void zone_table(void)
 {
-    unsigned char y, p, r;
+    unsigned char y, p, r, n, d;
     const char *libelle = 0;
 
     if (moi < 0) {
@@ -144,7 +146,21 @@ static void zone_table(void)
                 strcat(t, ")");
             }
         }
-        ecrire_n(nom_x[r], nom_y[r], t, LARGEUR_NOM, COUL_PLACE(p), FOND_VERT);
+        /* Espaces devant le nom (sans différence négative, voir CLAUDE.md) :
+         * OUEST commence au bord gauche de sa carte (colonne 4), EST finit au
+         * bord droit de la sienne (35) ; un nom trop long reste dans sa case. */
+        n = strlen(t);
+        if (r == 1) {
+            d = n < 9 ? 9 - n : 0;
+        } else if (r == 3) {
+            d = n < 11 ? 3 : 13 - n;
+        } else {
+            d = (14 - n) / 2;
+        }
+        memmove(t + d, t, n + 1);
+        memset(t, ' ', d);
+        ecrire_n(nom_x[r], nom_y[r], t, (r & 1) ? LARGEUR_NOM : LARGEUR_NOM + 1,
+                 COUL_PLACE(p), FOND_VERT);
         carte(carte_x[r], carte_y[r], pli[p]);
     }
     /* Centre : carte retournée (enchères) ou prise, avec son libellé. Les cases 14
@@ -431,9 +447,9 @@ static void zone_main(void)
 }
 
 /* Tableau de fin de manche : une grande carte blanche aux coins arrondis, posée
- * au centre du tapis (cases 7 à 26, lignes 3 à 9), avant le nom de l'EST (27).
+ * au centre du tapis (cases 10 à 29, lignes 3 à 9), dessinée après les noms.
  * Équipes en bleu et en rouge foncés, lisibles sur le blanc. */
-#define PX 7
+#define PX 10
 #define PW 20
 static unsigned char panneau_pose;
 #define COUL_FONCE(e) (((e) & 1) ? ROUGE : BLEU)

@@ -41,7 +41,6 @@ fx_actif: .res 1
 fx_file: .res 1             ; bruitage en attente + 1 (0 : aucun)
 fx_lo:  .res 1
 fx_hi:  .res 1
-ancien: .res 2              ; ancien vecteur d'interruption
 tmp:    .res 1
 vx:     .res 1
 
@@ -68,9 +67,9 @@ _son_init:
         sta SID+$18
         sei
         lda CINV
-        sta ancien
-        lda CINV+1
         sta ancien+1
+        lda CINV+1
+        sta ancien+2
         lda #<irq
         sta CINV
         lda #>irq
@@ -192,7 +191,10 @@ irq:
         cpx #3
         bne @v
         jsr effet
-        jmp (ancien)
+; Saut direct vers l'ancien vecteur, adresse posée par l'installation : un
+; jmp (vecteur) lirait une mauvaise adresse si le vecteur tombait en $xxFF
+; (bug du 6502), selon la taille du programme.
+ancien: jmp $FFFF
 
 ; Une image de la voix x.
 voix:
