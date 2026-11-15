@@ -213,3 +213,52 @@ def test_trop_de_connexions_en_tout_refusees():
             j.writer.close()
         srv.close()
     asyncio.run(corps())
+
+
+def test_salons_par_le_reseau():
+    from belote.salons import Salons
+
+    async def corps():
+        salons = Salons([Table(rng=random.Random(i), delai_bot=0.0) for i in range(2)])
+        srv = await demarrer(salons, "127.0.0.1", 0)
+        port = srv.sockets[0].getsockname()[1]
+        a = await connecter(port)
+        await a.envoyer("SALONS")
+        assert [await a.lire() for _ in range(3)] == ["SALONS 2", "SALON 1 0 ATTENTE", "SALON 2 0 ATTENTE"]
+        await a.envoyer("JOIN A 2")
+        assert await a.lire() == "BIENVENUE A 0"
+        b = await connecter(port)
+        await b.envoyer("SALONS")
+        assert [await b.lire() for _ in range(3)][2] == "SALON 2 1 ATTENTE"
+        a.writer.close()
+        b.writer.close()
+        srv.close()
+    asyncio.run(corps())
+
+
+def test_liste_des_salons_laisse_le_temps_de_choisir():
+    from belote.salons import Salons
+
+    async def corps():
+        salons = Salons([Table(rng=random.Random(i), delai_bot=0.0) for i in range(2)])
+        srv = await demarrer(salons, "127.0.0.1", 0, delai_join=0.2, delai_liste=0.8)
+        port = srv.sockets[0].getsockname()[1]
+        muet, lecteur = await connecter(port), await connecter(port)
+        await lecteur.envoyer("SALONS")
+        await lecteur.lire_jusqu_a("SALON 2 0 ATTENTE")
+        await asyncio.sleep(0.4)
+        # Le muet est coupé au bout de 0,2 s ; celui qui regarde la liste reste.
+        assert await asyncio.wait_for(muet.reader.read(), 1) == b""
+        await lecteur.envoyer("JOIN L 2")
+        assert await lecteur.lire() == "BIENVENUE L 0"
+        # Assis : le délai ne le concerne plus.
+        await asyncio.sleep(0.6)
+        await lecteur.envoyer("TCHAT ENCORE LA")
+        await lecteur.lire_jusqu_a("TCHAT L ENCORE LA")
+        retard = await connecter(port)
+        await retard.envoyer("SALONS")
+        assert await asyncio.wait_for(retard.reader.read(), 2) != b""
+        assert await asyncio.wait_for(retard.reader.read(), 2) == b""   # fermé après 0,8 s
+        lecteur.writer.close()
+        srv.close()
+    asyncio.run(corps())

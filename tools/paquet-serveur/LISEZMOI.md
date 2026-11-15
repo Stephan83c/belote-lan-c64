@@ -38,6 +38,7 @@ Options :
 | `--delai-bot` | 1.0 | Secondes avant chaque action d'un bot. |
 | `--delai-manche` | 10 | Secondes de pause en fin de manche avant la suivante. |
 | `--delai-attente` | 600 | Avant le lancement, secondes sans message après lesquelles un joueur rend sa place. |
+| `--salons` | 9 | Nombre de salons (tables de 4 places), de 1 à 9. |
 | `--max-connexions` | 64 | Connexions ouvertes au plus, en tout ; les suivantes reçoivent ERR TABLE PLEINE. |
 | `--max-par-ip` | 8 | Connexions ouvertes au plus depuis une même adresse IP (4 C64 derrière une box passent). |
 

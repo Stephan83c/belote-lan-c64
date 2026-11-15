@@ -136,37 +136,47 @@ static unsigned char accepte(unsigned char c, unsigned char mode)
     return (c >= 'A' && c <= 'Z') || (mode && (c == '.' || c == '-'));
 }
 
+/* Attend une touche de l'écran de connexion ou des salons. Joystick (sur front) :
+ * bouton = RETURN, haut/bas, droite/gauche = langue suivante/précédente. Surveille
+ * aussi le réseau : une connexion coupée pendant le choix du salon rend F7. */
+static unsigned char touche_connexion(void)
+{
+    unsigned char c, j, nv;
+
+    while (!(c = cbm_k_getin())) {
+        reseau();
+        if (perdu) {
+            return K_F7;
+        }
+        j = joy_read(JOY_2);
+        nv = j & ~joy_avant;
+        joy_avant = j;
+        if (JOY_BTN_1(nv)) {
+            c = K_RETURN;
+        } else if (JOY_RIGHT(nv)) {
+            c = K_F1;
+        } else if (JOY_LEFT(nv)) {
+            c = K_LANGUE_PREC;
+        } else if (JOY_UP(nv)) {
+            c = K_HAUT;
+        } else if (JOY_DOWN(nv)) {
+            c = K_BAS;
+        }
+    }
+    return c;
+}
+
 /* Saisie bloquante d'un champ ; renvoie la touche qui la termine. */
 static unsigned char saisir(unsigned char x, unsigned char y, char *buf, unsigned char max,
                             unsigned char mode)
 {
-    unsigned char n = strlen(buf), c, j, nv;
+    unsigned char n = strlen(buf), c;
     for (;;) {
         ecrire_n(x, y, buf, max + 1, BLANC, FOND_VERT);
         if (n < max) {
             curseur(x + n, y);
         }
-        /* Joystick (sur front) : bouton = RETURN, haut/bas = champ,
-         * droite/gauche = langue suivante/précédente. */
-        while (!(c = cbm_k_getin())) {
-            j = joy_read(JOY_2);
-            nv = j & ~joy_avant;
-            joy_avant = j;
-            if (JOY_BTN_1(nv)) {
-                c = K_RETURN;
-            } else if (JOY_RIGHT(nv)) {
-                c = K_F1;
-            } else if (JOY_LEFT(nv)) {
-                c = K_LANGUE_PREC;
-            } else if (JOY_UP(nv)) {
-                c = K_HAUT;
-            } else if (JOY_DOWN(nv)) {
-                c = K_BAS;
-            }
-            if (c) {
-                break;
-            }
-        }
+        c = touche_connexion();
         if (c == K_RETURN || c == K_HAUT || c == K_BAS || c == K_F1 || c == K_F3
             || c == K_LANGUE_PREC) {
             ecrire_n(x, y, buf, max + 1, BLANC, FOND_VERT);
@@ -185,9 +195,11 @@ static unsigned char saisir(unsigned char x, unsigned char y, char *buf, unsigne
 
 #define Y_MESSAGE 7
 
+/* Message de l'écran de connexion, centré sous le nom. */
 static void message(const char *s)
 {
-    ecrire_n(0, Y_MESSAGE, s, 40, JAUNE, FOND_VERT);
+    effacer(0, Y_MESSAGE, 40);
+    ecrire((40 - strlen(s)) / 2, Y_MESSAGE, s, JAUNE, FOND_VERT);
 }
 
 /* BOT, BOT1... : noms donnés aux bots, refusés aux joueurs (le serveur aussi). */
@@ -296,22 +308,80 @@ static void cartes_connexion(unsigned char animer)
     }
 }
 
-/* Revient quand le serveur a confirmé la place par BIENVENUE. */
-static void connexion(void)
+static void ecran_connexion(unsigned char animer)
 {
-    unsigned char k;
-    unsigned port, debut;
-    static unsigned char deja;      /* donne déjà animée */
-
     ecran_effacer();
     bandeau(0);
     ecrire(1, 0, "BELOTE LAN C64", JAUNE, FOND_NOIR);
     ecrire(39 - sizeof(VERSION), 0, "V" VERSION, GRIS_CLAIR, FOND_NOIR);   /* jusqu'à la case 38 */
     ligne_tirets(20);
-    reglage = 0;
     textes_connexion();
+    cartes_connexion(animer);
+}
+
+/* Liste des salons, une fois connecté (SPEC 2.1) : renvoie le salon choisi (1 à 9),
+ * 0 si le serveur n'a pas de salons (il répond ERR à SALONS : JOIN sans numéro),
+ * K_F7 pour revenir au nom ou si la connexion est coupée. msg : sous la liste. */
+#define Y_SALONS 5
+static unsigned char choisir_salon(const char *msg)
+{
+    unsigned char i, k, sel = 0;
+    unsigned debut = jiffies();
+
+    nb_salons = -1;
+    erreur[0] = 0;
+    envoyer("SALONS");
+    while ((nb_salons < 0 || sal_recus < (unsigned char)nb_salons) && !erreur[0] && !perdu
+           && moi < 0 && jiffies() - debut < 5 * 60) {
+        reseau();
+    }
+    if (perdu) {
+        return K_F7;
+    }
+    if (nb_salons <= 0 || sal_recus < (unsigned char)nb_salons) {
+        erreur[0] = 0;
+        return 0;
+    }
+    for (i = 3; i < 16; ++i) {
+        effacer(0, i, 40);
+    }
+    ecrire((40 - strlen(T(T_S_TITRE))) / 2, 3, T(T_S_TITRE), JAUNE, FOND_VERT);
+    if (msg) {
+        ecrire((40 - strlen(msg)) / 2, 15, msg, JAUNE, FOND_VERT);
+    }
+    barre(T(T_B_SALONS));
+    for (;;) {
+        for (i = 0; i < (unsigned char)nb_salons; ++i) {
+            fmt(tx, "%c %s %u   %u/4   %s", i == sel ? '>' : ' ', T(T_S_SALON), i + 1, sal_h[i],
+                T(sal_jeu[i] ? T_S_JEU : T_S_ATTENTE));
+            ecrire_n(8, Y_SALONS + i, tx, 26, i == sel ? JAUNE : BLANC, FOND_VERT);
+        }
+        k = touche_connexion();
+        if (k == K_F7 || k == K_RETURN) {
+            return k == K_F7 ? K_F7 : sel + 1;
+        }
+        if (k >= '1' && k < '1' + (unsigned char)nb_salons) {
+            return k - '0';
+        }
+        if (k == K_HAUT && sel) {
+            --sel;
+        } else if (k == K_BAS && sel + 1 < (unsigned char)nb_salons) {
+            ++sel;
+        }
+    }
+}
+
+/* Revient quand le serveur a confirmé la place par BIENVENUE. */
+static void connexion(void)
+{
+    unsigned char k, s;
+    unsigned port, debut;
+    const char *msg;
+    static unsigned char deja;      /* donne déjà animée */
+
+    reglage = 0;
     /* La donne animée une fois, en arrivant de l'écran titre. */
-    cartes_connexion(!deja);
+    ecran_connexion(!deja);
     deja = 1;
     if (perdu) {
         message(T(T_M_PERDUE));
@@ -380,22 +450,41 @@ static void connexion(void)
 
         jeu_raz();
         lg = deborde = 0;
-        strcpy(tx, "JOIN ");
-        strcat(tx, nom);
-        envoyer(tx);
-        debut = jiffies();
         perdu = 0;
-        while (moi < 0 && !erreur[0] && !perdu && jiffies() - debut < 5 * 60) {
-            reseau();
+        msg = 0;
+        for (;;) {
+            s = choisir_salon(msg);
+            if (s == K_F7) {
+                break;
+            }
+            strcpy(tx, "JOIN ");
+            strcat(tx, nom);
+            if (s) {                        /* « JOIN JEAN 3 » */
+                k = strlen(tx);
+                tx[k] = ' ';
+                tx[k + 1] = '0' + s;
+                tx[k + 2] = 0;
+            }
+            envoyer(tx);
+            debut = jiffies();
+            while (moi < 0 && !erreur[0] && !perdu && jiffies() - debut < 5 * 60) {
+                reseau();
+            }
+            if (moi >= 0) {
+                return;
+            }
+            /* Salon rempli entre-temps : la connexion reste ouverte, la liste à jour. */
+            if (!s || perdu || strcmp(erreur, "TABLE PLEINE")) {
+                break;
+            }
+            msg = T(T_M_PLEINE);
         }
-        if (moi >= 0) {
-            return;
-        }
+        ecran_connexion(0);
         if (erreur[0]) {
             refus();
         } else if (perdu) {
             message(T(T_M_FERMEE));
-        } else {
+        } else if (s != K_F7) {
             message(T(T_M_MUET));
         }
         perdu = 0;

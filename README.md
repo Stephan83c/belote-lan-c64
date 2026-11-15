@@ -31,7 +31,8 @@ bidding on a turned-up card. The rules are built in (F8 shows them on the C64).
   terminal, on Windows, macOS or Linux, to play without a C64 alongside C64 players.
 - **Server** (`server/`, Python 3.13 asyncio): enforces the rules of classic belote and handles
   bots (which remember the cards played), reconnection, idle players and chat; it moves on to the
-  next round by itself after a 10-second pause.
+  next round by itself after a 10-second pause. It has **9 rooms** (4-seat tables): after
+  connecting, the C64 and the PC client show the list and you pick one.
 - **Protocol**: ASCII text, one message per line ending in LF (64 bytes at most), on TCP port 6464.
   You can play or debug with `nc` (see [protocol.md](protocol.md)). Protocol keywords are French
   (JOIN, ENCH, COUP, PASSE...); the client translates what it displays.

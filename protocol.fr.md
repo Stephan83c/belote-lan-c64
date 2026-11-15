@@ -11,7 +11,9 @@ que la spec laisse ouvert.
     make server            # dans un terminal
     nc localhost 6464      # dans un autre
 
-    JOIN JEAN              rejoindre (place P0 et chef si la table est vide)
+    SALONS                 liste des salons (SALONS N, puis SALON I H ETAT), avant JOIN
+    JOIN JEAN 3            rejoindre le salon 3 (sans numéro : salon 1) ; place P0 et chef si
+                           la table est vide
     PARAM CIBLE 500        optionnel, chef, avant le lancement
     LANCER                 démarrer
     ENCH 1 / PASSE         à son TOUR, pendant les enchères (couleur 1 = coeur)
@@ -34,7 +36,8 @@ Carte = couleur × 8 + rang.
 Dans le terminal de `make server` (le chef peut aussi envoyer `RAZ`, voir plus bas ; pas de console
 quand le serveur tourne en service, voir docs/serveur-service.md) :
 
-    RAZ                    efface la partie en cours et revient en ATTENTE
+    RAZ                    efface la partie de chaque salon et revient en ATTENTE
+    RAZ 3                  même chose pour le salon 3 seulement
 
 Scores, réserve et places réservées sont effacés ; les humains connectés et les paramètres
 restent. Les clients reçoivent `INFO PARTIE EFFACEE`, `SCORE 0 0`, `ETAT ATTENTE`.
@@ -52,7 +55,9 @@ Erreurs ajoutées au format `ERR TEXTE` :
 
 Autres cas :
 
-- Toute commande avant JOIN, ou un second JOIN, reçoit `ERR NOM`.
+- Toute commande avant JOIN (sauf SALONS et LEAVE), ou un second JOIN, reçoit `ERR NOM`.
+- `JOIN NOM I` avec un salon plein reçoit `ERR TABLE PLEINE` sans fermeture (en choisir un autre) ;
+  numéro hors de 1 à N : `ERR SALON` (v1.9).
 - Table pleine, ou trop de connexions ouvertes (64 en tout, 8 depuis une même IP, serveur v1.9) :
   `ERR TABLE PLEINE`, puis le serveur ferme la connexion ; dans le second cas, dès l'ouverture.
 - Avant le lancement, un joueur muet pendant 10 minutes rend sa place (serveur v1.9) :

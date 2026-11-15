@@ -34,6 +34,10 @@ unsigned char suite, suite_vue, manche_nous;
 static clock_t suite_fin;
 unsigned char sale;
 char erreur[41];
+/* Liste des salons (SALONS N, puis SALON I H ETAT) ; nb_salons -1 tant qu'elle n'est pas là. */
+signed char nb_salons = -1;
+unsigned char sal_recus;
+unsigned char sal_h[9], sal_jeu[9];
 struct entree journal[JOURNAL_N];
 
 /* Équipe P0+P2 en bleus, P1+P3 en rouges : mêmes couleurs sur tous les écrans. */
@@ -471,6 +475,22 @@ void traiter_ligne(char *ligne)
         pli_fini = 0;
         prise = -1;
         sale |= D_TABLE;
+    } else if (!strcmp(mot, "SALONS")) {
+        n = nombre();
+        nb_salons = n > 9 ? 9 : (signed char)n;
+        sal_recus = 0;
+    } else if (!strcmp(mot, "SALON")) {
+        /* SALON I H ETAT : humains assis, partie en cours ou non */
+        n = nombre() - 1;
+        i = (unsigned char)nombre();
+        while (*reste == ' ') {
+            ++reste;
+        }
+        if (n >= 0 && n < 9) {
+            sal_h[n] = i;
+            sal_jeu[n] = strcmp(reste, "ATTENTE") != 0;
+            ++sal_recus;
+        }
     } else if (!strcmp(mot, "SIEGE")) {
         /* SIEGE P T NOM */
         p = place();

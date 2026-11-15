@@ -52,6 +52,16 @@ TEXTES = {
     "connexion": ("Connexion", "Connection", "Verbindung", "Conexión"),
     "c_serveur": ("Serveur", "Server", "Server", "Servidor"),
     "c_nom": ("Nom", "Name", "Name", "Nombre"),
+    # Choix du salon, une fois connecté (serveur à plusieurs salons)
+    "s_titre": ("Choisissez un salon", "Choose a room", "Raum wählen", "Elija una sala"),
+    "s_salon": ("Salon", "Room", "Raum", "Sala"),
+    "s_joueurs": ("joueurs", "players", "Spieler", "jugadores"),
+    "s_attente": ("en attente", "waiting", "wartet", "en espera"),
+    "s_jeu": ("en jeu", "playing", "spielt", "jugando"),
+    "s_aide": ("↑↓ choisir   1-9 salon   Entrée entrer   Esc retour",
+               "↑↓ select   1-9 room   Enter join   Esc back",
+               "↑↓ wählen   1-9 Raum   Eingabe beitreten   Esc zurück",
+               "↑↓ elegir   1-9 sala   Intro entrar   Esc volver"),
     "c_langue": ("Langue", "Language", "Sprache", "Idioma"),
     "c_info": ("4 places : les bots complètent la table.", "4 seats: bots fill the empty ones.",
                "4 Plätze: Bots füllen freie Plätze.", "4 plazas: los bots completan la mesa."),
@@ -901,6 +911,13 @@ class App:
         self.message_style = S_MSG_ERR
         self.reseau = None
         self.partie = None
+        # Salons : liste reçue [(humains, en jeu)], None hors de l'écran des salons
+        self.salons = None
+        self.attente_salons = False   # SALONS envoyé, liste pas encore complète
+        self.salons_recus = []
+        self.nb_salons = 0
+        self.sal_sel = 0
+        self.salon = 0                # salon demandé dans JOIN (0 : JOIN sans numéro)
         self.en_jeu = False
         self.perdue = False
         self.fin = False
@@ -964,6 +981,7 @@ class App:
             self.ligne(valeur)
         elif genre == "ferme" and source is self.reseau:
             self.reseau = None
+            self.salons, self.attente_salons = None, False
             if self.fin:
                 return
             if self.en_jeu:
@@ -1003,6 +1021,9 @@ class App:
 
     # -- connexion
     def touche_connexion(self, t: str) -> None:
+        if self.salons is not None or self.attente_salons:
+            self.touche_salons(t)
+            return
         if t == "ESC":
             self.quitter()
         elif t in ("UP", "DOWN", "TAB"):
@@ -1048,7 +1069,62 @@ class App:
         self.sel = self.ench_sel = 0
         self.tchat = self.question = self.regl = None
         self.aide = self.voir_dernier = False
-        self.reseau.envoyer("JOIN " + nom)
+        self.demander_salons()
+
+    # -- salons
+    def demander_salons(self) -> None:
+        self.attente_salons, self.salons_recus, self.nb_salons = True, [], 0
+        self.reseau.envoyer("SALONS")
+
+    def rejoindre(self, n: int) -> None:
+        """JOIN dans le salon n (1 à 9), ou sans numéro (n = 0, ancien serveur)."""
+        self.salon, self.salons = n, None
+        self.message, self.message_style = self.tr("m_connexion"), S_MSG_INFO
+        self.reseau.envoyer("JOIN " + self.champs[1] + (" %d" % n if n else ""))
+
+    def touche_salons(self, t: str) -> None:
+        if t == "ESC":                              # retour à l'écran de connexion
+            if self.reseau:
+                self.reseau.envoyer("LEAVE")
+                self.reseau.fermer()
+                self.reseau = None
+            self.salons, self.attente_salons, self.message = None, False, ""
+        elif self.salons is None:
+            return
+        elif t in ("UP", "DOWN"):
+            self.sal_sel = (self.sal_sel + (-1 if t == "UP" else 1)) % len(self.salons)
+        elif t in ("LEFT", "RIGHT", "F1"):
+            self.tr.i = (self.tr.i + (-1 if t == "LEFT" else 1)) % len(LANGUES)
+        elif t == "ENTER":
+            self.rejoindre(self.sal_sel + 1)
+        elif len(t) == 1 and "1" <= t <= str(len(self.salons)):
+            self.rejoindre(int(t))
+
+    def ligne_salons(self, ligne: str) -> bool:
+        """Réponse à SALONS ; True si la ligne est traitée ici."""
+        mot, _, reste = ligne.partition(" ")
+        if mot == "SALONS":
+            self.nb_salons = min(_int(reste, 0), 9)
+            if not self.nb_salons:
+                self.attente_salons = False
+                self.rejoindre(0)
+        elif mot == "SALON":
+            a = reste.split(" ", 2)
+            self.salons_recus.append((_int(a[1], 0) if len(a) > 1 else 0,
+                                      len(a) > 2 and a[2] != ATTENTE))
+            if len(self.salons_recus) >= self.nb_salons:
+                self.attente_salons = False
+                self.salons = self.salons_recus[:self.nb_salons]
+                self.sal_sel = min(self.sal_sel, len(self.salons) - 1)
+                if self.auto:
+                    self.rejoindre(1)
+        elif mot == "ERR":
+            # Serveur d'avant les salons : il refuse SALONS (ERR NOM) ; JOIN sans numéro.
+            self.attente_salons = False
+            self.rejoindre(0)
+        else:
+            return False
+        return True
 
     def erreur_join(self, err: str) -> None:
         cle = {"NOM RESERVE": "m_nom_bot", "TABLE PLEINE": "m_pleine"}.get(err, "m_nom_refuse")
@@ -1062,6 +1138,8 @@ class App:
         p = self.partie
         if p is None:
             return
+        if self.attente_salons and self.ligne_salons(ligne):
+            return
         avant_tour = p.tour
         p.recevoir(ligne)
         mot = ligne.split(" ", 1)[0]
@@ -1070,6 +1148,12 @@ class App:
             self.message = ""
             self.champs[1] = p.nom(p.moi)
         elif mot == "ERR" and p.moi < 0:
+            if self.salon and p.erreur_join == "TABLE PLEINE":
+                # Salon rempli entre-temps : la connexion reste ouverte, la liste à jour.
+                p.erreur_join = None
+                self.message, self.message_style = self.tr("m_pleine"), S_MSG_ERR
+                self.demander_salons()
+                return
             self.erreur_join(p.erreur_join)
             return
         elif mot == "TOUR" and p.a_moi() and avant_tour != p.moi:
@@ -1265,8 +1349,27 @@ class App:
             e.ecrire(x, HAUTEUR - 1, libelle, S_BANDEAU)
             x += len(libelle) + 3
 
+    def dessiner_salons(self) -> None:
+        e, tr = self.ecran, self.tr
+        e.vider(S_TAPIS)
+        self.bandeau_haut("·  " + tr("s_titre"))
+        e.ecrire(LARGEUR - len("v" + VERSION) - 1, 0, "v" + VERSION, S_BANDEAU)
+        e.remplir(20, 2, 40, 3, S_BANDEAU)
+        e.centre(20, 40, 3, tr("s_titre").upper(), S_TOUCHE)
+        for i, (h, jeu) in enumerate(self.salons):
+            texte = " %s %d    %d/4 %s    %s " % (tr("s_salon"), i + 1, h, tr("s_joueurs"),
+                                                 tr("s_jeu" if jeu else "s_attente"))
+            e.ecrire(22, 7 + i, texte.ljust(36), S_CHOIX_SEL if i == self.sal_sel else S_CHOIX)
+        if self.message:
+            e.centre(0, LARGEUR, 20, " " + self.message + " ", self.message_style)
+        e.ecrire(0, HAUTEUR - 1, " " * LARGEUR, S_BANDEAU)
+        e.centre(0, LARGEUR, HAUTEUR - 1, tr("s_aide"), S_TOUCHE)
+
     def dessiner_connexion(self) -> None:
         e, tr = self.ecran, self.tr
+        if self.salons is not None:
+            self.dessiner_salons()
+            return
         e.vider(S_TAPIS)
         self.bandeau_haut("·  " + tr("connexion"))
         e.ecrire(LARGEUR - len("v" + VERSION) - 1, 0, "v" + VERSION, S_BANDEAU)

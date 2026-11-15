@@ -131,3 +131,84 @@ async def _partie_complete(graine):
 def test_parties_completes_contre_le_serveur():
     for graine in range(4):
         asyncio.run(_partie_complete(graine))
+
+
+class _FauxReseau:
+    def __init__(self):
+        self.envoye, self.ferme = [], False
+
+    def envoyer(self, ligne):
+        self.envoye.append(ligne)
+
+    def fermer(self):
+        self.ferme = True
+
+
+def _app_connectee():
+    from types import SimpleNamespace
+    app = pc.App(SimpleNamespace(ascii=False, langue="fr", serveur="x", nom="JEAN", auto=False))
+    app.partie, app.reseau = pc.Partie(), _FauxReseau()
+    app.demander_salons()
+    return app
+
+
+def test_choix_du_salon():
+    app = _app_connectee()
+    assert app.reseau.envoye == ["SALONS"]
+    for ligne in ("SALONS 2", "SALON 1 3 EN COURS", "SALON 2 0 ATTENTE"):
+        app.ligne(ligne)
+    assert app.salons == [(3, True), (0, False)]
+    app.dessiner_connexion()                     # l'écran des salons se dessine
+    app.touche_connexion("DOWN")
+    app.touche_connexion("ENTER")
+    assert app.reseau.envoye[-1] == "JOIN JEAN 2" and app.salons is None
+    # Salon rempli entre-temps : la liste revient, la connexion reste ouverte.
+    app.ligne("ERR TABLE PLEINE")
+    assert app.reseau.envoye[-1] == "SALONS" and not app.reseau.ferme
+    assert app.message == app.tr("m_pleine")
+    for ligne in ("SALONS 2", "SALON 1 3 EN COURS", "SALON 2 4 ATTENTE"):
+        app.ligne(ligne)
+    app.touche_connexion("1")
+    assert app.reseau.envoye[-1] == "JOIN JEAN 1"
+    app.ligne("BIENVENUE JEAN 3")
+    assert app.en_jeu
+
+
+def test_serveur_sans_salons_join_sans_numero():
+    app = _app_connectee()
+    app.ligne("ERR NOM")                         # serveur d'avant les salons
+    assert app.reseau.envoye == ["SALONS", "JOIN JEAN"] and app.partie.erreur_join is None
+    app.ligne("BIENVENUE JEAN 0")
+    assert app.en_jeu
+
+
+def test_echap_revient_a_la_connexion():
+    app = _app_connectee()
+    for ligne in ("SALONS 1", "SALON 1 0 ATTENTE"):
+        app.ligne(ligne)
+    reseau = app.reseau
+    app.touche_connexion("ESC")
+    assert reseau.ferme and app.reseau is None and app.salons is None and not app.fin
+
+
+def test_client_pc_contre_le_serveur_a_salons():
+    from belote.salons import Salons
+
+    async def corps():
+        salons = Salons([Table(rng=random.Random(i), delai_bot=0.0) for i in range(3)])
+        srv = await demarrer(salons, "127.0.0.1", 0)
+        port = srv.sockets[0].getsockname()[1]
+        reader, writer = await asyncio.open_connection("127.0.0.1", port)
+        app = _app_connectee()
+        app.reseau.envoyer = lambda l: writer.write(l.encode() + b"\n")
+        app.demander_salons()
+        while app.salons is None:
+            app.ligne((await asyncio.wait_for(reader.readline(), 5)).decode().rstrip("\n"))
+        assert len(app.salons) == 3
+        app.touche_connexion("3")
+        while not app.en_jeu:
+            app.ligne((await asyncio.wait_for(reader.readline(), 5)).decode().rstrip("\n"))
+        assert salons.tables[2].est_assis is not None and salons.tables[2]._humains()
+        writer.close()
+        srv.close()
+    asyncio.run(corps())

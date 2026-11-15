@@ -31,7 +31,8 @@ retournée. Les règles sont intégrées (F8 les affiche sur le C64).
   un terminal, sous Windows, macOS ou Linux, pour jouer sans C64 avec les joueurs sur C64.
 - **Serveur** (`server/`, Python 3.13 asyncio) : il applique les règles de la belote classique, gère
   les bots (qui se souviennent des cartes jouées), la reconnexion, l'inactivité et le tchat ; il
-  enchaîne seul les manches après une pause de 10 secondes.
+  enchaîne seul les manches après une pause de 10 secondes. Il a **9 salons** (tables de 4 places) :
+  une fois connectés, le C64 et le client PC affichent la liste et on en choisit un.
 - **Protocole** : texte ASCII, une ligne par message terminée par LF (64 octets au maximum), sur le
   port TCP 6464. On peut jouer ou déboguer avec `nc` (voir [protocol.fr.md](protocol.fr.md)).
 - **Spécification complète** (règles, protocole, écran) : [SPEC.fr.md](SPEC.fr.md).

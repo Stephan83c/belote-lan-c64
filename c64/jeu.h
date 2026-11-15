@@ -59,6 +59,9 @@ extern unsigned char manche_nous;  /* 1 si notre équipe a gagné la dernière m
 /* Secondes avant la manche suivante annoncée (0 si l'heure est passée). */
 unsigned char suite_secondes(void);
 extern char erreur[41];            /* dernier ERR reçu (connexion) */
+extern signed char nb_salons;       /* salons annoncés par le serveur, -1 avant SALONS */
+extern unsigned char sal_recus;
+extern unsigned char sal_h[9], sal_jeu[9];
 
 /* Journal L12-L17 */
 #define JOURNAL_N 6

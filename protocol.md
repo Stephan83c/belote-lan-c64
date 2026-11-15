@@ -17,7 +17,9 @@ MANCHE round score, LITIGE tie, GAGNANT winner, CIBLE target score, INACTIF idle
     make server            # in one terminal
     nc localhost 6464      # in another
 
-    JOIN JEAN              join (seat P0 and host if the table is empty)
+    SALONS                 room list (SALONS N, then SALON I H STATE), before JOIN
+    JOIN JEAN 3            join room 3 (no number: room 1); seat P0 and host if the table
+                           is empty
     PARAM CIBLE 500        optional, host, before the start
     LANCER                 start
     ENCH 1 / PASSE         on your TOUR, during bidding (suit 1 = hearts)
@@ -40,7 +42,8 @@ Card = suit × 8 + rank.
 In the terminal of `make server` (the host can also send `RAZ`, see below; there is no console
 when the server runs as a service, see docs/server-service.md):
 
-    RAZ                    wipes the game in progress and goes back to ATTENTE
+    RAZ                    wipes the game of every room and goes back to ATTENTE
+    RAZ 3                  the same for room 3 only
 
 Scores, reserve and reserved seats are cleared; connected humans and settings stay. Clients
 receive `INFO PARTIE EFFACEE`, `SCORE 0 0`, `ETAT ATTENTE`.
@@ -58,7 +61,9 @@ Errors added, in the form `ERR TEXT`:
 
 Other cases:
 
-- Any command before JOIN, or a second JOIN, gets `ERR NOM`.
+- Any command before JOIN (except SALONS and LEAVE), or a second JOIN, gets `ERR NOM`.
+- `JOIN NAME I` on a full room gets `ERR TABLE PLEINE` without closing (choose another);
+  a number outside 1 to N: `ERR SALON` (v1.9).
 - Table full, or too many open connections (64 in all, 8 from one IP, server v1.9):
   `ERR TABLE PLEINE`, then the server closes the connection; in the second case, as soon as it opens.
 - Before the game starts, a player silent for 10 minutes gives up their seat (server v1.9):

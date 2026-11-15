@@ -1,5 +1,5 @@
 """Serveur TCP : python -m belote [--host H] [--port 6464] [--delai-bot 1.0] [--delai-manche 10]
-[--delai-attente 600] [--max-connexions 64] [--max-par-ip 8]"""
+[--delai-attente 600] [--salons 9] [--max-connexions 64] [--max-par-ip 8]"""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ import os
 import sys
 
 from .protocole import TROP_LONG, Cadreur
+from .salons import NB_SALONS, Salons
 from .table import DELAI_ATTENTE, DELAI_BOT, DELAI_MANCHE, Table
 
 log = logging.getLogger("belote")
@@ -18,6 +19,8 @@ TAMPON_ENVOI_MAX = 64 * 1024
 # Une connexion sans place à la table au bout de ce délai est fermée : sur un serveur
 # public, des connexions vides ne s'accumulent pas. Le C64 envoie JOIN aussitôt connecté.
 DELAI_JOIN = 60.0
+# Une connexion qui a demandé la liste des salons a ce délai pour en choisir un.
+DELAI_LISTE = 300.0
 # Limites du serveur entier (toutes tables confondues, pour le multi-salon) :
 # 8 connexions par IP laissent jouer 4 C64 derrière une même box.
 MAX_CONNEXIONS = 64
@@ -61,17 +64,25 @@ class ConnexionTCP:
         self.writer.close()
 
 
-async def gerer_client(table: Table, reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
-                       delai_join: float = DELAI_JOIN) -> None:
+async def gerer_client(table: Table | Salons, reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
+                       delai_join: float = DELAI_JOIN, delai_liste: float = DELAI_LISTE) -> None:
     pair = writer.get_extra_info("peername")
     log.info("connexion %s", pair)
     client = ConnexionTCP(writer)
     cadreur = Cadreur()
 
-    def sans_place() -> None:
-        if not table.est_assis(client):
-            log.info("sans JOIN depuis %.0f s, fermee %s", delai_join, pair)
-            client.fermer()
+    minuteur = None
+
+    def sans_place(prolonge: bool = False) -> None:
+        nonlocal minuteur
+        if table.est_assis(client):
+            return
+        # Devant la liste des salons (SALONS demandé), le joueur a le temps de choisir.
+        if not prolonge and isinstance(table, Salons) and table.a_demande_liste(client):
+            minuteur = asyncio.get_running_loop().call_later(delai_liste - delai_join, sans_place, True)
+            return
+        log.info("sans JOIN a temps, fermee %s", pair)
+        client.fermer()
 
     minuteur = asyncio.get_running_loop().call_later(delai_join, sans_place)
     try:
@@ -95,17 +106,22 @@ async def gerer_client(table: Table, reader: asyncio.StreamReader, writer: async
         log.info("deconnexion %s", pair)
 
 
-def commande_console(table: Table, ligne: str) -> str | None:
-    """Commande tapée dans le terminal du serveur ; renvoie la réponse à afficher."""
-    mot = ligne.strip(" ")
+def commande_console(salle: Table | Salons, ligne: str) -> str | None:
+    """Commande tapée dans le terminal du serveur ; renvoie la réponse à afficher.
+
+    RAZ efface la partie de chaque salon, RAZ N celle du salon N seulement.
+    """
+    mot, _, num = ligne.strip(" ").partition(" ")
     if not mot:
         return None
-    if mot == "RAZ":
-        return "partie effacee" if table.raz() else "aucune partie a effacer"
-    return "commande inconnue (disponible : RAZ)"
+    if mot == "RAZ" and not num:
+        return "partie effacee" if salle.raz() else "aucune partie a effacer"
+    if mot == "RAZ" and isinstance(salle, Salons) and num.isdigit() and 1 <= int(num) <= len(salle.tables):
+        return "partie effacee" if salle.raz(int(num)) else "aucune partie a effacer"
+    return "commande inconnue (disponible : RAZ, RAZ N)"
 
 
-def ecouter_console(table: Table) -> None:
+def ecouter_console(table: Table | Salons) -> None:
     """Lit stdin sans bloquer la boucle ; ignoré si stdin n'est pas surveillable."""
     boucle = asyncio.get_running_loop()
     fd = sys.stdin.fileno()
@@ -126,23 +142,26 @@ def ecouter_console(table: Table) -> None:
         log.info("console indisponible")
 
 
-async def demarrer(table: Table, host: str | None, port: int,
-                   delai_join: float = DELAI_JOIN, limites: Limites | None = None) -> asyncio.Server:
+async def demarrer(table: Table | Salons, host: str | None, port: int,
+                   delai_join: float = DELAI_JOIN, limites: Limites | None = None,
+                   delai_liste: float = DELAI_LISTE) -> asyncio.Server:
+    """Écoute ; une Table seule est servie comme un serveur à un salon."""
     limites = limites or Limites()
+    if isinstance(table, Table):
+        table = Salons([table])
 
     async def rappel(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         pair = writer.get_extra_info("peername")
         ip = pair[0] if pair else "?"
         if not limites.prendre(ip):
-            # Refusée avant tout, puis fermée. ERR TABLE PLEINE : les clients déjà
-            # publiés le traduisent (« réessayez plus tard ») ; un code à part
-            # attendra le multi-salon et ses nouveaux clients.
+            # Refusée avant tout, puis fermée. ERR TABLE PLEINE : tous les clients,
+            # même ceux d'avant le multi-salon, le traduisent (« réessayez plus tard »).
             log.info("refusee (trop de connexions) %s", pair)
             writer.write(b"ERR TABLE PLEINE\n")
             writer.close()
             return
         try:
-            await gerer_client(table, reader, writer, delai_join)
+            await gerer_client(table, reader, writer, delai_join, delai_liste)
         finally:
             limites.rendre(ip)
 
@@ -150,12 +169,14 @@ async def demarrer(table: Table, host: str | None, port: int,
 
 
 async def principal(host: str, port: int, delai_bot: float, delai_manche: float,
-                    delai_attente: float, limites: Limites) -> None:
-    table = Table(delai_bot=delai_bot, delai_manche=delai_manche, delai_attente=delai_attente)
-    serveur = await demarrer(table, host, port, limites=limites)
-    inactivite = asyncio.create_task(table.boucle_inactivite())
-    ecouter_console(table)
-    log.info("serveur de belote sur %s:%d (console : RAZ efface la partie)", host, port)
+                    delai_attente: float, limites: Limites, nb_salons: int) -> None:
+    salons = Salons([Table(delai_bot=delai_bot, delai_manche=delai_manche, delai_attente=delai_attente)
+                     for _ in range(nb_salons)])
+    serveur = await demarrer(salons, host, port, limites=limites)
+    inactivite = asyncio.create_task(salons.boucle_inactivite())
+    ecouter_console(salons)
+    log.info("serveur de belote sur %s:%d, %d salons (console : RAZ ou RAZ N efface les parties)",
+             host, port, nb_salons)
     try:
         async with serveur:
             await serveur.serve_forever()
@@ -172,6 +193,8 @@ def main() -> None:
                         help="secondes de pause en fin de manche avant la suivante")
     parser.add_argument("--delai-attente", type=float, default=DELAI_ATTENTE,
                         help="secondes sans message avant le lancement : la place est rendue")
+    parser.add_argument("--salons", type=int, default=NB_SALONS, choices=range(1, 10),
+                        metavar="1-9", help="nombre de salons (tables de 4 places)")
     parser.add_argument("--max-connexions", type=int, default=MAX_CONNEXIONS,
                         help="connexions ouvertes au plus, en tout")
     parser.add_argument("--max-par-ip", type=int, default=MAX_PAR_IP,
@@ -180,7 +203,8 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     try:
         asyncio.run(principal(args.host, args.port, args.delai_bot, args.delai_manche,
-                              args.delai_attente, Limites(args.max_connexions, args.max_par_ip)))
+                              args.delai_attente, Limites(args.max_connexions, args.max_par_ip),
+                              args.salons))
     except KeyboardInterrupt:
         pass
 

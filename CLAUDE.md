@@ -37,7 +37,7 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
   release (serveur sans dépendance, service, notes FR/EN de tools/paquet-serveur/)
 - `make vice` : le vrai client dans VICE (écran de connexion seulement : VICE n'émule pas
   la Command Interface)
-- `make vice-demo SCENARIO=1..7` : client avec réseau simulé (c64/vice/faux_uci.c) ;
+- `make vice-demo SCENARIO=1..8` : client avec réseau simulé (c64/vice/faux_uci.c) ;
   `make demo` compile sans lancer VICE
 - `python3 tools/musique.py` : régénère la musique et les bruitages (c64/son_donnees.s, versionné ;
   lecteur SID dans c64/son.s, branché sur l'IRQ du KERNAL, page zéro $FB-$FE)
@@ -47,9 +47,9 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
   décodé par c64/titre_dec.s ; demande Pillow et la ROM caractères de VICE)
 
 ## Mémoire du client (banque VIC 3)
-- Programme sous $C000 (__HIMEM__ dans le Makefile), pile C de 1,5 Ko (__STACKSIZE__) : environ
-  430 octets de marge en v1.8, depuis fmt() à la place de sprintf (fin du BSS lue dans build/belote_lan.map, __BSS_RUN__ +
-  __BSS_SIZE__, contre $BA00) ; au-delà, ld65 refuse (« BSS overflows »).
+- Programme sous $C000 (__HIMEM__ dans le Makefile), pile C de 512 octets (__STACKSIZE__, mesurée à
+  58 octets au plus dans VICE en v1.9) : 44 octets de marge en v1.9, avec les salons (fin du BSS lue dans build/belote_lan.map, __BSS_RUN__ +
+  __BSS_SIZE__, contre $BE00) ; au-delà, ld65 refuse (« BSS overflows »).
 - $C000 écran (ECM), $C3F8 pointeurs de sprites, $C400-$C47F sprites de la carte qui glisse (et du pli ramassé),
   $C800 jeu de caractères en RAM, $E000 bitmap de l'écran titre (RAM sous le KERNAL, libre après)
 - ECM : 64 caractères seulement. Redessinés : @ £ ↑ ← (♠ ♥ ♣ ♦), # (tapis), " $ % & (coins des
@@ -64,6 +64,9 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
   -limitcycles 25000000 -exitscreenshot f.png -autostart build/demoN.prg -keybuf ' \x0djean\x0d'`
   (une capture par lancement ; pour une animation, plusieurs lancements à -limitcycles croissants)
 - Sur le C64 : `make deploy`, écran lu par l'API REST (voir plus bas)
+- Pile C : VICE avec `-raminitstartvalue 85 -raminitvalueinvert 0 -raminitpatterninvert 0
+  -raminitrandomchance 0 -remotemonitor`, puis `m be00 bfff` par nc sur le port 6510 : la plus basse
+  adresse différente de $55 donne la profondeur (sans couper le bruit aléatoire, on croit la pile pleine)
 - Client PC : captures en lançant pc/belote_lan.py dans un pseudo-terminal 80x24 rendu par pyte
   et Pillow (venv à part, pas dans le dépôt) ; docs/pc.png (FR) et docs/pc-en.png (EN)
 
