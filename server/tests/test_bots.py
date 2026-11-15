@@ -27,26 +27,59 @@ from belote.moteur import (
 )
 
 
-def test_enchere_tour_1_deux_atouts_potentiels():
-    main = [carte(PIQUE, SEPT), carte(PIQUE, AS), carte(COEUR, AS)]
-    assert choisir_enchere(main, 1, PIQUE) == PIQUE
-    assert choisir_enchere(main, 1, COEUR) is None
+def test_enchere_prend_avec_valet_et_neuf():
+    main = [carte(PIQUE, VALET), carte(PIQUE, NEUF), carte(COEUR, SEPT), carte(TREFLE, HUIT), carte(CARREAU, SEPT)]
+    assert choisir_enchere(main, 1, carte(PIQUE, SEPT)) == PIQUE
+
+
+def test_enchere_passe_avec_deux_petits_atouts():
+    # Les anciens bots prenaient dès deux cartes de la couleur, même le 7 et le 8.
+    main = [carte(PIQUE, SEPT), carte(PIQUE, HUIT), carte(COEUR, SEPT), carte(TREFLE, HUIT), carte(CARREAU, DAME)]
+    assert choisir_enchere(main, 1, carte(PIQUE, DAME)) is None
+
+
+def test_enchere_compte_le_valet_retourne():
+    main = [carte(COEUR, NEUF), carte(COEUR, SEPT), carte(PIQUE, SEPT), carte(TREFLE, HUIT), carte(CARREAU, DAME)]
+    assert choisir_enchere(main, 1, carte(COEUR, VALET)) == COEUR
+    assert choisir_enchere(main, 1, carte(COEUR, HUIT)) is None
 
 
 def test_enchere_tour_2_jamais_la_couleur_retournee():
-    main = [carte(PIQUE, SEPT), carte(PIQUE, AS), carte(PIQUE, ROI), carte(COEUR, AS), carte(COEUR, ROI)]
-    assert choisir_enchere(main, 2, PIQUE) == COEUR
+    main = [carte(PIQUE, VALET), carte(PIQUE, NEUF), carte(PIQUE, AS), carte(COEUR, VALET), carte(COEUR, NEUF)]
+    assert choisir_enchere(main, 2, carte(PIQUE, SEPT)) == COEUR
 
 
-def test_enchere_tour_2_passe_sans_deux_cartes():
-    main = [carte(PIQUE, SEPT), carte(PIQUE, AS), carte(COEUR, AS), carte(TREFLE, AS), carte(3, AS)]
-    assert choisir_enchere(main, 2, PIQUE) is None
+def test_enchere_tour_2_passe_avec_une_main_faible():
+    main = [carte(PIQUE, SEPT), carte(COEUR, HUIT), carte(TREFLE, DAME), carte(CARREAU, SEPT), carte(CARREAU, HUIT)]
+    assert choisir_enchere(main, 2, carte(PIQUE, ROI)) is None
 
 
-def test_carte_faible_si_partenaire_maitre():
+def test_charge_le_partenaire_en_dernier():
+    # Partenaire (2) maître ; dernier à jouer, sans la couleur : on lui donne l'as.
+    pli = [(1, carte(TREFLE, SEPT)), (2, carte(TREFLE, AS)), (3, carte(TREFLE, HUIT))]
+    main = [carte(COEUR, AS), carte(COEUR, SEPT), carte(CARREAU, ROI)]
+    assert choisir_carte(main, pli, PIQUE, 0) == carte(COEUR, AS)
+
+
+def test_preneur_tire_son_atout_maitre():
+    main = [carte(PIQUE, VALET), carte(PIQUE, SEPT), carte(COEUR, AS)]
+    assert choisir_carte(main, [], PIQUE, 0, (), preneur=0) == carte(PIQUE, VALET)
+    # Pas preneur : il entame son as, comme avant.
+    assert choisir_carte(main, [], PIQUE, 0, (), preneur=1) == carte(COEUR, AS)
+
+
+def test_carte_faible_si_partenaire_maitre_mais_battable():
+    # Le partenaire gagne avec le roi, mais l'as est encore dehors : petite carte.
+    main = [carte(COEUR, DIX), carte(COEUR, SEPT)]
+    pli = [(2, carte(COEUR, ROI)), (3, carte(COEUR, HUIT))]
+    assert choisir_carte(main, pli, PIQUE, 0) == carte(COEUR, SEPT)
+
+
+def test_charge_le_partenaire_imbattable_en_troisieme():
+    # Le partenaire a l'as : on lui donne le dix.
     main = [carte(COEUR, DIX), carte(COEUR, SEPT)]
     pli = [(2, carte(COEUR, AS)), (3, carte(COEUR, HUIT))]
-    assert choisir_carte(main, pli, PIQUE, 0) == carte(COEUR, SEPT)
+    assert choisir_carte(main, pli, PIQUE, 0) == carte(COEUR, DIX)
 
 
 def test_carte_gagnante_si_adversaire_maitre():
@@ -89,7 +122,7 @@ def test_donne_complete_entre_bots(graine):
 
     while d.phase is Phase.ENCHERES:
         p = d.joueur
-        choix = choisir_enchere(d.mains[p], d.tour_encheres, couleur(d.retournee))
+        choix = choisir_enchere(d.mains[p], d.tour_encheres, d.retournee)
         if choix is None:
             d.passer(p)
         else:
@@ -102,7 +135,7 @@ def test_donne_complete_entre_bots(graine):
 
     while d.phase is Phase.JEU:
         p = d.joueur
-        c = choisir_carte(d.mains[p], d.pli, d.atout, p, d.jouees)
+        c = choisir_carte(d.mains[p], d.pli, d.atout, p, d.jouees, d.preneur)
         assert c in coups_legaux(d.mains[p], d.pli, d.atout, p)
         d.jouer(p, c)
 

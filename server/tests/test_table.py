@@ -671,7 +671,7 @@ def test_pause_apres_une_prise(monkeypatch):
         t.recevoir(a, "LANCER")
         d = t.donne
         assert t.sieges[d.joueur].humain is None
-        monkeypatch.setattr(module, "choisir_enchere", lambda main, tour, c: c)
+        monkeypatch.setattr(module, "choisir_enchere", lambda main, tour, r: couleur(r))
         boucle = asyncio.get_running_loop()
         t._action_bot()                        # le premier à parler prend
         assert d.phase is Phase.JEU

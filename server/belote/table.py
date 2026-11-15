@@ -535,10 +535,10 @@ class Table:
         d = self.donne
         place = d.joueur
         if d.phase is Phase.ENCHERES:
-            choix = choisir_enchere(d.mains[place], d.tour_encheres, couleur(d.retournee))
+            choix = choisir_enchere(d.mains[place], d.tour_encheres, d.retournee)
             evenements = d.passer(place) if choix is None else d.prendre(place, choix)
         else:
-            evenements = d.jouer(place, choisir_carte(d.mains[place], d.pli, d.atout, place, d.jouees))
+            evenements = d.jouer(place, choisir_carte(d.mains[place], d.pli, d.atout, place, d.jouees, d.preneur))
         self._appliquer(evenements)
 
     def _place_attendue(self) -> int | None:
