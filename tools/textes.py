@@ -31,15 +31,15 @@ TEXTES = [
     # Figures : valet, dame, roi (les autres rangs sont des chiffres et A)
     ("FIGURES", 3, "VDR", "JQK", "BDK", "JQK"),
 
-    # ---- Écran de connexion (libellés suivis de « : » en colonne 8) ----
-    ("C_SERVEUR", 8, "SERVEUR", "SERVER", "SERVER", "SERVIDOR"),
+    # ---- Écran de connexion : NOM centré ; F3, réglage du serveur (IP, PORT) ----
+    ("C_PORT", 8, "PORT", "PORT", "PORT", "PUERTO"),
     ("C_NOM", 8, "NOM", "NAME", "NAME", "NOMBRE"),
     ("C_INFO", 40, "4 PLACES : LES BOTS COMPLETENT LA TABLE", "4 SEATS: BOTS FILL THE EMPTY ONES",
      "4 PLAETZE: BOTS FUELLEN FREIE PLAETZE", "4 PLAZAS: LOS BOTS COMPLETAN LA MESA"),
     # Barre de touches de l'écran de connexion (ligne 24, comme en jeu)
-    ("B_CONNEXION", 39, "RETURN VALIDER  CRSR CHAMP  F1 LANGUE",
-     "RETURN CONFIRM  CRSR FIELD  F1 LANGUAGE", "RETURN OK  CRSR FELD  F1 SPRACHE",
-     "RETURN ACEPTAR  CRSR CAMPO  F1 IDIOMA"),
+    ("B_CONNEXION", 39, "RETURN VALIDER  F1 LANGUE  F3 SERVEUR",
+     "RETURN CONFIRM  F1 LANGUAGE  F3 SERVER", "RETURN OK  F1 SPRACHE  F3 SERVER",
+     "RETURN ACEPTAR  F1 IDIOMA  F3 SERVIDOR"),
     ("M_PERDUE", 40, "CONNEXION PERDUE", "CONNECTION LOST", "VERBINDUNG VERLOREN",
      "CONEXION PERDIDA"),
     ("M_ENTREZ_NOM", 40, "ENTREZ UN NOM (6 LETTRES OU CHIFFRES)",

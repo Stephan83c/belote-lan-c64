@@ -1,6 +1,5 @@
 /* Dessin des écrans : table (SPEC 8.1), règles, réglages F1, fin de partie. */
 #include "ascii.h"
-#include <stdio.h>
 #include <string.h>
 #include "ecran.h"
 #include "jeu.h"
@@ -112,9 +111,9 @@ static void entete(void)
     t[0] = atout >= 0 ? SYM(atout) : '?';
     ecrire(2 + strlen(T(T_V_ATOUT)), 0, t, BLANC, FOND_NOIR);
     ecrire(21, 0, T(T_NOUS), COUL_EQUIPE(nous), FOND_NOIR);
-    sprintf(t, "%04u", scores[nous]);
+    fmt(t, "%04u", scores[nous]);
     ecrire(22 + strlen(T(T_NOUS)), 0, t, BLANC, FOND_NOIR);
-    sprintf(t, "%04u", scores[nous ^ 1]);
+    fmt(t, "%04u", scores[nous ^ 1]);
     x = 39 - 5 - strlen(T(T_EUX));
     ecrire(x, 0, T(T_EUX), COUL_EQUIPE(nous + 1), FOND_NOIR);
     ecrire(x + strlen(T(T_EUX)) + 1, 0, t, BLANC, FOND_NOIR);
@@ -254,7 +253,7 @@ static void glisser(signed char p)
  * qui glisse). Le bruitage PLI (tools/musique.py, un glissement) part avec le
  * paquet. */
 #define PAUSE_PLI      30   /* 1/60 s où le pli complet reste visible */
-#define REUNIR_ETAPES   5   /* images (1/50 s) par carte */
+#define REUNIR_ETAPES  10   /* images (1/50 s) par carte */
 #define CENTRE_CX      18   /* case 18, 6 : libre pendant les plis */
 #define CENTRE_CY       6
 #define CENTRE_X       (24 + CENTRE_CX * 8)
@@ -263,7 +262,7 @@ static void glisser(signed char p)
 /* Départ du paquet selon la place relative du gagnant : arrivée et images. */
 static const int sortie_x[4] = { CENTRE_X, 344, CENTRE_X, 0 };
 static const unsigned char sortie_y[4] = { 50 + 10 * 8, CENTRE_Y, 20, CENTRE_Y };
-static const unsigned char sortie_n[4] = { 8, 14, 14, 14 };
+static const unsigned char sortie_n[4] = { 16, 28, 28, 28 };
 
 void donner(signed char c, int sx, int sy, unsigned char x, unsigned char y)
 {
@@ -377,11 +376,11 @@ static void zone_encheres(void)
 
     effacer(0, 19, 40);
     if (etat == E_ATTENTE) {
-        sprintf(t, T(T_V_ATTENTE), nom_place(chef), cible);
+        fmt(t, T(T_V_ATTENTE), nom_place(chef), cible);
         ecrire(0, 19, t, GRIS_CLAIR, FOND_VERT);
     } else if (etat == E_COURS && atout < 0 && retournee >= 0) {
         if (tour != moi) {
-            sprintf(t, T(T_V_AU_TOUR), nom_place(tour));
+            fmt(t, T(T_V_AU_TOUR), nom_place(tour));
             ecrire(0, 19, t, GRIS_CLAIR, FOND_VERT);
         } else if (tour_ench == 1) {
             /* 1 PRENDRE ♠   2 PASSE */
@@ -398,14 +397,15 @@ static void zone_encheres(void)
             }
             choix(x, '4', T(T_V_PASSER), 0, ench_sel == 3);
         }
-        /* Le journal ne montre pas toujours les passes du 1er tour. */
+        /* Le journal ne montre pas toujours les passes du 1er tour. Finit à la
+         * colonne 38, comme les choix commencent à la colonne 1. */
         k = tour_ench == 1 ? T_V_TOUR1 : T_V_TOUR2;
-        ecrire(40 - strlen(T(k)), 19, T(k), BLANC, FOND_VERT);
+        ecrire(39 - strlen(T(k)), 19, T(k), BLANC, FOND_VERT);
     } else if (etat == E_COURS && atout >= 0 && tour == moi) {
         ecrire(0, 19, T(T_V_A_VOUS), JAUNE, FOND_VERT);
     } else if (etat == E_FIN_MANCHE && suite) {
         suite_vue = suite_secondes();
-        sprintf(t, T(T_V_SUITE), T(manche_nous ? T_NOUS : T_EUX), suite_vue);
+        fmt(t, T(T_V_SUITE), T(manche_nous ? T_NOUS : T_EUX), suite_vue);
         ecrire(0, 19, t, COUL_EQUIPE(manche_nous ? moi : moi + 1), FOND_VERT);
     } else if (etat == E_FIN_MANCHE) {          /* serveur sans SUITE (v1.5) */
         ecrire(0, 19, T(suis_chef() ? T_V_FIN_CHEF : T_V_FIN_AUTRE), GRIS_CLAIR, FOND_VERT);
@@ -465,8 +465,8 @@ static void scores_panneau(unsigned char y, int a, int b)
 {
     unsigned char nous = moi & 1, x, e = 1;
     char n1[6], n2[6];
-    sprintf(n1, "%d", nous ? b : a);
-    sprintf(n2, "%d", nous ? a : b);
+    fmt(n1, "%d", nous ? b : a);
+    fmt(n2, "%d", nous ? a : b);
     x = strlen(T(T_NOUS)) + strlen(n1) + strlen(T(T_EUX)) + strlen(n2) + 4;
     if (x > PW - 2) {                   /* espagnol, deux scores à 4 chiffres */
         e = 0;
@@ -537,6 +537,7 @@ static void vue_table(void)
         sale |= D_TABLE;
     }
     if (sale == D_TOUT) {
+        ecran_uni(12, 19);              /* journal et tchat sur du vert uni */
         ligne_tirets(11);
         ligne_tirets(20);
     }
@@ -602,9 +603,9 @@ static void vue_regles(void)
 static void vue_param(void)
 {
     titre_ecran(T_T_PARAM);
-    sprintf(t, T(T_P_CIBLE), param_sel == 0 ? '>' : ' ', param_cible);
+    fmt(t, T(T_P_CIBLE), param_sel == 0 ? '>' : ' ', param_cible);
     ecrire_n(0, 4, t, 40, param_sel == 0 ? JAUNE : BLANC, FOND_VERT);
-    sprintf(t, T(T_P_INACTIF), param_sel == 1 ? '>' : ' ', param_inactif);
+    fmt(t, T(T_P_INACTIF), param_sel == 1 ? '>' : ' ', param_inactif);
     ecrire_n(0, 6, t, 40, param_sel == 1 ? JAUNE : BLANC, FOND_VERT);
     ecrire(0, 9, T(T_P_CHOISIR), GRIS_CLAIR, FOND_VERT);
     ecrire(0, 10, T(T_P_MODIFIER), GRIS_CLAIR, FOND_VERT);
@@ -618,9 +619,9 @@ static void vue_fin(void)
         return;
     }
     titre_ecran(T_T_FIN);
-    sprintf(t, "%-5s: %4u", T(T_NOUS), nous);
+    fmt(t, "%-5s: %4u", T(T_NOUS), nous);
     ecrire(0, 4, t, BLANC, FOND_VERT);
-    sprintf(t, "%-5s: %4u", T(T_EUX), eux);
+    fmt(t, "%-5s: %4u", T(T_EUX), eux);
     ecrire(0, 5, t, BLANC, FOND_VERT);
     if (gagnant >= 0) {
         ecrire(0, 7, T(gagnant == (moi & 1) ? T_F_VICT_NOUS : T_F_VICT_EUX), JAUNE, FOND_VERT);

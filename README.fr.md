@@ -39,8 +39,8 @@ retournée. Les règles sont intégrées (F8 les affiche sur le C64).
 ## Jouer tout de suite
 
 Téléchargez **`belote_lan.prg`** dans les [Releases](https://github.com/Stephan83c/belote-lan-c64/releases).
-Il se connecte par défaut au serveur public (adresse pré-remplie, modifiable sur l'écran de
-connexion). Il faut un C64 Ultimate (ou Ultimate 64 / Ultimate-II+) dont la **Command Interface** est
+Il se connecte par défaut au serveur public (adresse pré-remplie, modifiable avec F3 sur
+l'écran de connexion). Il faut un C64 Ultimate (ou Ultimate 64 / Ultimate-II+) dont la **Command Interface** est
 activée dans les réglages, et branché sur un réseau qui a accès à Internet.
 
 Pour le lancer :

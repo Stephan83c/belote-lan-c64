@@ -40,8 +40,8 @@ bidding on a turned-up card. The rules are built in (F8 shows them on the C64).
 ## Play right away
 
 Download **`belote_lan.prg`** from the [Releases](https://github.com/Stephan83c/belote-lan-c64/releases).
-By default it connects to the public server (its address is pre-filled and can be changed on the
-connection screen). You need a C64 Ultimate (or Ultimate 64 / Ultimate-II+) with the **Command
+By default it connects to the public server (its address is pre-filled and can be changed with F3 on
+the connection screen). You need a C64 Ultimate (or Ultimate 64 / Ultimate-II+) with the **Command
 Interface** enabled in its settings, on a network with Internet access.
 
 To start it:

@@ -18,7 +18,9 @@
 #define VERSION "?"
 #endif
 #define PORT_DEFAUT 6464
-#define SERVEUR_MAX 31
+#define IP_MAX 29               /* hôte ou IP, colonnes 10 à 38 (curseur en 39) */
+#define PORT_MAX 5
+#define CHAMP_X 10              /* champs IP et PORT (libellés en 1, « : » en 9) */
 
 #define K_RETURN 13
 #define K_DEL    20
@@ -38,9 +40,12 @@
 
 #define PEEK(a) (*(volatile unsigned char *)(a))
 
-static char serveur[SERVEUR_MAX + 1];
 static char nom[NOM_MAX + 1];
-static char hote[SERVEUR_MAX + 1];
+static char hote[IP_MAX + 1];
+static char port_txt[PORT_MAX + 1];
+/* Écran de connexion : 0 le nom (centré), 1 l'IP, 2 le port (réglage du serveur, F3). */
+static unsigned char reglage;
+static unsigned char nom_cx;         /* colonne du champ NOM */
 static int sock = -1;
 static unsigned char perdu;          /* écriture refusée : connexion perdue */
 
@@ -119,22 +124,27 @@ static void reseau(void)
 
 /* ---- Écran de connexion (SPEC 2.1) ------------------------------------ */
 
-static unsigned char accepte(unsigned char c, unsigned char hote_permis)
+/* mode : 0 nom (lettres, chiffres), 1 hôte (et . -), 2 port (chiffres). */
+static unsigned char accepte(unsigned char c, unsigned char mode)
 {
-    if ((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
+    if (c >= '0' && c <= '9') {
         return 1;
     }
-    return hote_permis && (c == '.' || c == '-' || c == ':');
+    if (mode == 2) {
+        return 0;
+    }
+    return (c >= 'A' && c <= 'Z') || (mode && (c == '.' || c == '-'));
 }
 
 /* Saisie bloquante d'un champ ; renvoie la touche qui la termine. */
-static unsigned char saisir(unsigned char y, char *buf, unsigned char max, unsigned char hote_permis)
+static unsigned char saisir(unsigned char x, unsigned char y, char *buf, unsigned char max,
+                            unsigned char mode)
 {
     unsigned char n = strlen(buf), c, j, nv;
     for (;;) {
-        ecrire_n(9, y, buf, 40 - 9, BLANC, FOND_VERT);
+        ecrire_n(x, y, buf, max + 1, BLANC, FOND_VERT);
         if (n < max) {
-            curseur(9 + n, y);
+            curseur(x + n, y);
         }
         /* Joystick (sur front) : bouton = RETURN, haut/bas = champ,
          * droite/gauche = langue suivante/précédente. */
@@ -157,15 +167,16 @@ static unsigned char saisir(unsigned char y, char *buf, unsigned char max, unsig
                 break;
             }
         }
-        if (c == K_RETURN || c == K_HAUT || c == K_BAS || c == K_F1 || c == K_LANGUE_PREC) {
-            ecrire_n(9, y, buf, 40 - 9, BLANC, FOND_VERT);
+        if (c == K_RETURN || c == K_HAUT || c == K_BAS || c == K_F1 || c == K_F3
+            || c == K_LANGUE_PREC) {
+            ecrire_n(x, y, buf, max + 1, BLANC, FOND_VERT);
             return c;
         }
         if (c == K_DEL) {
             if (n) {
                 buf[--n] = 0;
             }
-        } else if (n < max && accepte(c, hote_permis)) {
+        } else if (n < max && accepte(c, mode)) {
             buf[n++] = c;
             buf[n] = 0;
         }
@@ -193,25 +204,24 @@ static unsigned char nom_de_bot(const char *s)
     return 1;
 }
 
-/* Message de refus du serveur (ERR ...) en clair ; renvoie le champ à corriger. */
-static unsigned char refus(void)
+/* Message de refus du serveur (ERR ...) en clair  */
+static void refus(void)
 {
     if (!strcmp(erreur, "TABLE PLEINE")) {
         message(T(T_M_PLEINE));
-        return 0;
+        return;
     }
     if (!strcmp(erreur, "NOM RESERVE")) {
         message(T(T_M_NOM_BOT));
-        return 1;
+        return;
     }
     if (!strcmp(erreur, "NOM")) {
         message(T(T_M_NOM_REFUSE));
-        return 1;
+        return;
     }
     strcpy(tx, T(T_REFUS));
     strncat(tx, motif_refus(erreur), 40 - strlen(tx));
     message(tx);
-    return 0;
 }
 
 static void ferme(void)
@@ -222,20 +232,44 @@ static void ferme(void)
     }
 }
 
+/* Lignes 3 et 5 : le NOM centré, ou le réglage du serveur (IP et PORT). */
+static void champs_connexion(void)
+{
+    unsigned char l;
+
+    effacer(0, 3, 40);
+    effacer(0, 5, 40);
+    if (reglage) {
+        ecrire(1, 3, "IP", BLANC, FOND_VERT);
+        ecrire(1, 5, T(T_C_PORT), BLANC, FOND_VERT);
+        ecrire(CHAMP_X - 1, 3, ":", BLANC, FOND_VERT);
+        ecrire(CHAMP_X - 1, 5, ":", BLANC, FOND_VERT);
+        ecrire(CHAMP_X, 3, hote, BLANC, FOND_VERT);
+        ecrire(CHAMP_X, 5, port_txt, BLANC, FOND_VERT);
+    } else {
+        /* « NOM : JEAN » centré, le champ réservé sur 6 lettres et le curseur. */
+        l = strlen(T(T_C_NOM));
+        nom_cx = (40 - 3 - NOM_MAX - 1 - l) / 2 + l + 3;
+        ecrire(nom_cx - 3 - l, 5, T(T_C_NOM), BLANC, FOND_VERT);
+        ecrire(nom_cx - 2, 5, ":", BLANC, FOND_VERT);
+        ecrire(nom_cx, 5, nom, BLANC, FOND_VERT);
+    }
+}
+
 /* Libellés de l'écran de connexion dans la langue choisie ; en bas, les
  * langues dans la leur, celle en cours en jaune (F1 passe à la suivante), et la
  * barre de touches comme en jeu. */
 static void textes_connexion(void)
 {
-    unsigned char i, x = 0;
+    unsigned char i, x;
     const char *s = T(T_C_INFO);
 
-    ecrire_n(0, 3, T(T_C_SERVEUR), 8, BLANC, FOND_VERT);
-    ecrire(8, 3, ":", BLANC, FOND_VERT);
-    ecrire_n(0, 5, T(T_C_NOM), 8, BLANC, FOND_VERT);
-    ecrire(8, 5, ":", BLANC, FOND_VERT);
+    champs_connexion();
     effacer(0, 16, 40);
     ecrire((40 - strlen(s)) / 2, 16, s, GRIS_CLAIR, FOND_VERT);
+    /* FRANCAIS ENGLISH DEUTSCH ESPANOL, chacun dans sa langue : 35 colonnes
+     * quelle que soit la langue, centrées à partir de la colonne 2. */
+    x = 2;
     for (i = 0; i < NB_LANGUES; ++i) {
         ecrire(x, 22, textes[i][T_LANGUE], i == langue ? JAUNE : GRIS_FONCE, FOND_VERT);
         x += strlen(textes[i][T_LANGUE]) + 2;
@@ -265,9 +299,8 @@ static void cartes_connexion(unsigned char animer)
 /* Revient quand le serveur a confirmé la place par BIENVENUE. */
 static void connexion(void)
 {
-    unsigned char champ = 0, k;
+    unsigned char k;
     unsigned port, debut;
-    char *dp;
     static unsigned char deja;      /* donne déjà animée */
 
     ecran_effacer();
@@ -275,11 +308,8 @@ static void connexion(void)
     ecrire(1, 0, "BELOTE LAN C64", JAUNE, FOND_NOIR);
     ecrire(39 - sizeof(VERSION), 0, "V" VERSION, GRIS_CLAIR, FOND_NOIR);   /* jusqu'à la case 38 */
     ligne_tirets(20);
+    reglage = 0;
     textes_connexion();
-    ecrire_n(9, 3, serveur, 31, BLANC, FOND_VERT);
-    ecrire_n(9, 5, nom, 31, BLANC, FOND_VERT);
-    /* Serveur déjà rempli (le cas courant) : le curseur commence sur le nom. */
-    champ = serveur[0] ? 1 : 0;
     /* La donne animée une fois, en arrivant de l'écran titre. */
     cartes_connexion(!deja);
     deja = 1;
@@ -289,7 +319,9 @@ static void connexion(void)
     }
 
     for (;;) {
-        k = champ == 0 ? saisir(3, serveur, SERVEUR_MAX, 1) : saisir(5, nom, NOM_MAX, 0);
+        k = reglage == 0 ? saisir(nom_cx, 5, nom, NOM_MAX, 0)
+            : reglage == 1 ? saisir(CHAMP_X, 3, hote, IP_MAX, 1)
+            : saisir(CHAMP_X, 5, port_txt, PORT_MAX, 2);
         if (k == K_F1 || k == K_LANGUE_PREC) {
             langue_choisir(k == K_F1 ? langue + 1 : (langue + NB_LANGUES - 1) % NB_LANGUES);
             textes_connexion();
@@ -297,8 +329,18 @@ static void connexion(void)
             effacer(0, Y_MESSAGE, 40);
             continue;
         }
-        if (k == K_HAUT || k == K_BAS || (k == K_RETURN && champ == 0)) {
-            champ ^= 1;
+        /* Réglage du serveur : F3 l'ouvre et le ferme ; haut, bas ou RETURN sur
+         * l'IP passent d'un champ à l'autre, RETURN sur le port revient au nom. */
+        if (reglage && (k == K_HAUT || k == K_BAS || (k == K_RETURN && reglage == 1))) {
+            reglage ^= 3;
+            continue;
+        }
+        if (k == K_F3 || (reglage && k == K_RETURN)) {
+            reglage = reglage ? 0 : 1;
+            champs_connexion();
+            continue;
+        }
+        if (k != K_RETURN) {
             continue;
         }
         if (!nom[0]) {
@@ -307,11 +349,11 @@ static void connexion(void)
         }
         if (nom_de_bot(nom)) {
             message(T(T_M_NOM_BOT));
-            champ = 1;
             continue;
         }
-        if (!serveur[0]) {
-            champ = 0;
+        if (!hote[0]) {
+            reglage = 1;
+            champs_connexion();
             continue;
         }
         if (!uci_present()) {
@@ -319,15 +361,9 @@ static void connexion(void)
             continue;
         }
 
-        strcpy(hote, serveur);
-        port = PORT_DEFAUT;
-        dp = strchr(hote, ':');
-        if (dp) {
-            *dp = 0;
-            port = atoi(dp + 1);
-            if (!port) {
-                port = PORT_DEFAUT;
-            }
+        port = atoi(port_txt);
+        if (!port) {
+            port = PORT_DEFAUT;
         }
         message(T(T_M_CONNEXION));
         sock = net_ouvrir(hote, port);
@@ -339,7 +375,6 @@ static void connexion(void)
         }
         if (sock < 0) {
             message(T(T_M_IMPOSSIBLE));
-            champ = 0;
             continue;
         }
 
@@ -356,9 +391,8 @@ static void connexion(void)
         if (moi >= 0) {
             return;
         }
-        champ = 0;
         if (erreur[0]) {
-            champ = refus();
+            refus();
         } else if (perdu) {
             message(T(T_M_FERMEE));
         } else {
@@ -714,12 +748,20 @@ static void partie(void)
 
 int main(void)
 {
+    char *p;
+
     langue_choisir(langue);
     joy_install(joy_static_stddrv);
     ecran_init();
     son_init();
     titre();
-    strcpy(serveur, SERVEUR_DEFAUT);
+    /* « hôte:port » de config.mk, coupé en ses deux champs. */
+    strcpy(hote, SERVEUR_DEFAUT);
+    p = strchr(hote, ':');
+    if (p) {
+        *p = 0;
+        strcpy(port_txt, p + 1);
+    }
     for (;;) {
         connexion();
         partie();

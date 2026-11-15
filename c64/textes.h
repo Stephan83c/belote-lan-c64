@@ -9,7 +9,7 @@ enum {
     T_LANGUE,
     T_TOUCHE_OUI,
     T_FIGURES,
-    T_C_SERVEUR,
+    T_C_PORT,
     T_C_NOM,
     T_C_INFO,
     T_B_CONNEXION,

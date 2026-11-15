@@ -48,7 +48,8 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
 
 ## Mémoire du client (banque VIC 3)
 - Programme sous $C000 (__HIMEM__ dans le Makefile), pile C de 1,5 Ko (__STACKSIZE__) : environ
-  5,5 Ko de marge depuis la compression de l'image titre ; au-delà, ld65 refuse (« BSS overflows »).
+  430 octets de marge en v1.8, depuis fmt() à la place de sprintf (fin du BSS lue dans build/belote_lan.map, __BSS_RUN__ +
+  __BSS_SIZE__, contre $BA00) ; au-delà, ld65 refuse (« BSS overflows »).
 - $C000 écran (ECM), $C3F8 pointeurs de sprites, $C400-$C47F sprites de la carte qui glisse (et du pli ramassé),
   $C800 jeu de caractères en RAM, $E000 bitmap de l'écran titre (RAM sous le KERNAL, libre après)
 - ECM : 64 caractères seulement. Redessinés : @ £ ↑ ← (♠ ♥ ♣ ♦), # (tapis), " $ % & (coins des

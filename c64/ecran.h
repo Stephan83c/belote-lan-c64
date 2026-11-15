@@ -45,6 +45,9 @@
 void ecran_init(void);
 void ecran_effacer(void);
 void effacer(unsigned char x, unsigned char y, unsigned char n);
+/* Lignes y0 à y1 en vert uni (sans les points du feutre) jusqu'au prochain
+ * ecran_effacer() : espaces et effacements y restent unis. */
+void ecran_uni(unsigned char y0, unsigned char y1);
 void ecrire(unsigned char x, unsigned char y, const char *s, unsigned char coul, unsigned char fond);
 /* Écrit au plus n caractères et complète par des espaces. */
 void ecrire_n(unsigned char x, unsigned char y, const char *s, unsigned char n,
@@ -66,5 +69,8 @@ void curseur(unsigned char x, unsigned char y);
 
 /* Couleur C64 d'une couleur de carte : noir pour ♠ ♣, rouge pour ♥ ♦. */
 #define FC(c) (((c) & 1) ? ROUGE : NOIR)
+
+/* sprintf réduit : %s %c %u %d, largeur, 0 et - (voir ecran.c). */
+void fmt(char *d, const char *f, ...);
 
 #endif

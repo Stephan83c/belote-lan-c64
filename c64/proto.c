@@ -1,7 +1,6 @@
 /* Interprétation des messages serveur -> client (SPEC 7.2). */
 #include "ascii.h"
 #include <string.h>
-#include <stdio.h>
 #include <time.h>
 #include "ecran.h"
 #include "jeu.h"
@@ -295,7 +294,7 @@ static void info(char *s)
     } else if (!strcmp(s, "INACTIF : PLACE RENDUE AU BOT")) {
         journal_info(T(T_I_INACTIF));
     } else if (!strncmp(s, "NOM CHANGE EN ", 14) && strlen(s + 14) <= NOM_MAX) {
-        sprintf(tampon, T(T_I_NOM_CHANGE), s + 14);
+        fmt(tampon, T(T_I_NOM_CHANGE), s + 14);
         journal_info(tampon);
     } else if (!strncmp(s, "RESERVE ", 8)) {
         /* RESERVE N POUR EQUIPE E */
@@ -304,22 +303,22 @@ static void info(char *s)
         if (!strncmp(reste, " POUR EQUIPE ", 13)) {
             reste += 13;
             e = nombre();
-            sprintf(tampon, T(moi >= 0 && e == (moi & 1) ? T_I_RESERVE_NOUS : T_I_RESERVE_EUX), pts);
+            fmt(tampon, T(moi >= 0 && e == (moi & 1) ? T_I_RESERVE_NOUS : T_I_RESERVE_EUX), pts);
             journal_info(tampon);
         } else {
             journal_info(s);
         }
     } else if ((n = finit_par(s, "RECONNECTE")) != 0) {
         s[n - 1] = 0;
-        sprintf(tampon, T(T_I_RECONNECTE), s);
+        fmt(tampon, T(T_I_RECONNECTE), s);
         journal_info(tampon);
     } else if ((n = finit_par(s, "INACTIF REMPLACE PAR UN BOT")) != 0) {
         s[n - 1] = 0;
-        sprintf(tampon, T(T_I_INACTIF_BOT), s);
+        fmt(tampon, T(T_I_INACTIF_BOT), s);
         journal_info(tampon);
     } else if ((n = finit_par(s, "REMPLACE PAR UN BOT")) != 0) {
         s[n - 1] = 0;
-        sprintf(tampon, T(T_I_BOT), s);
+        fmt(tampon, T(T_I_BOT), s);
         journal_info(tampon);
     } else {
         journal_info(s);
@@ -538,7 +537,7 @@ void traiter_ligne(char *ligne)
                 eux = e0;
             }
             manche_nous = nous > eux;
-            sprintf(tampon, T(T_J_MANCHE), nous, eux);
+            fmt(tampon, T(T_J_MANCHE), nous, eux);
         }
         journal_info(tampon);
     } else if (!strcmp(mot, "CAPOT")) {
@@ -547,7 +546,7 @@ void traiter_ligne(char *ligne)
         journal_info(T(moi >= 0 && n == (moi & 1) ? T_J_CAPOT_NOUS : T_J_CAPOT_EUX));
     } else if (!strcmp(mot, "LITIGE")) {
         litige_m = 1;
-        sprintf(tampon, T(T_J_LITIGE), nombre());
+        fmt(tampon, T(T_J_LITIGE), nombre());
         journal_info(tampon);
     } else if (!strcmp(mot, "GAGNANT")) {
         gagnant = (signed char)nombre();

@@ -1,3 +1,5 @@
+#include <stdarg.h>
+#include <stdlib.h>
 #include "ascii.h"
 #include <string.h>
 #include "ecran.h"
@@ -39,6 +41,8 @@ static const unsigned char motif_coin[4][8] = {
 static const unsigned char motif_trait[8] = { 0, 0, 0, 0xFF, 0xFF, 0, 0, 0 };
 
 static unsigned off[25];
+/* Zone en vert uni (sans les points du feutre) : décalages [uni_de, uni_a). */
+static unsigned uni_de, uni_a;
 
 void ecran_init(void)
 {
@@ -81,12 +85,24 @@ void ecran_effacer(void)
 {
     memset(ECRAN, FEUTRE, 1000);
     memset(COULEUR, VERT_CLAIR, 1000);
+    uni_de = uni_a = 0;
+}
+
+/* Fond d'une case vide sur le vert : le feutre, ou le vert uni dans la zone unie. */
+#define FOND_VIDE(o) ((o) >= uni_de && (o) < uni_a ? (32 | FOND_VERT) : FEUTRE)
+
+void ecran_uni(unsigned char y0, unsigned char y1)
+{
+    uni_de = off[y0];
+    uni_a = off[y1] + 40;
+    memset(ECRAN + uni_de, 32 | FOND_VERT, uni_a - uni_de);
+    memset(COULEUR + uni_de, VERT_CLAIR, uni_a - uni_de);
 }
 
 void effacer(unsigned char x, unsigned char y, unsigned char n)
 {
     unsigned o = off[y] + x;
-    memset(ECRAN + o, FEUTRE, n);
+    memset(ECRAN + o, FOND_VIDE(o), n);
     memset(COULEUR + o, VERT_CLAIR, n);
 }
 
@@ -101,7 +117,7 @@ static void car(unsigned o, unsigned char c, unsigned char coul, unsigned char f
         return;
     }
     if (c == ' ' && fond == FOND_VERT) {
-        ECRAN[o] = FEUTRE;
+        ECRAN[o] = FOND_VIDE(o);
         COULEUR[o] = VERT_CLAIR;
         return;
     }
@@ -246,4 +262,58 @@ void sprite_position(int x, int y)
 void sprite_cacher(void)
 {
     VIC[0x15] = 0;
+}
+
+/* sprintf réduit (celui de cc65 prenait 1,3 Ko) : %s %c %u %d, avec une largeur,
+ * 0 devant pour compléter par des zéros, - pour aligner à gauche. Les nombres
+ * sont pris sans signe : le client n'en affiche pas de négatifs. */
+void fmt(char *d, const char *f, ...)
+{
+    va_list a;
+    char n[6];
+    const char *s;
+    unsigned char w, z, g, l;
+
+    va_start(a, f);
+    while (*f) {
+        if (*f != '%') {
+            *d++ = *f++;
+            continue;
+        }
+        ++f;
+        g = *f == '-';
+        f += g;
+        z = *f == '0';
+        f += z;
+        for (w = 0; *f >= '0' && *f <= '9'; ++f) {
+            w = w * 10 + *f - '0';
+        }
+        switch (*f++) {
+        case 's':
+            s = va_arg(a, const char *);
+            break;
+        case 'c':
+            n[0] = (char)va_arg(a, int);
+            n[1] = 0;
+            s = n;
+            break;
+        default:                        /* u, d */
+            s = utoa(va_arg(a, unsigned), n, 10);
+        }
+        l = strlen(s);
+        w = w > l ? w - l : 0;          /* espaces ou zéros à ajouter */
+        if (!g) {
+            for (; w; --w) {
+                *d++ = z ? '0' : ' ';
+            }
+        }
+        while (*s) {
+            *d++ = *s++;
+        }
+        for (; w; --w) {
+            *d++ = ' ';
+        }
+    }
+    *d = 0;
+    va_end(a);
 }
