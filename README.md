@@ -11,9 +11,9 @@ bidding on a turned-up card. The rules are built in (F8 shows them on the C64).
 
 ![Title screen](docs/titre.png)
 
-| Game table | Bidding, second round |
-|---|---|
-| ![Table](docs/table-en.png) | ![Bidding](docs/bidding-en.png) |
+| Choosing a room | Game table | Bidding, second round |
+|---|---|---|
+| ![Rooms](docs/salons-en.png) | ![Table](docs/table-en.png) | ![Bidding](docs/bidding-en.png) |
 
 ## What's inside
 
@@ -51,10 +51,12 @@ To start it:
 - or send it from a PC on the same network, if the Ultimate's REST API is enabled:
   `curl -X POST --data-binary @belote_lan.prg http://<ultimate-ip>/v1/runners:run_prg`.
 
-Press a key on the title screen, then **F1** on the connection screen to pick your language.
+Press a key on the title screen, then **F1** on the connection screen to pick your language. Type
+your name and press RETURN: the list of the server's rooms appears; pick one (joystick, arrows or
+a digit) and RETURN to sit down. **F3** on the connection screen changes the server (IP, PORT).
 
-**Limits**: the public server has a single 4-seat table; if it is full ("TABLE FULL"), try again
-later or run your own server (below). VICE cannot connect: it does not emulate the Ultimate's
+**Limits**: the public server has 9 rooms of 4 seats; if the room you pick is full ("TABLE FULL"),
+choose another one or run your own server (below). VICE cannot connect: it does not emulate the Ultimate's
 Command Interface. No C64 Ultimate? Use the PC client (below).
 
 **Your own server, without the repository**: the release also holds `belote-serveur-vX.Y.tar.gz`

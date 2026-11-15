@@ -9,7 +9,7 @@ include config.mk
 SERVEUR_DEFAUT := $(SERVEUR_IP):$(SERVEUR_PORT)
 # Version affichée sur l'écran de connexion (celle de la release GitHub) ; pc/belote_lan.py
 # porte la même (VERSION, vérifiée par les tests).
-VERSION := 1.8
+VERSION := 2.0
 # Langue au démarrage (F1 la change sur l'écran de connexion) : 0 FR, 1 EN, 2 DE, 3 ES.
 LANGUE ?= 0
 PRG := build/belote_lan.prg
@@ -63,7 +63,7 @@ DEMO := build/demo$(SCENARIO).prg
 
 demo: $(SOURCES) $(ENTETES) c64/vice/faux_uci.c Makefile
 	@mkdir -p build
-	cl65 -t c64 -O -Or -Ic64 -DSCENARIO=$(SCENARIO) -DLANGUE_DEFAUT=$(LANGUE) -Wl -D,__HIMEM__=0xC000,-D,__STACKSIZE__=0x200 \
+	cl65 -t c64 -O -Or -Ic64 -DSCENARIO=$(SCENARIO) -DLANGUE_DEFAUT=$(LANGUE) -DVERSION='"$(VERSION)"' -Wl -D,__HIMEM__=0xC000,-D,__STACKSIZE__=0x200 \
 	  -o $(DEMO) $(filter-out c64/uci.c,$(SOURCES)) c64/vice/faux_uci.c
 	@rm -f c64/*.o c64/vice/*.o
 

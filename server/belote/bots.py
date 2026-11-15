@@ -72,7 +72,7 @@ def choisir_carte(main: list[int], pli: list[tuple[int, int]], atout: int, place
 
     jouees : cartes déjà posées dans la donne (pli en cours compris ou non). Le bot
     s'en souvient pour entamer la plus forte carte restante d'une couleur.
-    preneur : place du preneur (None : inconnu, comme avant la v1.9).
+    preneur : place du preneur (None : inconnu, comme avant la v2.0).
 
     Essayé puis écarté (simulation de 20 000 donnes contre l'ancienne stratégie) :
     gagner un pli avec une carte que personne ne peut battre (atout maître) plutôt

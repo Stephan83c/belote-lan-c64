@@ -57,10 +57,10 @@ Autres cas :
 
 - Toute commande avant JOIN (sauf SALONS et LEAVE), ou un second JOIN, reçoit `ERR NOM`.
 - `JOIN NOM I` avec un salon plein reçoit `ERR TABLE PLEINE` sans fermeture (en choisir un autre) ;
-  numéro hors de 1 à N : `ERR SALON` (v1.9).
-- Table pleine, ou trop de connexions ouvertes (64 en tout, 8 depuis une même IP, serveur v1.9) :
+  numéro hors de 1 à N : `ERR SALON` (v2.0).
+- Table pleine, ou trop de connexions ouvertes (64 en tout, 8 depuis une même IP, serveur v2.0) :
   `ERR TABLE PLEINE`, puis le serveur ferme la connexion ; dans le second cas, dès l'ouverture.
-- Avant le lancement, un joueur muet pendant 10 minutes rend sa place (serveur v1.9) :
+- Avant le lancement, un joueur muet pendant 10 minutes rend sa place (serveur v2.0) :
   `INFO INACTIF : PLACE RENDUE AU BOT`, puis fermeture, comme pour l'inactivité en jeu.
 - Enchère mal placée à son tour (mauvaise couleur, ou ENCH pendant le jeu) et COUP pendant les
   enchères reçoivent `ERR COUP REFUSE`.

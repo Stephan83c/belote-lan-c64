@@ -63,10 +63,10 @@ Other cases:
 
 - Any command before JOIN (except SALONS and LEAVE), or a second JOIN, gets `ERR NOM`.
 - `JOIN NAME I` on a full room gets `ERR TABLE PLEINE` without closing (choose another);
-  a number outside 1 to N: `ERR SALON` (v1.9).
-- Table full, or too many open connections (64 in all, 8 from one IP, server v1.9):
+  a number outside 1 to N: `ERR SALON` (v2.0).
+- Table full, or too many open connections (64 in all, 8 from one IP, server v2.0):
   `ERR TABLE PLEINE`, then the server closes the connection; in the second case, as soon as it opens.
-- Before the game starts, a player silent for 10 minutes gives up their seat (server v1.9):
+- Before the game starts, a player silent for 10 minutes gives up their seat (server v2.0):
   `INFO INACTIF : PLACE RENDUE AU BOT`, then the connection is closed, as for idleness in play.
 - A misplaced bid on your turn (wrong suit, or ENCH during play) and COUP during bidding get
   `ERR COUP REFUSE`.

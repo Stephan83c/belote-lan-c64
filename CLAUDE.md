@@ -48,7 +48,7 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
 
 ## Mémoire du client (banque VIC 3)
 - Programme sous $C000 (__HIMEM__ dans le Makefile), pile C de 512 octets (__STACKSIZE__, mesurée à
-  58 octets au plus dans VICE en v1.9). L'image titre et son décompresseur sont dans le segment ONCE :
+  58 octets au plus dans VICE en v2.0). L'image titre et son décompresseur sont dans le segment ONCE :
   un constructeur (c64/titre_dec.s) la décompresse au chargement, avant zerobss et main, puis la place
   sert aux variables. Deux marges dans build/belote_lan.map : fin du BSS sous $BE00 (environ 4,7 Ko) et
   fin du segment ONCE sous $C000 (environ 1,7 Ko : la vraie limite pour le code) ; au-delà, ld65 refuse.

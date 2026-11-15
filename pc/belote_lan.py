@@ -26,7 +26,7 @@ import time
 import unicodedata
 from pathlib import Path
 
-VERSION = "1.8"
+VERSION = "2.0"
 SERVEUR_DEFAUT = "51.38.50.79"
 PORT_DEFAUT = 6464
 LARGEUR, HAUTEUR = 80, 24
@@ -1712,7 +1712,12 @@ class App:
 
 
 def activer_ansi_windows() -> None:
-    """Console Windows : séquences ANSI (VT) et sortie UTF-8."""
+    """Console Windows : séquences ANSI (VT), sortie UTF-8, sans Édition rapide.
+
+    Édition rapide : un clic dans la fenêtre commence une sélection, et Windows
+    bloque alors tout affichage du programme, qui paraît figé (le jeu s'arrête
+    pendant son tour). On la coupe pour cette fenêtre seulement.
+    """
     if os.name != "nt":
         return
     try:
@@ -1723,6 +1728,10 @@ def activer_ansi_windows() -> None:
         if k.GetConsoleMode(h, ctypes.byref(mode)):
             k.SetConsoleMode(h, mode.value | 0x0004)   # ENABLE_VIRTUAL_TERMINAL_PROCESSING
         k.SetConsoleOutputCP(65001)
+        h = k.GetStdHandle(-10)
+        if k.GetConsoleMode(h, ctypes.byref(mode)):
+            # sans ENABLE_QUICK_EDIT_MODE (0x40), avec ENABLE_EXTENDED_FLAGS (0x80)
+            k.SetConsoleMode(h, (mode.value & ~0x0040) | 0x0080)
     except Exception:
         pass
 

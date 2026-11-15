@@ -11,9 +11,9 @@ retournée. Les règles sont intégrées (F8 les affiche sur le C64).
 
 ![Écran titre](docs/titre.png)
 
-| Table de jeu | Enchères, second tour |
-|---|---|
-| ![Table](docs/table.png) | ![Enchères](docs/encheres.png) |
+| Choix du salon | Table de jeu | Enchères, second tour |
+|---|---|---|
+| ![Salons](docs/salons.png) | ![Table](docs/table.png) | ![Enchères](docs/encheres.png) |
 
 ## Ce qu'il y a dedans
 
@@ -52,9 +52,12 @@ Pour le lancer :
   `curl -X POST --data-binary @belote_lan.prg http://<ip-de-l-ultimate>/v1/runners:run_prg`.
 
 Appuyez sur une touche à l'écran titre, puis sur **F1** à l'écran de connexion pour choisir la langue.
+Tapez votre nom puis RETURN : la liste des salons du serveur s'affiche ; choisissez-en un (joystick,
+flèches ou chiffre) et RETURN pour vous asseoir. **F3** à l'écran de connexion change le serveur (IP,
+PORT).
 
-**Limites** : le serveur public n'a qu'une table de 4 places ; si elle est pleine (« TABLE PLEINE »),
-réessayez plus tard ou lancez votre propre serveur (ci-dessous). VICE ne peut pas se connecter : il
+**Limites** : le serveur public a 9 salons de 4 places ; si celui que vous choisissez est plein
+(« TABLE PLEINE »), prenez-en un autre ou lancez votre propre serveur (ci-dessous). VICE ne peut pas se connecter : il
 n'émule pas la Command Interface de l'Ultimate. Sans C64 Ultimate, prenez le client PC (ci-dessous).
 
 **Votre propre serveur, sans le dépôt** : la release contient aussi `belote-serveur-vX.Y.tar.gz`

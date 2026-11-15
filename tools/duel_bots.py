@@ -40,7 +40,7 @@ def jouer(paquet: list[int], donneur: int, strategies) -> tuple[int, int] | None
     while d.phase is Phase.ENCHERES:
         p = d.joueur
         s = strategies[p % 2]
-        # Avant la v1.9, les bots ne recevaient que la couleur de la retournée.
+        # Avant la v2.0, les bots ne recevaient que la couleur de la retournée.
         ancienne = "couleur_retournee" in inspect.signature(s.choisir_enchere).parameters
         choix = s.choisir_enchere(d.mains[p], d.tour_encheres,
                                   couleur(d.retournee) if ancienne else d.retournee)
