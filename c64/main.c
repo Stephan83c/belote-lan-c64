@@ -841,9 +841,9 @@ int main(void)
 
     langue_choisir(langue);
     joy_install(joy_static_stddrv);
-    ecran_init();
     son_init();
-    titre();
+    titre();                        /* avant ecran_init : l'image est déjà en place */
+    ecran_init();
     /* « hôte:port » de config.mk, coupé en ses deux champs. */
     strcpy(hote, SERVEUR_DEFAUT);
     p = strchr(hote, ':');

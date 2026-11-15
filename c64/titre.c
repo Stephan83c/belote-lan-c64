@@ -13,19 +13,11 @@
 #define POKE(a, v) (*(volatile unsigned char *)(a) = (v))
 #define PEEK(a)    (*(volatile unsigned char *)(a))
 
-/* Image compressée par tools/titre.py : une case de feutre (8 octets de bitmap,
- * matrice, couleur), un bit par case (1 = feutre), puis les autres cases. */
-extern const unsigned char titre_feutre[10];
-extern const unsigned char titre_cases[125];
-extern const unsigned char titre_autres[];
-
-/* c64/titre_dec.s */
-void titre_decompresser(void);
-
+/* L'image (tools/titre.py) est déjà décompressée, au chargement, par un
+ * constructeur de c64/titre_dec.s : sa place sert ensuite aux variables. Appelée
+ * avant ecran_init(), qui écrase la matrice de couleurs et rallume l'écran. */
 void titre(void)
 {
-    POKE(0xD011, PEEK(0xD011) & 0xEF);              /* écran éteint pendant la copie */
-    titre_decompresser();
     POKE(0xD018, 0x08);                             /* matrice $C000, bitmap $E000 */
     POKE(0xD016, PEEK(0xD016) | 0x10);              /* multicolore */
     POKE(0xD011, (PEEK(0xD011) & 0xBF) | 0x30);     /* bitmap, écran allumé */
@@ -38,9 +30,6 @@ void titre(void)
     }
     son_stop();
 
-    POKE(0xD011, PEEK(0xD011) & 0xEF);
+    POKE(0xD011, PEEK(0xD011) & 0xCF);              /* écran éteint, fin du bitmap */
     POKE(0xD016, PEEK(0xD016) & 0xEF);
-    POKE(0xD018, 0x02);
-    ecran_effacer();
-    POKE(0xD011, (PEEK(0xD011) & 0xDF) | 0x50);     /* texte ECM, écran allumé */
 }

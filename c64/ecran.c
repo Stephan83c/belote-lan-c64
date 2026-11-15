@@ -78,7 +78,7 @@ void ecran_init(void)
     POKE(0xD023, NOIR);                 /* bandeaux du haut et du bas */
     POKE(0xD024, GRIS_FONCE);
     ecran_effacer();
-    POKE(0xD011, PEEK(0xD011) | 0x40);  /* mode couleur étendue */
+    POKE(0xD011, PEEK(0xD011) | 0x50);  /* mode couleur étendue, écran allumé (éteint par le titre) */
 }
 
 void ecran_effacer(void)

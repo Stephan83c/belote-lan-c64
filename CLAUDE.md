@@ -48,8 +48,11 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
 
 ## Mémoire du client (banque VIC 3)
 - Programme sous $C000 (__HIMEM__ dans le Makefile), pile C de 512 octets (__STACKSIZE__, mesurée à
-  58 octets au plus dans VICE en v1.9) : 44 octets de marge en v1.9, avec les salons (fin du BSS lue dans build/belote_lan.map, __BSS_RUN__ +
-  __BSS_SIZE__, contre $BE00) ; au-delà, ld65 refuse (« BSS overflows »).
+  58 octets au plus dans VICE en v1.9). L'image titre et son décompresseur sont dans le segment ONCE :
+  un constructeur (c64/titre_dec.s) la décompresse au chargement, avant zerobss et main, puis la place
+  sert aux variables. Deux marges dans build/belote_lan.map : fin du BSS sous $BE00 (environ 4,7 Ko) et
+  fin du segment ONCE sous $C000 (environ 1,7 Ko : la vraie limite pour le code) ; au-delà, ld65 refuse.
+  Le constructeur règle bordure, fond et banque VIC ; titre() est appelé avant ecran_init().
 - $C000 écran (ECM), $C3F8 pointeurs de sprites, $C400-$C47F sprites de la carte qui glisse (et du pli ramassé),
   $C800 jeu de caractères en RAM, $E000 bitmap de l'écran titre (RAM sous le KERNAL, libre après)
 - ECM : 64 caractères seulement. Redessinés : @ £ ↑ ← (♠ ♥ ♣ ♦), # (tapis), " $ % & (coins des

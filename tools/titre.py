@@ -288,10 +288,13 @@ def main():
     bitmap, ecran, couleur = convertir(img)
     feutre, drapeaux, autres = compresser(bitmap, ecran, couleur)
     src = "\n\n".join([
-        "/* Écran titre (bitmap multicolore), généré par tools/titre.py : ne pas éditer. */",
+        "/* Écran titre (bitmap multicolore), généré par tools/titre.py : ne pas éditer.\n"
+        " * Segment ONCE : décompressé au chargement, avant main (c64/titre_dec.s), puis la\n"
+        " * place sert aux variables (BSS). */\n\n#pragma rodata-name (push, \"ONCE\")",
         tableau("titre_feutre", feutre),
         tableau("titre_cases", drapeaux),
         tableau("titre_autres", autres),
+        "#pragma rodata-name (pop)",
     ]) + "\n"
     (RACINE / "c64/titre_img.c").write_text(src)
     if len(sys.argv) > 1:

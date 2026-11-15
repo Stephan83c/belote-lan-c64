@@ -3,8 +3,13 @@
 ; autres cases à la suite dans titre_autres, 10 octets chacune (8 de bitmap,
 ; matrice écran, RAM couleur). En assembleur : en C, cc65 mettait près d'une
 ; seconde de plus à afficher l'image.
+;
+; Segment ONCE, comme les données : un constructeur décompresse l'image au
+; chargement, avant que crt0 remette les variables à zéro (zerobss) et appelle
+; main ; ensuite, cette place sert aux variables. L'écran reste éteint jusqu'à
+; titre() (c64/titre.c).
 
-        .export _titre_decompresser
+        .constructor titre_preparer
         .import _titre_feutre, _titre_cases, _titre_autres
         .importzp ptr1, ptr2, ptr3, ptr4, tmp1
 
@@ -12,10 +17,19 @@ BITMAP  = $E000             ; RAM sous le KERNAL : le CPU y écrit, le VIC la li
 ECRAN   = $C000
 COULEUR = $D800
 
-        .segment "CODE"
+        .segment "ONCE"
 
-; void titre_decompresser(void)
-_titre_decompresser:
+titre_preparer:
+        lda $D011           ; écran éteint pendant la copie
+        and #$EF
+        sta $D011
+        lda $DD00           ; banque VIC 3 : $C000-$FFFF
+        and #$FC
+        sta $DD00
+        lda #9              ; bordure brune (BRUN), comme en jeu
+        sta $D020
+        lda #5              ; fond vert (VERT) : le feutre de l'image
+        sta $D021
         lda #<BITMAP
         sta ptr1
         lda #>BITMAP
