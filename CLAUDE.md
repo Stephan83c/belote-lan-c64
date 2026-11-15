@@ -70,8 +70,8 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
 - Pile C : VICE avec `-raminitstartvalue 85 -raminitvalueinvert 0 -raminitpatterninvert 0
   -raminitrandomchance 0 -remotemonitor`, puis `m be00 bfff` par nc sur le port 6510 : la plus basse
   adresse différente de $55 donne la profondeur (sans couper le bruit aléatoire, on croit la pile pleine)
-- Client PC : captures en lançant pc/belote_lan.py dans un pseudo-terminal 80x24 rendu par pyte
-  et Pillow (venv à part, pas dans le dépôt) ; docs/pc.png (FR) et docs/pc-en.png (EN)
+- Client PC : `python3 tools/capture_pc.py fr docs/pc.png` (et `en docs/pc-en.png`) : le client joue en
+  mémoire contre le serveur et ses bots, sa grille est dessinée en PNG (Pillow, sans terminal ni pyte)
 
 ## Règles
 - Réseau côté C64 via l'Ultimate Command Interface ($DF1C-$DF1F), cible réseau.
