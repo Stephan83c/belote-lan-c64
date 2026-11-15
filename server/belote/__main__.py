@@ -1,4 +1,5 @@
-"""Serveur TCP : python -m belote [--host H] [--port 6464] [--delai-bot 1.0] [--delai-manche 10]"""
+"""Serveur TCP : python -m belote [--host H] [--port 6464] [--delai-bot 1.0] [--delai-manche 10]
+[--delai-attente 600] [--max-connexions 64] [--max-par-ip 8]"""
 
 from __future__ import annotations
 
@@ -9,7 +10,7 @@ import os
 import sys
 
 from .protocole import TROP_LONG, Cadreur
-from .table import DELAI_BOT, DELAI_MANCHE, Table
+from .table import DELAI_ATTENTE, DELAI_BOT, DELAI_MANCHE, Table
 
 log = logging.getLogger("belote")
 
@@ -17,6 +18,29 @@ TAMPON_ENVOI_MAX = 64 * 1024
 # Une connexion sans place à la table au bout de ce délai est fermée : sur un serveur
 # public, des connexions vides ne s'accumulent pas. Le C64 envoie JOIN aussitôt connecté.
 DELAI_JOIN = 60.0
+# Limites du serveur entier (toutes tables confondues, pour le multi-salon) :
+# 8 connexions par IP laissent jouer 4 C64 derrière une même box.
+MAX_CONNEXIONS = 64
+MAX_PAR_IP = 8
+
+
+class Limites:
+    """Compte les connexions ouvertes, en tout et par adresse IP."""
+
+    def __init__(self, total: int = MAX_CONNEXIONS, par_ip: int = MAX_PAR_IP):
+        self.total, self.par_ip = total, par_ip
+        self.ouvertes: dict[str, int] = {}
+
+    def prendre(self, ip: str) -> bool:
+        if sum(self.ouvertes.values()) >= self.total or self.ouvertes.get(ip, 0) >= self.par_ip:
+            return False
+        self.ouvertes[ip] = self.ouvertes.get(ip, 0) + 1
+        return True
+
+    def rendre(self, ip: str) -> None:
+        self.ouvertes[ip] -= 1
+        if not self.ouvertes[ip]:
+            del self.ouvertes[ip]
 
 
 class ConnexionTCP:
@@ -103,16 +127,32 @@ def ecouter_console(table: Table) -> None:
 
 
 async def demarrer(table: Table, host: str | None, port: int,
-                   delai_join: float = DELAI_JOIN) -> asyncio.Server:
+                   delai_join: float = DELAI_JOIN, limites: Limites | None = None) -> asyncio.Server:
+    limites = limites or Limites()
+
     async def rappel(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
-        await gerer_client(table, reader, writer, delai_join)
+        pair = writer.get_extra_info("peername")
+        ip = pair[0] if pair else "?"
+        if not limites.prendre(ip):
+            # Refusée avant tout, puis fermée. ERR TABLE PLEINE : les clients déjà
+            # publiés le traduisent (« réessayez plus tard ») ; un code à part
+            # attendra le multi-salon et ses nouveaux clients.
+            log.info("refusee (trop de connexions) %s", pair)
+            writer.write(b"ERR TABLE PLEINE\n")
+            writer.close()
+            return
+        try:
+            await gerer_client(table, reader, writer, delai_join)
+        finally:
+            limites.rendre(ip)
 
     return await asyncio.start_server(rappel, host, port)
 
 
-async def principal(host: str, port: int, delai_bot: float, delai_manche: float) -> None:
-    table = Table(delai_bot=delai_bot, delai_manche=delai_manche)
-    serveur = await demarrer(table, host, port)
+async def principal(host: str, port: int, delai_bot: float, delai_manche: float,
+                    delai_attente: float, limites: Limites) -> None:
+    table = Table(delai_bot=delai_bot, delai_manche=delai_manche, delai_attente=delai_attente)
+    serveur = await demarrer(table, host, port, limites=limites)
     inactivite = asyncio.create_task(table.boucle_inactivite())
     ecouter_console(table)
     log.info("serveur de belote sur %s:%d (console : RAZ efface la partie)", host, port)
@@ -130,10 +170,17 @@ def main() -> None:
     parser.add_argument("--delai-bot", type=float, default=DELAI_BOT, help="secondes par action de bot")
     parser.add_argument("--delai-manche", type=float, default=DELAI_MANCHE,
                         help="secondes de pause en fin de manche avant la suivante")
+    parser.add_argument("--delai-attente", type=float, default=DELAI_ATTENTE,
+                        help="secondes sans message avant le lancement : la place est rendue")
+    parser.add_argument("--max-connexions", type=int, default=MAX_CONNEXIONS,
+                        help="connexions ouvertes au plus, en tout")
+    parser.add_argument("--max-par-ip", type=int, default=MAX_PAR_IP,
+                        help="connexions ouvertes au plus depuis une même adresse IP")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     try:
-        asyncio.run(principal(args.host, args.port, args.delai_bot, args.delai_manche))
+        asyncio.run(principal(args.host, args.port, args.delai_bot, args.delai_manche,
+                              args.delai_attente, Limites(args.max_connexions, args.max_par_ip)))
     except KeyboardInterrupt:
         pass
 

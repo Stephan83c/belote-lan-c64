@@ -37,6 +37,9 @@ Options :
 | `--host` | 0.0.0.0 | Adresse écoutée (toutes les interfaces). |
 | `--delai-bot` | 1.0 | Secondes avant chaque action d'un bot. |
 | `--delai-manche` | 10 | Secondes de pause en fin de manche avant la suivante. |
+| `--delai-attente` | 600 | Avant le lancement, secondes sans message après lesquelles un joueur rend sa place. |
+| `--max-connexions` | 64 | Connexions ouvertes au plus, en tout ; les suivantes reçoivent ERR TABLE PLEINE. |
+| `--max-par-ip` | 8 | Connexions ouvertes au plus depuis une même adresse IP (4 C64 derrière une box passent). |
 
 ## 3. Vérifier
 

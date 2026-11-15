@@ -53,6 +53,10 @@ Erreurs ajoutées au format `ERR TEXTE` :
 Autres cas :
 
 - Toute commande avant JOIN, ou un second JOIN, reçoit `ERR NOM`.
+- Table pleine, ou trop de connexions ouvertes (64 en tout, 8 depuis une même IP, serveur v1.9) :
+  `ERR TABLE PLEINE`, puis le serveur ferme la connexion ; dans le second cas, dès l'ouverture.
+- Avant le lancement, un joueur muet pendant 10 minutes rend sa place (serveur v1.9) :
+  `INFO INACTIF : PLACE RENDUE AU BOT`, puis fermeture, comme pour l'inactivité en jeu.
 - Enchère mal placée à son tour (mauvaise couleur, ou ENCH pendant le jeu) et COUP pendant les
   enchères reçoivent `ERR COUP REFUSE`.
 - Après REDONNE, le serveur enchaîne `ETAT EN COURS` et `DONNEUR P`, comme pour toute donne.

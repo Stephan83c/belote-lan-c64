@@ -37,6 +37,9 @@ Options:
 | `--host` | 0.0.0.0 | Address to listen on (all interfaces). |
 | `--delai-bot` | 1.0 | Seconds before each bot action. |
 | `--delai-manche` | 10 | Seconds of pause at the end of a round before the next one. |
+| `--delai-attente` | 600 | Before the game starts, seconds without a message after which a player gives up their seat. |
+| `--max-connexions` | 64 | Open connections at most, in all; the next ones get ERR TABLE PLEINE. |
+| `--max-par-ip` | 8 | Open connections at most from one IP address (4 C64s behind one router fit). |
 
 ## 3. Check
 

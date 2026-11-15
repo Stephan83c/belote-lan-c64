@@ -770,16 +770,32 @@ def test_inactivite_reglable():
 
 
 @dans_boucle
-def test_pas_d_inactivite_en_attente_ni_hors_de_son_tour():
+def test_pas_d_inactivite_hors_de_son_tour():
     t = table_ne_jouant_pas()
     a = rejoindre(t, "A")
     b = rejoindre(t, "B")
-    t.verifier_inactivite(t._attendu_depuis + 10_000)
-    assert not a.ferme and not b.ferme
     t.recevoir(a, "LANCER")  # c'est à B : A n'est pas attendu
     t.sieges[1].actif_a = t._attendu_depuis
     t.verifier_inactivite(t._attendu_depuis + 10_000)
     assert not a.ferme and b.ferme
+
+
+@dans_boucle
+def test_muet_avant_le_lancement_rend_sa_place():
+    # Une table d'attente ne reste pas prise par des connexions muettes.
+    t = table_ne_jouant_pas()
+    a = rejoindre(t, "A")
+    b = rejoindre(t, "B")
+    t.sieges[0].actif_a = t.sieges[1].actif_a = 1000.0
+    t.recevoir(b, "TCHAT ON ATTEND")  # B parle : il reste
+    b_actif = t.sieges[1].actif_a
+    t.verifier_inactivite(1000.0 + t.delai_attente - 1)
+    assert not a.ferme
+    t.verifier_inactivite(1000.0 + t.delai_attente)
+    assert a.ferme and "INFO INACTIF : PLACE RENDUE AU BOT" in a.lignes
+    assert "INFO A INACTIF REMPLACE PAR UN BOT" in b.lignes
+    assert not b.ferme and b_actif > 1000.0
+    assert t.chef == 1 and t.sieges[0].humain is None and t.sieges[0].nom_reserve is None
 
 
 @dans_boucle

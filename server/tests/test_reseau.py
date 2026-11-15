@@ -3,7 +3,7 @@
 import asyncio
 import random
 
-from belote.__main__ import commande_console, demarrer
+from belote.__main__ import Limites, commande_console, demarrer
 from belote.table import Table
 
 
@@ -31,9 +31,9 @@ class Joueur:
                 return
 
 
-async def serveur(graine=3, delai=0.0, delai_join=60.0):
+async def serveur(graine=3, delai=0.0, delai_join=60.0, limites=None):
     table = Table(rng=random.Random(graine), delai_bot=delai)
-    srv = await demarrer(table, "127.0.0.1", 0, delai_join)
+    srv = await demarrer(table, "127.0.0.1", 0, delai_join, limites)
     port = srv.sockets[0].getsockname()[1]
     return table, srv, port
 
@@ -176,5 +176,40 @@ def test_connexion_sans_join_fermee_apres_le_delai():
         await assise.envoyer("TCHAT TOUJOURS LA")
         assert await assise.lire() == "TCHAT A TOUJOURS LA"
         assise.writer.close()
+        srv.close()
+    asyncio.run(corps())
+
+
+def test_trop_de_connexions_par_ip_refusees():
+    async def corps():
+        limites = Limites(total=64, par_ip=2)
+        _, srv, port = await serveur(limites=limites)
+        a, b = await connecter(port), await connecter(port)
+        c = await connecter(port)
+        assert await c.lire() == "ERR TABLE PLEINE"
+        assert await asyncio.wait_for(c.reader.read(), 5) == b""
+        # Une place se libère : la connexion suivante est acceptée.
+        a.writer.close()
+        await asyncio.sleep(0.1)
+        d = await connecter(port)
+        await d.envoyer("JOIN D")
+        assert await d.lire() == "BIENVENUE D 0"
+        assert limites.ouvertes == {"127.0.0.1": 2}
+        b.writer.close()
+        d.writer.close()
+        await asyncio.sleep(0.1)
+        assert limites.ouvertes == {}
+        srv.close()
+    asyncio.run(corps())
+
+
+def test_trop_de_connexions_en_tout_refusees():
+    async def corps():
+        _, srv, port = await serveur(limites=Limites(total=3, par_ip=8))
+        js = [await connecter(port) for _ in range(3)]
+        e = await connecter(port)
+        assert await e.lire() == "ERR TABLE PLEINE"
+        for j in js:
+            j.writer.close()
         srv.close()
     asyncio.run(corps())

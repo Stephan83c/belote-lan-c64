@@ -38,6 +38,10 @@ FACTEUR_PAUSE_PRISE = 3
 # Pause de fin de manche (SUITE) : le temps de lire le résultat, puis la manche
 # suivante démarre seule ; REJOUER (F5, tout joueur) l'écourte.
 DELAI_MANCHE = 10.0
+# Avant le lancement, un humain qui n'envoie rien pendant ce délai rend sa place
+# (secondes) : une table ne reste pas prise par des connexions muettes. Chaque
+# table (chaque salon, plus tard) le vérifie pour elle-même.
+DELAI_ATTENTE = 600.0
 
 
 class Client(Protocol):
@@ -63,10 +67,11 @@ def _entier(texte: str) -> int | None:
 
 class Table:
     def __init__(self, rng: random.Random | None = None, delai_bot: float = DELAI_BOT,
-                 delai_manche: float = DELAI_MANCHE):
+                 delai_manche: float = DELAI_MANCHE, delai_attente: float = DELAI_ATTENTE):
         self.rng = rng or random.Random()
         self.delai_bot = delai_bot
         self.delai_manche = delai_manche
+        self.delai_attente = delai_attente
         self._pause_prise = False
         self.sieges = [Siege() for _ in range(4)]
         self.chef = -1
@@ -548,21 +553,31 @@ class Table:
         """Remplace par un bot l'humain attendu depuis trop longtemps (4.3).
 
         Seul celui dont la table attend une action peut être jugé inactif : le
-        joueur à son tour, ou le chef en fin de partie.
+        joueur à son tour, ou le chef en fin de partie. Avant le lancement,
+        tout humain muet depuis delai_attente rend sa place.
         """
+        maintenant = time.monotonic() if maintenant is None else maintenant
+        if self.etat == ATTENTE:
+            for place, siege in self._humains():
+                if maintenant - siege.actif_a >= self.delai_attente:
+                    self._rendre_place(place)
+            return
         place = self._place_attendue()
         if place is None or place < 0:
             return
         siege = self.sieges[place]
         if siege.humain is None:
             return
-        maintenant = time.monotonic() if maintenant is None else maintenant
         depuis = max(self._attendu_depuis, siege.actif_a)
         if maintenant - depuis >= self.inactif_min * 60:
-            client = siege.humain
-            client.envoyer("INFO INACTIF : PLACE RENDUE AU BOT")
-            self._liberer(place, f"{siege.nom} INACTIF REMPLACE PAR UN BOT")
-            client.fermer()
+            self._rendre_place(place)
+
+    def _rendre_place(self, place: int) -> None:
+        siege = self.sieges[place]
+        client = siege.humain
+        client.envoyer("INFO INACTIF : PLACE RENDUE AU BOT")
+        self._liberer(place, f"{siege.nom} INACTIF REMPLACE PAR UN BOT")
+        client.fermer()
 
     async def boucle_inactivite(self, periode: float = 1.0) -> None:
         while True:
