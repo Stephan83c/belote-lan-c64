@@ -8,7 +8,7 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
 
 ## Matériel
 - C64 Ultimate sur le LAN : 192.168.1.27 (API REST active, Command Interface activée)
-- Serveur public (adresse par défaut du C64, SERVEUR_IP dans config.mk) : 51.38.50.79:6464, sur un
+- Serveur public (adresse par défaut du C64, SERVEUR_IP dans config.mk), port 6464, sur un
   VPS que Stéphan met à jour lui-même (git pull, make test PYTHON=python3, systemctl --user
   restart belote ; voir docs/serveur-service.md)
 - Serveur de test sur ce PC : 192.168.1.55:6464 (`make server`, puis
