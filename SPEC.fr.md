@@ -656,6 +656,8 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 
 - **Bots** — Renforcés en v2.0 (4.4) : enchères à la valeur de la main, atouts tirés par le preneur, partenaire chargé. Pistes suivantes : compter les atouts tombés pour savoir quand couper, le 10 de der, jouer selon la place du preneur ; à mesurer avec tools/duel_bots.py.
 
+- **Écran de fin de partie (C64)** — Scores, victoire, F5 et F7 sont centrés (v2.0 retouchée). Reste à finir : aligner F5/F7 en un bloc, centrer la barre du bas, raccourcir « F5 = NOUVELLE PARTIE (CHEF SEULEMENT) » en français.
+
 - **Plusieurs tables** — Fait en v2.0 : 9 salons (4.5). Au-delà de 9, il faudrait deux colonnes ou des pages sur le C64, qui manque de mémoire.
 
 - **Accessibilité** — Il faut un C64 Ultimate (ou Ultimate 64 / Ultimate-II+) : VICE n’émule pas la Command Interface. Une version passant par le réseau émulé de VICE (RR-Net) permettrait d’essayer sans matériel.

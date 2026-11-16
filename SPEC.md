@@ -658,6 +658,8 @@ These decisions override contradictory or older wording.
 
 - **Bots** — Strengthened in v2.0 (4.4): bidding on the hand's value, trumps drawn by the taker, partner's trick loaded. Next ideas: count the fallen trumps to know when to ruff, the last-trick 10, play according to the taker's seat; to be measured with tools/duel_bots.py.
 
+- **End-of-game screen (C64)** — Scores, victory line, F5 and F7 are centred (v2.0 touched up). Still to do: align F5/F7 as one block, centre the bottom bar, shorten "F5 = NOUVELLE PARTIE (CHEF SEULEMENT)" in French.
+
 - **Several tables** — Done in v2.0: 9 rooms (4.5). Beyond 9, the C64 would need two columns or pages, and it is short of memory.
 
 - **Accessibility** — A C64 Ultimate (or Ultimate 64 / Ultimate-II+) is needed: VICE does not emulate the Command Interface. A version using VICE's emulated network (RR-Net) would allow trying it without the hardware.
