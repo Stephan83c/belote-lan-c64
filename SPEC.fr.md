@@ -658,6 +658,14 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 
 - **Écran de fin de partie (C64)** — Scores, victoire, F5 et F7 sont centrés (v2.0 retouchée). Reste à finir : aligner F5/F7 en un bloc, centrer la barre du bas, raccourcir « F5 = NOUVELLE PARTIE (CHEF SEULEMENT) » en français.
 
+- **Type de client dans les logs** — Le serveur ne sait pas si une connexion vient d’un C64 ou du client PC : les deux envoient la même séquence (SALONS, JOIN). Proposition : une ligne `CLIENT C64 2.0` ou `CLIENT PC 2.0` avant SALONS, loguée par le serveur, absence tolérée (anciens clients = « inconnu »). Déployer le serveur avant les clients (un serveur v2.0 répond ERR NOM, que les clients doivent ignorer). Touche salons.py, proto.c, pc/belote_lan.py, protocol, SPEC, tests.
+
+- **Sons d’arrivée et de départ** — Un petit bruitage quand un joueur entre dans la partie et un autre quand il en sort (tools/musique.py, c64/son.s ; côté PC, au minimum la cloche du terminal). Le client sait déjà qui est assis (messages de table) : il reste à repérer l’arrivée ou le départ d’un humain, sans sonner pour un bot qui prend la place.
+
+- **Son de changement de tour d’enchères** — Un son discret quand les deux tours d’enchères sont passés (tout le monde a passé) et que la donne repart vers une autre enchère, c’est-à-dire une nouvelle donne. À brancher sur le message du serveur qui annonce ce changement (tools/musique.py, c64/son.s ; cloche du terminal côté PC).
+
+- **Joystick partout** — Le joystick ne sert pas encore : à la validation de l’écran de connexion (avec le choix de langue), à la sélection du salon, et pour lancer une nouvelle partie côté chef (F5). Prévoir le feu pour valider, haut/bas pour choisir le salon et la langue, et une façon de lancer la nouvelle partie sans clavier. Une analyse d’ensemble est à faire d’abord : recenser chaque écran et chaque touche (F1, F2, F5, F7…) pour rendre le jeu aussi complet que possible au joystick seul. Le joystick s’ajoute au clavier : toutes les fonctions existantes (pseudo, tchat, touches F) restent telles quelles. Le but est qu’un joueur qui ne tchate pas puisse, son nom saisi, tout faire au joystick sans retourner au clavier.
+
 - **Plusieurs tables** — Fait en v2.0 : 9 salons (4.5). Au-delà de 9, il faudrait deux colonnes ou des pages sur le C64, qui manque de mémoire.
 
 - **Accessibilité** — Il faut un C64 Ultimate (ou Ultimate 64 / Ultimate-II+) : VICE n’émule pas la Command Interface. Une version passant par le réseau émulé de VICE (RR-Net) permettrait d’essayer sans matériel.

@@ -660,6 +660,14 @@ These decisions override contradictory or older wording.
 
 - **End-of-game screen (C64)** — Scores, victory line, F5 and F7 are centred (v2.0 touched up). Still to do: align F5/F7 as one block, centre the bottom bar, shorten "F5 = NOUVELLE PARTIE (CHEF SEULEMENT)" in French.
 
+- **Client type in the logs** — The server cannot tell whether a connection comes from a C64 or from the PC client: both send the same sequence (SALONS, JOIN). Proposal: a `CLIENT C64 2.0` or `CLIENT PC 2.0` line before SALONS, logged by the server, absence tolerated (old clients = "unknown"). Deploy the server before the clients (a v2.0 server answers ERR NOM, which clients must ignore). Touches salons.py, proto.c, pc/belote_lan.py, protocol, SPEC, tests.
+
+- **Join and leave sounds** — A small sound effect when a player joins the game and another when one leaves (tools/musique.py, c64/son.s; on the PC, at least the terminal bell). The client already knows who is seated (table messages): what remains is spotting a human arriving or leaving, without sounding for a bot taking the seat.
+
+- **Bidding-round change sound** — A discreet sound when both bidding rounds are passed (everyone passed) and play moves on to another bid, i.e. a new deal. To be hooked to the server message announcing the change (tools/musique.py, c64/son.s; terminal bell on the PC).
+
+- **Joystick everywhere** — The joystick is not yet usable: to confirm the connection screen (with the language choice), to select the room, and to start a new game as host (F5). To do: fire to confirm, up/down to pick the room and the language, and a way to start the new game without the keyboard. An overall analysis comes first: list every screen and every key (F1, F2, F5, F7…) to make the game as fully playable as possible with the joystick alone. The joystick is added to the keyboard: all existing features (name, chat, F keys) stay as they are. The goal is that a player who does not chat can, once the name is typed, do everything with the joystick without going back to the keyboard.
+
 - **Several tables** — Done in v2.0: 9 rooms (4.5). Beyond 9, the C64 would need two columns or pages, and it is short of memory.
 
 - **Accessibility** — A C64 Ultimate (or Ultimate 64 / Ultimate-II+) is needed: VICE does not emulate the Command Interface. A version using VICE's emulated network (RR-Net) would allow trying it without the hardware.
