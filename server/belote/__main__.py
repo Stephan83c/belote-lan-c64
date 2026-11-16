@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import time
 import os
 import sys
 
@@ -70,6 +71,9 @@ async def gerer_client(table: Table | Salons, reader: asyncio.StreamReader, writ
     log.info("connexion %s", pair)
     client = ConnexionTCP(writer)
     cadreur = Cadreur()
+    debut = time.monotonic()
+    octets = 0
+    premiere = None
 
     minuteur = None
 
@@ -90,7 +94,10 @@ async def gerer_client(table: Table | Salons, reader: asyncio.StreamReader, writ
             bloc = await reader.read(256)
             if not bloc:
                 break
+            octets += len(bloc)
             for ligne in cadreur.alimenter(bloc):
+                if premiere is None:
+                    premiere = ligne if isinstance(ligne, str) else "(trop long)"
                 if writer.is_closing():
                     break
                 if ligne is TROP_LONG:
@@ -101,9 +108,12 @@ async def gerer_client(table: Table | Salons, reader: asyncio.StreamReader, writ
         pass
     finally:
         minuteur.cancel()
+        assis = table.est_assis(client)
         table.deconnexion(client)
         client.fermer()
-        log.info("deconnexion %s", pair)
+        log.info("deconnexion %s apres %.1f s, %d octets recus, %s, 1re ligne : %s", pair,
+                 time.monotonic() - debut, octets, "assis" if assis else "jamais assis",
+                 ascii(premiere[:40]) if premiere is not None else "aucune")
 
 
 def commande_console(salle: Table | Salons, ligne: str) -> str | None:
