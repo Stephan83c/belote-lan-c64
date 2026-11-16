@@ -8,6 +8,7 @@ partie : sur un PC du réseau local, ou le serveur public déjà en ligne.
 
 La belote classique : 32 cartes, deux équipes de deux, l'atout choisi aux enchères sur une carte
 retournée. Les règles sont intégrées (F8 les affiche sur le C64).
+**Vous ne connaissez pas la belote ? Lisez [La belote en 5 minutes](docs/regles.fr.md).**
 
 ![Écran titre](docs/titre.png)
 
@@ -41,7 +42,6 @@ retournée. Les règles sont intégrées (F8 les affiche sur le C64).
 
 Téléchargez **`belote_lan.prg`** dans les [Releases](https://github.com/Stephan83c/belote-lan-c64/releases)
 ou sur la [page itch.io](https://stephan83c.itch.io/belote-lan-c64).
-Vous ne connaissez pas la belote ? [La belote en 5 minutes](docs/regles.fr.md).
 Il se connecte par défaut au serveur public (adresse pré-remplie, modifiable avec F3 sur
 l'écran de connexion). Il faut un C64 Ultimate (ou Ultimate 64 / Ultimate-II+) dont la **Command Interface** est
 activée dans les réglages, et branché sur un réseau qui a accès à Internet.

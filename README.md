@@ -8,6 +8,7 @@ on a PC of the local network, or the public server already online.
 
 Belote is the classic French trick-taking card game: 32 cards, two teams of two, trumps chosen by
 bidding on a turned-up card. The rules are built in (F8 shows them on the C64).
+**New to belote? Read [Belote in 5 minutes](docs/rules.md).**
 
 ![Title screen](docs/titre.png)
 
@@ -42,7 +43,6 @@ bidding on a turned-up card. The rules are built in (F8 shows them on the C64).
 
 Download **`belote_lan.prg`** from the [Releases](https://github.com/Stephan83c/belote-lan-c64/releases)
 or from the [itch.io page](https://stephan83c.itch.io/belote-lan-c64).
-New to belote? [Belote in 5 minutes](docs/rules.md).
 By default it connects to the public server (its address is pre-filled and can be changed with F3 on
 the connection screen). You need a C64 Ultimate (or Ultimate 64 / Ultimate-II+) with the **Command
 Interface** enabled in its settings, on a network with Internet access.
