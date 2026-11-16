@@ -107,6 +107,10 @@ Une manche vaut donc **162 points** (plus 20 de belote s'il y en a).
 - **Capot** : une équipe gagne **les 8 plis** et marque **252** au lieu de 162. Si c'est la
   défense, le preneur est dedans.
 
+Ici les points sont comptés **exactement**, sans arrondi : 162 et 252. À la table, beaucoup de
+joueurs arrondissent à la dizaine et disent « 160 » pour un dedans et « 250 » pour un capot : c'est
+la même chose, ce n'est pas une erreur.
+
 Il n'y a pas d'annonces (tierce, cinquante, cent, carré) : seule la belote-rebelote compte.
 
 ## Un pli commenté

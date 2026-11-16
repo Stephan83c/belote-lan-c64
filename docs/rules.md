@@ -105,6 +105,10 @@ A round is therefore worth **162 points** (plus 20 for belote, if any).
 - **Capot**: a team wins **all 8 tricks** and scores **252** instead of 162. If it is the defence,
   the taker is dedans.
 
+Points are counted **exactly** here, without rounding: 162 and 252. At the table many players round
+to the nearest ten and say "160" for a dedans and "250" for a capot: it is the same thing, not a
+mistake.
+
 There are no declarations (tierce, fifty, hundred, four of a kind): only belote-rebelote counts.
 
 ## A trick, explained
