@@ -612,6 +612,11 @@ static void vue_param(void)
     barre(T(T_B_PARAM));
 }
 
+static void centrer(unsigned char y, const char *s, unsigned char coul)
+{
+    ecrire((40 - strlen(s)) / 2, y, s, coul, FOND_VERT);
+}
+
 static void vue_fin(void)
 {
     unsigned nous = scores[moi & 1], eux = scores[(moi & 1) ^ 1];
@@ -620,14 +625,14 @@ static void vue_fin(void)
     }
     titre_ecran(T_T_FIN);
     fmt(t, "%-5s: %4u", T(T_NOUS), nous);
-    ecrire(0, 4, t, BLANC, FOND_VERT);
+    centrer(6, t, BLANC);
     fmt(t, "%-5s: %4u", T(T_EUX), eux);
-    ecrire(0, 5, t, BLANC, FOND_VERT);
+    centrer(8, t, BLANC);
     if (gagnant >= 0) {
-        ecrire(0, 7, T(gagnant == (moi & 1) ? T_F_VICT_NOUS : T_F_VICT_EUX), JAUNE, FOND_VERT);
+        centrer(11, T(gagnant == (moi & 1) ? T_F_VICT_NOUS : T_F_VICT_EUX), JAUNE);
     }
-    ecrire(0, 11, T(T_F_NOUVELLE), BLANC, FOND_VERT);
-    ecrire(0, 12, T(T_F_QUITTER), BLANC, FOND_VERT);
+    centrer(14, T(T_F_NOUVELLE), BLANC);
+    centrer(16, T(T_F_QUITTER), BLANC);
     barre(T(suis_chef() ? T_B_FIN_CHEF : T_B_FIN));
 }
 
