@@ -74,6 +74,8 @@ async def gerer_client(table: Table | Salons, reader: asyncio.StreamReader, writ
     debut = time.monotonic()
     octets = 0
     premiere = None
+    derniere = None
+    a_ete_assis = False
 
     minuteur = None
 
@@ -104,16 +106,19 @@ async def gerer_client(table: Table | Salons, reader: asyncio.StreamReader, writ
                     client.envoyer("ERR TROP LONG")
                 else:
                     table.recevoir(client, ligne)
+                    a_ete_assis = a_ete_assis or table.est_assis(client)
+                derniere = ligne if isinstance(ligne, str) else "(trop long)"
     except ConnectionError:
         pass
     finally:
         minuteur.cancel()
-        assis = table.est_assis(client)
+        assis = a_ete_assis or table.est_assis(client)
         table.deconnexion(client)
         client.fermer()
-        log.info("deconnexion %s apres %.1f s, %d octets recus, %s, 1re ligne : %s", pair,
+        log.info("deconnexion %s apres %.1f s, %d octets recus, %s, 1re ligne : %s, derniere : %s", pair,
                  time.monotonic() - debut, octets, "assis" if assis else "jamais assis",
-                 ascii(premiere[:40]) if premiere is not None else "aucune")
+                 ascii(premiere[:40]) if premiere is not None else "aucune",
+                 ascii(derniere[:40]) if derniere is not None else "aucune")
 
 
 def commande_console(salle: Table | Salons, ligne: str) -> str | None:
