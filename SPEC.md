@@ -249,7 +249,7 @@ Seats go round P0 → P1 → P2 → P3 → P0, that is SOUTH → EAST → NORTH 
 
 Bots are computed by the server and only act after the start. They always play a legal move (section 5.3) *(v2.0)*:
 
-- **Bidding**: the hand is valued for each possible trump, the turned-up card included (jack 20, 9 14, ace 11, 10 10, king 4, queen 3, 8 and 7 2; ace outside trumps 10, a 10 outside trumps guarded by its ace 5, belote 10). The bot takes if it is worth at least 35: in the first round in the turned-up card's suit, in the second in the best of the other three; otherwise it passes.
+- **Bidding**: the hand is valued for each possible trump, the turned-up card included (jack 20, 9 14, ace 11, 10 10, king 4, queen 3, 8 and 7 2; ace outside trumps 10, a 10 outside trumps guarded by its ace 5, belote 10). The bot takes if it is worth at least 32: in the first round in the turned-up card's suit, in the second in the best of the other three; otherwise it passes.
 - **Taker**: when leading, it draws the opponents' trumps with its master trump while some are still out, or with its smallest trump if it holds at least three.
 - **Lead**: otherwise, the highest card left in a non-trump suit (the ace, or the 10 once the ace has fallen): it remembers the cards already played in the deal.
 - **Opponent winning**: the smallest card that wins, otherwise the weakest.
@@ -724,3 +724,4 @@ These decisions override contradictory or older wording.
 | 46 | End-of-game screen: scores, victory line, F5 and F7 centred (c64/vue.c, centrer()), scores spaced by one line. v2.0 release PRG replaced (same tag, no new version). | Cosmetic touch-up. |
 | 47 | Help for beginners (the French retro community mostly does not know belote and gives no feedback): belote in 5 minutes, docs/rules.md and docs/regles.fr.md (goal, round, trump, bidding with a guideline, obligations, points, contract, worked trick, keys), linked from the READMEs. Ideas noted, not done: reason shown for a greyed card, bidding hint, solo practice table against 3 bots. | Documentation only; client and server unchanged. |
 | 48 | Rules: sentence added to the rules page (docs/rules.md, docs/regles.fr.md): points are exact (162 and 252), tables often round to 160 and 250. Raw points kept (Stéphan's choice), no code change. | Documentation. |
+| 49 | Bots: taking threshold lowered from 35 to 32 (server/belote/bots.py), after a sweep with duel_bots (25 to 45; other values: ace, guarded ten, belote, no clear effect). Against threshold 35: +0.4 points of share over 6 seeds of 20,000 deals (50.42% on average), fewer redeals (about 4,250 out of 40,000 instead of 7,200). PIMC prototype for card play (tools/pimc.py, not integrated): 56% against the current bots, 100 draws per move. | Tuning; VPS server update to do. |

@@ -13,7 +13,7 @@ VALEUR_ATOUT = {VALET: 20, NEUF: 14, AS: 11, DIX: 10, ROI: 4, DAME: 3, HUIT: 2, 
 VALEUR_AS = 10           # as hors atout : un pli presque sûr
 VALEUR_DIX_GARDE = 5     # dix hors atout avec son as
 BONUS_BELOTE = 10        # roi et dame d'atout
-SEUIL_PRISE = 35
+SEUIL_PRISE = 32
 
 
 def valeur_main(main: list[int], atout: int, retournee: int) -> int:
