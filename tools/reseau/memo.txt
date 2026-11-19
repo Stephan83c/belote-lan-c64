@@ -1,0 +1,48 @@
+RÉSEAU DE NEURONES QUI IMITE LE PIMC — MÉMO
+============================================
+
+Lancer (une journée, ~8 h) — depuis le dossier du dépôt, de préférence dans tmux :
+
+    cd ~/c64-online
+    nice -n 19 tools/reseau/.venv/bin/python tools/reseau/entrainer.py --heures 8 --processus 6
+
+Sans tmux (survit à la fermeture du terminal) :
+
+    nohup nice -n 19 tools/reseau/.venv/bin/python tools/reseau/entrainer.py --heures 8 --processus 6 > /dev/null 2>&1 &
+
+Phases (budget partagé) : 35 % données (le PIMC joue contre lui-même), 50 % entraînement,
+puis mesure (réseau contre la stratégie simple, 2 x 2 500 donnes x 6 processus).
+
+Ménager le CPU :
+  --processus 6      8 au plus ; 4 pour un PC plus frais
+  --charge 0.85      part du temps passée à calculer ; 0.7 = plus de pauses, CPU plus frais
+  (nice 19 : le PC reste utilisable pendant le calcul)
+
+Suivre sans rien coûter :
+    tail -f tools/reseau/travail/journal.log        (Ctrl+C quitte le tail, pas le calcul)
+    watch -n 30 sensors                             (température, si lm-sensors est installé)
+
+Arrêter : Ctrl+C dans le terminal du calcul, ou  pkill -f entrainer.py  (depuis un autre terminal).
+Rien n'est perdu : fichiers de données et poids sont enregistrés au fur et à mesure.
+
+Reprendre : relancer EXACTEMENT la même commande. Les données déjà faites sont gardées, l'entraînement
+reprend là où il s'était arrêté (travail/reprise.npz). Pour ajouter des données seulement, puis
+entraîner plus longtemps :
+    ... entrainer.py --phase donnees --heures 4
+    ... entrainer.py --phase entrainement --heures 6
+    ... entrainer.py --phase mesure
+
+Résultat (quelques lignes, c'est tout ce que Claude a besoin de lire) :
+    tools/reseau/travail/resultat.txt
+Poids : travail/poids.npz et travail/poids.json (le meilleur sur la validation).
+Objectif : 55 % des points ou plus contre la stratégie simple ; en dessous, on arrête là.
+
+Pour tester que tout marche (4 minutes) :
+    nice -n 19 tools/reseau/.venv/bin/python tools/reseau/entrainer.py --essai --processus 4
+    (écrit dans travail/essai/, sans toucher au vrai travail)
+
+Après : dire à Claude « c'est fini », il lit resultat.txt et propose la suite (export en Python
+pur pour le serveur seulement si le résultat est bon).
+
+Installation (déjà faite) : python3 -m venv tools/reseau/.venv ; tools/reseau/.venv/bin/pip install numpy
+Dossiers ignorés par git : tools/reseau/.venv/ et tools/reseau/travail/

@@ -2,3 +2,5 @@ server/.venv/
 __pycache__/
 .pytest_cache/
 build/
+tools/reseau/.venv/
+tools/reseau/travail/
