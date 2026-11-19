@@ -8,6 +8,8 @@ import asyncio
 import logging
 import time
 import os
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
 import sys
 
 from .protocole import TROP_LONG, Cadreur
@@ -184,9 +186,17 @@ async def demarrer(table: Table | Salons, host: str | None, port: int,
 
 
 async def principal(host: str, port: int, delai_bot: float, delai_manche: float,
-                    delai_attente: float, limites: Limites, nb_salons: int) -> None:
-    salons = Salons([Table(delai_bot=delai_bot, delai_manche=delai_manche, delai_attente=delai_attente)
-                     for _ in range(nb_salons)])
+                    delai_attente: float, limites: Limites, nb_salons: int, pimc: int = 0) -> None:
+    tables = [Table(delai_bot=delai_bot, delai_manche=delai_manche, delai_attente=delai_attente)
+              for _ in range(nb_salons)]
+    executeur = None
+    if pimc > 0:
+        # Les bots calculent leur carte par PIMC dans pimc processus (4.4) ; spawn : sûr avec asyncio.
+        executeur = ProcessPoolExecutor(pimc, mp_context=multiprocessing.get_context("spawn"))
+        executeur.submit(int).result()
+        for t in tables:
+            t.executeur = executeur
+    salons = Salons(tables)
     serveur = await demarrer(salons, host, port, limites=limites)
     inactivite = asyncio.create_task(salons.boucle_inactivite())
     ecouter_console(salons)
@@ -210,6 +220,8 @@ def main() -> None:
                         help="secondes sans message avant le lancement : la place est rendue")
     parser.add_argument("--salons", type=int, default=NB_SALONS, choices=range(1, 10),
                         metavar="1-9", help="nombre de salons (tables de 4 places)")
+    parser.add_argument("--pimc", type=int, default=2, metavar="N",
+                        help="processus de calcul des bots PIMC (0 : stratégie simple seulement)")
     parser.add_argument("--max-connexions", type=int, default=MAX_CONNEXIONS,
                         help="connexions ouvertes au plus, en tout")
     parser.add_argument("--max-par-ip", type=int, default=MAX_PAR_IP,
@@ -219,7 +231,7 @@ def main() -> None:
     try:
         asyncio.run(principal(args.host, args.port, args.delai_bot, args.delai_manche,
                               args.delai_attente, Limites(args.max_connexions, args.max_par_ip),
-                              args.salons))
+                              args.salons, args.pimc))
     except KeyboardInterrupt:
         pass
 

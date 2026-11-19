@@ -29,91 +29,7 @@ from belote.moteur import (DIX_DE_DER, ROI, DAME, Donne, Phase, carte, compter_m
                            couleur, coups_legaux, equipe, gagnant_pli, partenaire, points_carte)
 
 
-def vides(plis: list[list[tuple[int, int]]], atout: int) -> list[set[int]]:
-    """Couleurs qu'une place n'a plus, déduites de ce qu'elle a joué (règles 5.3)."""
-    v: list[set[int]] = [set() for _ in range(4)]
-    for pli in plis:
-        if not pli:
-            continue
-        demandee = couleur(pli[0][1])
-        for place, c in pli[1:]:
-            if couleur(c) != demandee:
-                v[place].add(demandee)                 # n'avait pas la couleur demandée
-    return v
-
-
-def tirer(main: list[int], place: int, plis: list[list[tuple[int, int]]], pli: list[tuple[int, int]],
-          atout: int, preneur: int, retournee: int, rng: random.Random) -> list[list[int]] | None:
-    """Une répartition plausible des mains des autres places ; None si introuvable."""
-    posees = [c for p in plis + [pli] for _, c in p]
-    joues_par = [0] * 4
-    for p in plis + [pli]:
-        for pl, _ in p:
-            joues_par[pl] += 1
-    besoin = [8 - joues_par[p] for p in range(4)]
-    besoin[place] = 0
-    connues = set(main) | set(posees)
-    inconnues = [c for c in range(32) if c not in connues]
-    interdit = vides(plis + [pli], atout)
-
-    for _ in range(60):
-        mains: list[list[int]] = [[] for _ in range(4)]
-        reste = list(besoin)
-        cartes = list(inconnues)
-        if preneur != place and retournee in cartes:
-            mains[preneur].append(retournee)
-            reste[preneur] -= 1
-            cartes.remove(retournee)
-        rng.shuffle(cartes)
-        # les cartes les plus contraintes d'abord
-        cartes.sort(key=lambda c: -sum(1 for p in range(4) if p != place and couleur(c) in interdit[p]))
-        ok = True
-        for c in cartes:
-            possibles = [p for p in range(4) if p != place and reste[p] > 0 and couleur(c) not in interdit[p]]
-            if not possibles:
-                ok = False
-                break
-            p = rng.choices(possibles, weights=[reste[q] for q in possibles])[0]
-            mains[p].append(c)
-            reste[p] -= 1
-        if ok:
-            mains[place] = list(main)
-            return mains
-    return None
-
-
-def finir(mains: list[list[int]], pli: list[tuple[int, int]], jouees: list[int], atout: int,
-          joueur: int, preneur: int, pts: list[int], plis: list[int], equipe_belote: int | None,
-          premiere: int | None) -> tuple[int, int]:
-    """Fait jouer les bots actuels jusqu'au bout ; `premiere` : carte imposée à `joueur`."""
-    mains = [list(m) for m in mains]
-    pli = list(pli)
-    jouees = list(jouees)
-    pts = list(pts)
-    plis = list(plis)
-    nb = sum(plis)
-    while True:
-        if premiere is not None:
-            c, premiere = premiere, None
-        else:
-            c = bots.choisir_carte(mains[joueur], pli, atout, joueur, jouees, preneur)
-        mains[joueur].remove(c)
-        pli.append((joueur, c))
-        jouees.append(c)
-        if len(pli) < 4:
-            joueur = (joueur + 1) % 4
-            continue
-        gagnant = gagnant_pli(pli, atout)
-        camp = equipe(gagnant)
-        pts[camp] += sum(points_carte(x, atout) for _, x in pli)
-        plis[camp] += 1
-        nb += 1
-        pli = []
-        joueur = gagnant
-        if nb == 8:
-            pts[camp] += DIX_DE_DER
-            break
-    return compter_manche(equipe(preneur), (pts[0], pts[1]), (plis[0], plis[1]), equipe_belote).points
+from belote.pimc import choisir, finir, tirer, vides  # noqa: E402,F401
 
 
 def choisir_pimc(d: Donne, place: int, plis: list[list[tuple[int, int]]], tirages: int,
@@ -152,18 +68,60 @@ def choisir_pimc(d: Donne, place: int, plis: list[list[tuple[int, int]]], tirage
     return max(legaux, key=lambda c: total[c])
 
 
-def jouer(paquet: list[int], donneur: int, equipe_pimc: int, tirages: int, rng: random.Random):
+def valeur_prise(main: list[int], place: int, donneur: int, retournee: int, atout: int,
+                 tirages: int, rng: random.Random) -> float:
+    """Écart moyen de points (mon camp moins l'autre) si `place` prend à `atout` : elle ramasse
+    la retournée et 2 cartes du talon tirées au hasard, les autres complètent à 8 cartes."""
+    inconnues = [c for c in range(32) if c not in main and c != retournee]
+    roi, dame = carte(atout, ROI), carte(atout, DAME)
+    meme_camp = equipe(place)
+    total = 0
+    for _ in range(tirages):
+        rng.shuffle(inconnues)
+        mains: list[list[int]] = [[] for _ in range(4)]
+        mains[place] = main + [retournee] + inconnues[:2]
+        reste = inconnues[2:]
+        k = 0
+        for p in range(4):
+            if p != place:
+                mains[p] = reste[k:k + 8]
+                k += 8
+        eb = None
+        for p in range(4):
+            if roi in mains[p] and dame in mains[p]:
+                eb = equipe(p)
+        pts = finir(mains, [], [], atout, (donneur + 1) % 4, place, [0, 0], [0, 0], eb, None)
+        total += pts[meme_camp] - pts[1 - meme_camp]
+    return total / tirages
+
+
+def enchere_pimc(main: list[int], tour: int, retournee: int, place: int, donneur: int,
+                 tirages: int, seuil: float, rng: random.Random) -> int | None:
+    if tour == 1:
+        candidates = [couleur(retournee)]
+    else:
+        candidates = [c for c in range(4) if c != couleur(retournee)]
+    meilleur, v = max(((c, valeur_prise(main, place, donneur, retournee, c, tirages, rng))
+                       for c in candidates), key=lambda x: x[1])
+    return meilleur if v >= seuil else None
+
+
+def jouer(paquet: list[int], donneur: int, equipe_pimc: int, tirages: int, rng: random.Random,
+          enchere: str = "actuel", cartes: str = "pimc", seuil: float = 0.0):
     d = Donne(donneur, paquet=paquet)
     while d.phase is Phase.ENCHERES:
         p = d.joueur
-        choix = bots.choisir_enchere(d.mains[p], d.tour_encheres, d.retournee)
+        if enchere == "pimc" and equipe(p) == equipe_pimc:
+            choix = enchere_pimc(d.mains[p], d.tour_encheres, d.retournee, p, donneur, tirages, seuil, rng)
+        else:
+            choix = bots.choisir_enchere(d.mains[p], d.tour_encheres, d.retournee)
         d.passer(p) if choix is None else d.prendre(p, choix)
     if d.phase is not Phase.JEU:
         return None
     plis: list[list[tuple[int, int]]] = []
     while d.phase is Phase.JEU:
         p = d.joueur
-        if equipe(p) == equipe_pimc:
+        if cartes == "pimc" and equipe(p) == equipe_pimc:
             c = choisir_pimc(d, p, plis, tirages, rng)
         else:
             c = bots.choisir_carte(d.mains[p], d.pli, d.atout, p, d.jouees, d.preneur)
@@ -175,12 +133,12 @@ def jouer(paquet: list[int], donneur: int, equipe_pimc: int, tirages: int, rng: 
 
 
 def une_donne(args):
-    i, paquet, tirages, graine = args
+    i, paquet, tirages, graine, enchere, cartes, seuil = args
     rng = random.Random(graine * 100003 + i)
     pimc = actuels = 0
     redonnes = 0
     for equipe_pimc in (0, 1):
-        pts = jouer(paquet, i % 4, equipe_pimc, tirages, rng)
+        pts = jouer(paquet, i % 4, equipe_pimc, tirages, rng, enchere, cartes, seuil)
         if pts is None:
             redonnes += 1
             continue
@@ -194,6 +152,9 @@ def main() -> None:
     ap.add_argument("n", nargs="?", type=int, default=100, help="donnes (chacune jouée deux fois)")
     ap.add_argument("--tirages", type=int, default=30, help="répartitions tirées par coup")
     ap.add_argument("--processus", type=int, default=8)
+    ap.add_argument("--encheres", choices=("actuel", "pimc"), default="actuel")
+    ap.add_argument("--cartes", choices=("actuel", "pimc"), default="pimc")
+    ap.add_argument("--seuil", type=float, default=0.0, help="écart moyen minimal pour prendre (PIMC)")
     ap.add_argument("--graine", type=int, default=1)
     args = ap.parse_args()
 
@@ -202,7 +163,7 @@ def main() -> None:
     for i in range(args.n):
         paquet = list(range(32))
         rng.shuffle(paquet)
-        travaux.append((i, paquet, args.tirages, args.graine))
+        travaux.append((i, paquet, args.tirages, args.graine, args.encheres, args.cartes, args.seuil))
 
     debut = time.time()
     pimc = actuels = redonnes = faites = 0

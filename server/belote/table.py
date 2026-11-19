@@ -14,8 +14,9 @@ import time
 from dataclasses import dataclass, field
 from typing import Protocol
 
+from . import pimc
 from .bots import choisir_carte, choisir_enchere
-from .moteur import CoupRefuse, Donne, PasTonTour, Phase, couleur, equipe_gagnante
+from .moteur import CoupRefuse, Donne, PasTonTour, Phase, coups_legaux, couleur, equipe_gagnante
 
 ATTENTE = "ATTENTE"
 LANCEE = "LANCEE"
@@ -33,6 +34,7 @@ TCHAT_MAX = 30
 TCHAT_RAFALE = 3
 TCHAT_FENETRE = 10.0
 DELAI_BOT = 1.0
+DELAI_PIMC = 3.0       # secondes au plus pour un calcul PIMC, puis stratégie simple
 # Après une prise, le premier bot attend plus longtemps : le temps de voir la carte prise.
 FACTEUR_PAUSE_PRISE = 3
 # Pause de fin de manche (SUITE) : le temps de lire le résultat, puis la manche
@@ -73,6 +75,8 @@ class Table:
         self.delai_manche = delai_manche
         self.delai_attente = delai_attente
         self._pause_prise = False
+        self.executeur = None          # ProcessPoolExecutor des bots PIMC ; None : stratégie simple
+        self._calcul_bot: asyncio.Task | None = None
         self.sieges = [Siege() for _ in range(4)]
         self.chef = -1
         self.etat = ATTENTE
@@ -520,6 +524,9 @@ class Table:
         if self._minuteur_bot is not None:
             self._minuteur_bot.cancel()
             self._minuteur_bot = None
+        # Un calcul PIMC en cours reprend la main tout seul (_jouer_pimc).
+        if self._calcul_bot is not None:
+            return
         # Sans humain à la table, la partie reste en suspens (4.2).
         if self.etat != EN_COURS or not self._humains():
             return
@@ -538,8 +545,31 @@ class Table:
             choix = choisir_enchere(d.mains[place], d.tour_encheres, d.retournee)
             evenements = d.passer(place) if choix is None else d.prendre(place, choix)
         else:
+            if self.executeur is not None and len(coups_legaux(d.mains[place], d.pli, d.atout, place)) > 1:
+                self._calcul_bot = asyncio.get_running_loop().create_task(self._jouer_pimc(d, place))
+                return
             evenements = d.jouer(place, choisir_carte(d.mains[place], d.pli, d.atout, place, d.jouees, d.preneur))
         self._appliquer(evenements)
+
+    async def _jouer_pimc(self, d: Donne, place: int) -> None:
+        """Choisit la carte du bot par PIMC dans un autre processus (la boucle reste libre) ;
+        au-delà de DELAI_PIMC secondes ou en cas d'erreur, stratégie simple."""
+        main = list(d.mains[place])
+        try:
+            futur = self.executeur.submit(
+                pimc.choisir, main, list(d.pli), [list(p) for p in d.plis], list(d.jouees), d.atout,
+                place, d.preneur, d.retournee, list(d.points_cartes), list(d.plis_gagnes))
+            c = await asyncio.wait_for(asyncio.wrap_future(futur), DELAI_PIMC)
+        except Exception:                       # délai, pool cassé, arrêt du serveur...
+            c = choisir_carte(main, d.pli, d.atout, place, d.jouees, d.preneur)
+        finally:
+            self._calcul_bot = None
+        # La table a pu changer pendant le calcul (joueur parti, nouvelle partie...).
+        if (self.donne is d and self.etat == EN_COURS and d.phase is Phase.JEU and d.joueur == place
+                and self.sieges[place].humain is None and c in coups_legaux(d.mains[place], d.pli, d.atout, place)):
+            self._appliquer(d.jouer(place, c))
+        else:
+            self._planifier_bot(False)
 
     def _place_attendue(self) -> int | None:
         if self.etat == EN_COURS:

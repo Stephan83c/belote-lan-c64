@@ -210,6 +210,7 @@ class Donne:
         self.pli: list[tuple[int, int]] = []
         self.jouees: list[int] = []         # cartes posées, dans l'ordre (mémoire des bots)
         self.nb_plis = 0
+        self.plis: list[list[tuple[int, int]]] = []   # plis terminés (place, carte)
         self.points_cartes = [0, 0]
         self.plis_gagnes = [0, 0]
         self.place_belote: int | None = None
@@ -306,6 +307,7 @@ class Donne:
         self.points_cartes[camp] += sum(points_carte(x, self.atout) for _, x in self.pli)
         self.plis_gagnes[camp] += 1
         self.nb_plis += 1
+        self.plis.append(self.pli)
         self.pli = []
         self.joueur = gagnant
         evts.append(("PLI", gagnant))
