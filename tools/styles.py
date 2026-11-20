@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Prototype : bots à style (BOT1x attaquant, BOT2x défenseur, BOT3x modéré, BOT4x adaptatif).
+"""Prototype : bots à style (BOT1 attaquant, BOT2 défenseur, BOT3 modéré, BOT4 adaptatif, BOT5 feinteur).
+
+Noms : la variante 1 de chaque style s'appelle BOT<style> (BOT1), les autres BOT<style><variante>
+(BOT12, BOT13 ; BOT22, BOT23...).
 
 python3 tools/styles.py [N] [--tirages T] [--processus P] [--graine G] [--cible C] [--duel A B]
 
@@ -37,11 +40,11 @@ CIBLE = 1000
 
 @dataclass(frozen=True)
 class Style:
-    code: int          # premier chiffre du nom : BOT<code><variante>
+    code: int          # premier chiffre du nom : BOT<code> (variante 1), BOT<code>2, BOT<code>3
     nom: str
     seuil: int         # seuil de prise (valeur de la main) ; 32 = bots actuels
     objectif: str      # 'attaque', 'defense', 'ecart', 'adaptatif'
-    decalage: int = 0  # variante : décale tous les seuils (BOT11 -2, BOT12 0, BOT13 +2)
+    decalage: int = 0  # variante : décale tous les seuils (BOT1 -2, BOT12 0, BOT13 +2)
     tolerance: float = 0.0  # feinteur : points d'écart qu'il accepte de perdre pour surprendre
 
 
@@ -69,8 +72,11 @@ def style_de(numero: int) -> Style:
     return replace(STYLES[numero // 10], decalage=VARIANTES[numero % 10])
 
 
-def nom_bot(code: int, variante: int) -> str:
-    return f"BOT{code}{variante}"
+def nom_bot(numero: int) -> str:
+    """BOT1 pour 11, BOT12 pour 12, BOT13 pour 13, BOT2 pour 21... (la variante 1 prend le nom court)."""
+    if numero < 10:
+        return f"BOT{numero}"
+    return f"BOT{numero // 10}" if numero % 10 == 1 else f"BOT{numero}"
 
 
 def mode(style: Style, mon_score: int, son_score: int) -> tuple[str, int]:
@@ -210,7 +216,7 @@ def travail_table(args):
     fois avec les mêmes paquets : la 2e fois, chacun passe dans l'autre camp (décalage d'une place)."""
     i, graine, tirages, cible, doublons = args
     hasard = random.Random(graine)
-    if doublons:    # 4 noms différents parmi les 15 (BOT11 et BOT12 possibles, jamais deux BOT11)
+    if doublons:    # 4 noms différents parmi les 15 (BOT1 et BOT12 possibles, jamais deux BOT1)
         joueurs = hasard.sample([c * 10 + v for c in STYLES for v in VARIANTES], 4)
     else:           # pas deux fois le même style
         joueurs = [code * 10 + hasard.choice(list(VARIANTES)) for code in hasard.sample(list(STYLES), 4)]
@@ -254,7 +260,7 @@ def tables(args) -> None:
           f"{args.tirages} tirages. 50 % = à égalité.")
     print("Par style (chaque joueur compté à chaque partie) :")
     for c, (v, n, pour, contre) in sorted(par_style.items(), key=lambda x: -x[1][0] / max(1, x[1][1])):
-        print(f"  {STYLES[c].nom:<10} BOT{c}x : {100 * v / n:5.1f} % de victoires, "
+        print(f"  {STYLES[c].nom:<10} {nom_bot(c)}* : {100 * v / n:5.1f} % de victoires, "
               f"{100 * pour / (pour + contre):.1f} % des points ({n} parties)")
     print("Par duo de partenaires (victoires du duo) :")
     for (a, b), (v, n) in sorted(par_duo.items(), key=lambda x: -x[1][0] / x[1][1]):
@@ -274,7 +280,7 @@ def main() -> None:
     ap.add_argument("--doublons", action="store_true",
                     help="avec --tables : un même style peut revenir 2 à 4 fois (noms toujours différents)")
     ap.add_argument("--variantes", type=int, metavar="CODE",
-                    help="compare entre elles les variantes 1, 2, 3 d'un style (BOT<CODE>1, 2, 3)")
+                    help="compare entre elles les variantes 1, 2, 3 d'un style (BOT<CODE>, BOT<CODE>2, BOT<CODE>3)")
     ap.add_argument("--tolerance", type=float, help="tolérance du feinteur (points d'écart), défaut 3")
     ap.add_argument("--seulement", type=int, metavar="CODE", help="seulement les paires où ce style joue")
     ap.add_argument("--seuil", type=int, nargs=2, action="append", default=[], metavar=("CODE", "SEUIL"),
@@ -317,7 +323,7 @@ def main() -> None:
     if args.variantes:
         print(f"\nVariantes de {STYLES[args.variantes].nom} ({args.n} parties x 2 camps par paire) :")
         for (a, b), s in stats.items():
-            print(f"  BOT{a} contre BOT{b} : {100 * s[0] / s[1]:.1f} % de victoires, "
+            print(f"  {nom_bot(a)} contre {nom_bot(b)} : {100 * s[0] / s[1]:.1f} % de victoires, "
                   f"{100 * s[2] / (s[2] + s[3]):.1f} % des points")
         return
     print(f"\nTaux de victoire de la partie à {args.cible} (ligne contre colonne), {args.n} parties "
