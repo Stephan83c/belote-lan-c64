@@ -208,10 +208,12 @@ def partie_styles(graine: int, styles: list[Style], tirages: int, cible: int = C
 def travail_table(args):
     """Une table au hasard SANS DOUBLON (4 styles différents parmi 5, variantes tirées), jouée deux
     fois avec les mêmes paquets : la 2e fois, chacun passe dans l'autre camp (décalage d'une place)."""
-    i, graine, tirages, cible = args
+    i, graine, tirages, cible, doublons = args
     hasard = random.Random(graine)
-    codes = hasard.sample(list(STYLES), 4)                  # pas deux fois le même style
-    joueurs = [code * 10 + hasard.choice(list(VARIANTES)) for code in codes]
+    if doublons:    # 4 noms différents parmi les 15 (BOT11 et BOT12 possibles, jamais deux BOT11)
+        joueurs = hasard.sample([c * 10 + v for c in STYLES for v in VARIANTES], 4)
+    else:           # pas deux fois le même style
+        joueurs = [code * 10 + hasard.choice(list(VARIANTES)) for code in hasard.sample(list(STYLES), 4)]
     sortie = []
     FEINTES[:] = [0, 0, 0]
     for decalage in (0, 1):
@@ -231,7 +233,7 @@ def travail(args):
 
 
 def tables(args) -> None:
-    travaux = [(i, args.graine * 100003 + i, args.tirages, args.cible) for i in range(args.n)]
+    travaux = [(i, args.graine * 100003 + i, args.tirages, args.cible, args.doublons) for i in range(args.n)]
     par_style = {c: [0, 0, 0, 0] for c in STYLES}              # victoires, parties, points pour, contre
     par_duo = {}                                               # (style, style) trié : victoires, parties
     debut = time.time()
@@ -248,7 +250,7 @@ def tables(args) -> None:
                 duo[1] += 1
             if fait % 50 == 0 or fait == len(travaux):
                 print(f"{fait}/{len(travaux)} tables, {time.time() - debut:.0f} s", flush=True)
-    print(f"\nTables aléatoires sans doublon : {args.n} tables x 2 (camps échangés), cible {args.cible}, "
+    print(f"\nTables aléatoires {'AVEC doublons' if args.doublons else 'sans doublon'} : {args.n} tables x 2 (camps échangés), cible {args.cible}, "
           f"{args.tirages} tirages. 50 % = à égalité.")
     print("Par style (chaque joueur compté à chaque partie) :")
     for c, (v, n, pour, contre) in sorted(par_style.items(), key=lambda x: -x[1][0] / max(1, x[1][1])):
@@ -269,6 +271,8 @@ def main() -> None:
     ap.add_argument("--duel", type=int, nargs=2, metavar=("A", "B"), help="une seule paire (codes 1 à 4)")
     ap.add_argument("--tables", action="store_true",
                     help="tables aléatoires sans doublon de style (N tables, chacune jouée deux fois)")
+    ap.add_argument("--doublons", action="store_true",
+                    help="avec --tables : un même style peut revenir 2 à 4 fois (noms toujours différents)")
     ap.add_argument("--variantes", type=int, metavar="CODE",
                     help="compare entre elles les variantes 1, 2, 3 d'un style (BOT<CODE>1, 2, 3)")
     ap.add_argument("--tolerance", type=float, help="tolérance du feinteur (points d'écart), défaut 3")
