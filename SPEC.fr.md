@@ -614,7 +614,7 @@ BOT        : toujours un coup legal (section 5.3)
 ### 10.4 Organisation du projet *(v3)*
 
 ```
-c64-online/
+Belote_C64/
   c64/         client C (cc65), compilé par le Makefile de la racine (cl65 -t c64)
   c64/vice/    réseau simulé pour VICE (make vice-demo SCENARIO=1..7)
   pc/          client PC dans un terminal (make pc), belote_lan.py

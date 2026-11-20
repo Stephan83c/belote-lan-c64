@@ -3,7 +3,7 @@ RÉSEAU DE NEURONES QUI IMITE LE PIMC — MÉMO
 
 Lancer (une journée, ~8 h) — depuis le dossier du dépôt, de préférence dans tmux :
 
-    cd ~/c64-online
+    cd ~/Projet_C64/Belote_C64
     nice -n 19 tools/reseau/.venv/bin/python tools/reseau/entrainer.py --heures 8 --processus 6
 
 Sans tmux (survit à la fermeture du terminal) :

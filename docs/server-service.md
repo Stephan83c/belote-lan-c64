@@ -11,10 +11,10 @@ service**: no root needed to run it, and it runs under your account.
 
 ## 1. Prepare
 
-The repository is cloned, for example in `~/c64-online`, and the server's venv exists:
+The repository is cloned, for example in `~/Projet_C64/Belote_C64`, and the server's venv exists:
 
 ```sh
-cd ~/c64-online
+cd ~/Projet_C64/Belote_C64
 make test        # creates server/.venv if needed and checks that the server works
 ```
 
@@ -27,7 +27,7 @@ Stop any `make server` started by hand (Ctrl+C): two servers cannot listen on th
 
 The file `tools/belote.service` is ready. If needed, **adapt it** before copying it:
 
-- the **path** `%h/c64-online/server` if the repository is elsewhere (`%h` = your home directory);
+- the **path** `%h/Projet_C64/Belote_C64/server` if the repository is elsewhere (`%h` = your home directory);
 - the **port** `--port 6464` if it differs from `SERVEUR_PORT` in `config.mk`.
 
 Then:
@@ -86,8 +86,8 @@ address (`SERVEUR_IP` in `config.mk`). The VPS needs neither cc65 nor VICE.
 
 ```sh
 sudo dnf install -y git make python3
-git clone https://github.com/Stephan83c/belote-lan-c64.git ~/c64-online
-cd ~/c64-online
+git clone https://github.com/Stephan83c/belote-lan-c64.git ~/Projet_C64/Belote_C64
+cd ~/Projet_C64/Belote_C64
 make test PYTHON=python3          # creates the venv with Fedora's Python and runs the tests
 ```
 

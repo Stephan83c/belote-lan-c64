@@ -12,10 +12,10 @@ votre compte.
 
 ## 1. Préparer
 
-Le dépôt est cloné, par exemple dans `~/c64-online`, et le venv du serveur existe :
+Le dépôt est cloné, par exemple dans `~/Projet_C64/Belote_C64`, et le venv du serveur existe :
 
 ```sh
-cd ~/c64-online
+cd ~/Projet_C64/Belote_C64
 make test        # crée server/.venv au besoin et vérifie que le serveur fonctionne
 ```
 
@@ -29,7 +29,7 @@ même port.
 
 Le fichier `tools/belote.service` est prêt. S'il le faut, **adaptez-le** avant de le copier :
 
-- le **chemin** `%h/c64-online/server` si le dépôt est ailleurs (`%h` = votre dossier personnel) ;
+- le **chemin** `%h/Projet_C64/Belote_C64/server` si le dépôt est ailleurs (`%h` = votre dossier personnel) ;
 - le **port** `--port 6464` s'il diffère de `SERVEUR_PORT` dans `config.mk`.
 
 Puis :
@@ -89,8 +89,8 @@ VICE.
 
 ```sh
 sudo dnf install -y git make python3
-git clone https://github.com/Stephan83c/belote-lan-c64.git ~/c64-online
-cd ~/c64-online
+git clone https://github.com/Stephan83c/belote-lan-c64.git ~/Projet_C64/Belote_C64
+cd ~/Projet_C64/Belote_C64
 make test PYTHON=python3          # crée le venv avec le Python de Fedora et lance les tests
 ```
 

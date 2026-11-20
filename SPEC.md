@@ -616,7 +616,7 @@ BOT        : always a legal move (section 5.3)
 ### 10.4 Project layout *(v3)*
 
 ```
-c64-online/
+Belote_C64/
   c64/         C client (cc65), built by the Makefile at the root (cl65 -t c64)
   c64/vice/    simulated network for VICE (make vice-demo SCENARIO=1..7)
   pc/          PC client in a terminal (make pc), belote_lan.py
