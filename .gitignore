@@ -4,3 +4,7 @@ __pycache__/
 build/
 tools/reseau/.venv/
 tools/reseau/travail/
+
+# Fichiers temporaires de Kate
+.*.kate-swp
+*.kate-swp
