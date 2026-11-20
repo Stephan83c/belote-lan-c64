@@ -42,6 +42,7 @@ class Style:
     seuil: int         # seuil de prise (valeur de la main) ; 32 = bots actuels
     objectif: str      # 'attaque', 'defense', 'ecart', 'adaptatif'
     decalage: int = 0  # variante : décale tous les seuils (BOT11 -2, BOT12 0, BOT13 +2)
+    tolerance: float = 0.0  # feinteur : points d'écart qu'il accepte de perdre pour surprendre
 
 
 STYLES = {
@@ -49,7 +50,11 @@ STYLES = {
     2: Style(2, "defenseur", 34, "defense"),
     3: Style(3, "modere", 32, "ecart"),
     4: Style(4, "adaptatif", 32, "adaptatif"),
+    5: Style(5, "feinteur", 32, "ecart", tolerance=3.0),
 }
+
+# Compteurs du feinteur (par processus, remis à zéro à chaque partie).
+FEINTES = [0, 0, 0]   # ses coups décidés par le PIMC, feintes possibles, feintes réellement jouées
 
 
 # Second chiffre du nom : de petits décalages des seuils de prise, pour que deux bots du même style
@@ -132,7 +137,25 @@ def choisir_carte(style: Style, d: Donne, place: int, plis: list, scores: list[i
             total[c] += utilite(objectif, pts[mon_camp], pts[1 - mon_camp])
     if not valides:
         return bots.choisir_carte(main, d.pli, d.atout, place, d.jouees, d.preneur)
-    return max(legaux, key=lambda c: total[c])
+    meilleure = max(legaux, key=lambda c: total[c])
+    if style.tolerance <= 0:
+        return meilleure
+    FEINTES[0] += 1
+    # Feinte : parmi les cartes presque aussi bonnes que la meilleure, jouer une carte AUTRE que celle
+    # que la règle habituelle (bots.choisir_carte) jouerait : un humain qui lit le jeu se trompe.
+    # Jamais quand le partenaire tient le pli (on ne le trompe pas, on le charge).
+    from belote.moteur import gagnant_pli, partenaire
+    if d.pli and gagnant_pli(d.pli, d.atout) == partenaire(place):
+        return meilleure
+    proches = [c for c in legaux if (total[meilleure] - total[c]) / valides <= style.tolerance]
+    naturelle = bots.choisir_carte(main, d.pli, d.atout, place, d.jouees, d.preneur)
+    autres = [c for c in proches if c != naturelle]
+    if naturelle not in proches or not autres:
+        return meilleure        # la meilleure carte n'est déjà pas la règle, ou pas d'alternative
+    FEINTES[1] += 1
+    choix = rng.choice(autres)
+    FEINTES[2] += choix != meilleure
+    return choix
 
 
 def manche(paquet: list[int], donneur: int, styles: list[Style], scores: list[int], reserve: int,
@@ -180,8 +203,9 @@ def partie(graine: int, a: Style, b: Style, a_equipe: int, tirages: int, cible: 
 
 def travail(args):
     i, graine, ca, cb, a_equipe, tirages, cible = args
+    FEINTES[:] = [0, 0, 0]
     g, scores, k = partie(graine, style_de(ca), style_de(cb), a_equipe, tirages, cible)
-    return i, ca, cb, g == a_equipe, scores[a_equipe], scores[1 - a_equipe], k
+    return i, ca, cb, g == a_equipe, scores[a_equipe], scores[1 - a_equipe], k, tuple(FEINTES)
 
 
 def main() -> None:
@@ -194,10 +218,13 @@ def main() -> None:
     ap.add_argument("--duel", type=int, nargs=2, metavar=("A", "B"), help="une seule paire (codes 1 à 4)")
     ap.add_argument("--variantes", type=int, metavar="CODE",
                     help="compare entre elles les variantes 1, 2, 3 d'un style (BOT<CODE>1, 2, 3)")
+    ap.add_argument("--tolerance", type=float, help="tolérance du feinteur (points d'écart), défaut 3")
     ap.add_argument("--seulement", type=int, metavar="CODE", help="seulement les paires où ce style joue")
     ap.add_argument("--seuil", type=int, nargs=2, action="append", default=[], metavar=("CODE", "SEUIL"),
                     help="change le seuil de prise d'un style (répétable)")
     args = ap.parse_args()
+    if args.tolerance is not None:
+        STYLES[5] = replace(STYLES[5], tolerance=args.tolerance)
     for code, seuil in args.seuil:
         STYLES[code] = replace(STYLES[code], seuil=seuil)
 
@@ -213,15 +240,17 @@ def main() -> None:
     travaux = [(i, args.graine * 100003 + i, a, b, eq, args.tirages, args.cible)
                for a, b in paires for i in range(args.n) for eq in (0, 1)]
     stats = {p: [0, 0, 0, 0, 0] for p in paires}      # victoires de a, parties, pts a, pts b, manches
+    feintes = {p: [0, 0, 0] for p in paires}
     debut = time.time()
     with Pool(args.processus) as pool:
-        for fait, (_, a, b, gagne, pa, pb, k) in enumerate(pool.imap_unordered(travail, travaux), 1):
+        for fait, (_, a, b, gagne, pa, pb, k, fe) in enumerate(pool.imap_unordered(travail, travaux), 1):
             s = stats[(a, b)]
             s[0] += gagne
             s[1] += 1
             s[2] += pa
             s[3] += pb
             s[4] += k
+            feintes[(a, b)] = [x + y for x, y in zip(feintes[(a, b)], fe)]
             if fait % 20 == 0 or fait == len(travaux):
                 print(f"{fait}/{len(travaux)} parties, {time.time() - debut:.0f} s", flush=True)
 
@@ -255,6 +284,12 @@ def main() -> None:
             ligne += f"{taux:>10.1f}%"
         ligne += f"   {sum(moyennes[a]) / len(moyennes[a]):.1f} %" if moyennes[a] else ""
         print(ligne)
+    if any(5 in p for p in paires):
+        # Les compteurs mélangent les deux camps : on ne garde que les paires où joue le feinteur.
+        tot = [sum(feintes[p][i] for p in paires if 5 in p) for i in range(3)]
+        print(f"\nFeinteur : {tot[0]} coups à plusieurs cartes décidés par le PIMC, "
+              f"{100 * tot[1] / max(1, tot[0]):.1f} % avec une feinte possible, "
+              f"{100 * tot[2] / max(1, tot[0]):.1f} % de feintes réellement jouées")
     print("\nPart des points marqués et nombre moyen de manches par partie :")
     for (a, b), s in stats.items():
         print(f"  {STYLES[a].nom} - {STYLES[b].nom} : {100 * s[2] / (s[2] + s[3]):.1f} % des points, "
