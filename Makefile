@@ -20,7 +20,7 @@ ENTETES := $(sort $(wildcard c64/*.h) c64/textes.h)
 # l'image titre en $E000 (voir CLAUDE.md, mémoire du client).
 CFLAGS := -t c64 -O -Or -DSERVEUR_DEFAUT='"$(SERVEUR_DEFAUT)"' -DVERSION='"$(VERSION)"' -DLANGUE_DEFAUT=$(LANGUE) -Wl -D,__HIMEM__=0xC000,-D,__STACKSIZE__=0x200
 
-.PHONY: all deploy vice demo vice-demo test server paquet-serveur pc clean
+.PHONY: all deploy vice demo vice-demo test server paquet-serveur paquet-client pc clean
 
 all: $(PRG)
 
@@ -103,3 +103,11 @@ clean:
 $(VENV)/bin/pytest:
 	$(PYTHON) -m venv $(VENV)
 	$(VENV)/bin/pip install -q -r server/requirements-dev.txt
+
+# Paquet du client C64 pour la release : build/belote-lan-c64-vX.Y.zip (PRG + README.txt bilingue)
+paquet-client: all
+	rm -rf build/paquet-client && mkdir -p build/paquet-client/belote-lan-c64
+	cp build/belote_lan.prg build/paquet-client/belote-lan-c64/
+	sed 's/@VERSION@/$(VERSION)/g' tools/paquet-client/README.txt > build/paquet-client/belote-lan-c64/README.txt
+	cd build/paquet-client && rm -f ../belote-lan-c64-v$(VERSION).zip && zip -qr ../belote-lan-c64-v$(VERSION).zip belote-lan-c64
+	@ls -l build/belote-lan-c64-v$(VERSION).zip
