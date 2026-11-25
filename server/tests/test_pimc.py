@@ -70,6 +70,13 @@ def _humain():
     return Faux()
 
 
+def _passer_si_attendu(t, h):
+    """L'humain (place 0) passe aux enchères : la donne ne reste pas bloquée sur lui."""
+    d = t.donne
+    if d is not None and d.phase is Phase.ENCHERES and d.joueur == 0:
+        t.recevoir(h, "PASSE")
+
+
 def test_table_un_bot_joue_par_pimc():
     """Avec un exécuteur, le bot joue sa carte en tâche asynchrone, légalement."""
     async def corps():
@@ -80,6 +87,7 @@ def test_table_un_bot_joue_par_pimc():
         t.recevoir(h, "LANCER")
         for _ in range(300):
             await asyncio.sleep(0.01)
+            _passer_si_attendu(t, h)
             if any(l.startswith("JOUE") for l in h.lignes):
                 break
         assert any(l.startswith("JOUE") for l in h.lignes)
@@ -102,6 +110,7 @@ def test_table_repli_si_le_pool_echoue():
         t.recevoir(h, "LANCER")
         for _ in range(300):
             await asyncio.sleep(0.01)
+            _passer_si_attendu(t, h)
             if any(l.startswith("JOUE") for l in h.lignes):
                 break
         assert any(l.startswith("JOUE") for l in h.lignes)

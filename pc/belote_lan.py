@@ -470,7 +470,8 @@ class Partie:
     def nom(self, p: int) -> str:
         if not 0 <= p <= 3:
             return "?"
-        return self.noms[p] if self.humains[p] else "BOT%d" % (p + 1)
+        # Bots à style (serveur v2.1) : leur nom ; serveur v2.0 : tous « BOT », numérotés par place.
+        return "BOT%d" % (p + 1) if not self.humains[p] and self.noms[p] == "BOT" else self.noms[p]
 
     def equipe(self, p: int) -> int:
         return p % 2

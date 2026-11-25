@@ -32,8 +32,9 @@ def valeur_main(main: list[int], atout: int, retournee: int) -> int:
     return v
 
 
-def choisir_enchere(main: list[int], tour_encheres: int, retournee: int) -> int | None:
-    """Couleur prise si la main, retournée comprise, vaut au moins SEUIL_PRISE ; sinon None.
+def choisir_enchere(main: list[int], tour_encheres: int, retournee: int,
+                    seuil: int = SEUIL_PRISE) -> int | None:
+    """Couleur prise si la main, retournée comprise, vaut au moins `seuil` ; sinon None.
 
     Au premier tour, seule la couleur de la retournée ; au second, la meilleure des
     trois autres.
@@ -43,7 +44,7 @@ def choisir_enchere(main: list[int], tour_encheres: int, retournee: int) -> int 
     else:
         candidates = [c for c in range(4) if c != couleur(retournee)]
     meilleure = max(candidates, key=lambda c: valeur_main(main, c, retournee))
-    return meilleure if valeur_main(main, meilleure, retournee) >= SEUIL_PRISE else None
+    return meilleure if valeur_main(main, meilleure, retournee) >= seuil else None
 
 
 TIRER_ATOUTS = 1       # 0 : jamais ; 1 : le preneur ; 2 : le preneur et son partenaire

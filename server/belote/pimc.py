@@ -13,6 +13,7 @@ from __future__ import annotations
 import random
 
 from . import bots
+from .styles import utilite
 from .moteur import (DIX_DE_DER, ROI, DAME, carte, compter_manche, couleur, coups_legaux,
                      equipe, gagnant_pli, points_carte)
 
@@ -108,8 +109,13 @@ def finir(mains: list[list[int]], pli: list[tuple[int, int]], jouees: list[int],
 def choisir(main: list[int], pli: list[tuple[int, int]], plis: list[list[tuple[int, int]]],
             jouees: list[int], atout: int, place: int, preneur: int, retournee: int,
             points_cartes: list[int], plis_gagnes: list[int], tirages: int = TIRAGES,
-            rng: random.Random | None = None) -> int:
-    """Carte à jouer ; toujours un coup légal (repli : stratégie simple)."""
+            rng: random.Random | None = None, objectif: str = "ecart", tolerance: float = 0.0) -> int:
+    """Carte à jouer ; toujours un coup légal (repli : stratégie simple).
+
+    `objectif` note chaque fin de donne simulée (styles.utilite). Avec une `tolerance` (feinteur),
+    parmi les cartes à moins de `tolerance` d'écart moyen de la meilleure, joue une carte autre que
+    celle de la stratégie simple, sauf quand le partenaire tient le pli.
+    """
     rng = rng or random.Random()
     legaux = coups_legaux(main, pli, atout, place)
     if len(legaux) == 1:
@@ -119,7 +125,7 @@ def choisir(main: list[int], pli: list[tuple[int, int]], plis: list[list[tuple[i
         for pl, c in p:
             pose_par[pl].add(c)
     roi, dame = carte(atout, ROI), carte(atout, DAME)
-    total = {c: 0 for c in legaux}
+    total = {c: 0.0 for c in legaux}
     valides = 0
     for _ in range(tirages):
         mains = tirer(main, place, plis, pli, atout, preneur, retournee, rng)
@@ -132,7 +138,15 @@ def choisir(main: list[int], pli: list[tuple[int, int]], plis: list[list[tuple[i
                 eb = equipe(p)
         for c in legaux:
             pts = finir(mains, pli, jouees, atout, place, preneur, points_cartes, plis_gagnes, eb, c)
-            total[c] += pts[equipe(place)] - pts[1 - equipe(place)]
+            total[c] += utilite(objectif, pts[equipe(place)], pts[1 - equipe(place)])
     if not valides:
         return bots.choisir_carte(main, pli, atout, place, jouees, preneur)
-    return max(legaux, key=lambda c: total[c])
+    meilleure = max(legaux, key=lambda c: total[c])
+    if tolerance <= 0 or (pli and gagnant_pli(pli, atout) == (place + 2) % 4):
+        return meilleure
+    proches = [c for c in legaux if (total[meilleure] - total[c]) / valides <= tolerance]
+    naturelle = bots.choisir_carte(main, pli, atout, place, jouees, preneur)
+    autres = [c for c in proches if c != naturelle]
+    if naturelle not in proches or not autres:
+        return meilleure        # la meilleure n'est déjà pas la carte attendue, ou pas d'autre choix
+    return rng.choice(autres)

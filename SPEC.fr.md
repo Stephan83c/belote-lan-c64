@@ -233,7 +233,7 @@ L’ordre de parcours des places est P0 → P1 → P2 → P3 → P0, soit SUD �
 
 - Nom affiché : 6 caractères maximum, lettres A–Z et chiffres ; pseudo unique parmi les joueurs. En cas de doublon, le dernier caractère est remplacé par un suffixe numérique (ex. JEAN → JEA2), de 1 à 9 ; sinon la connexion est refusée. Le nom final est renvoyé dans BIENVENUE.
 
-- Noms réservés : BOT et BOT suivi de chiffres (BOT1 à BOT4 nomment les bots à l’écran). Le C64 les refuse avant de se connecter ; le serveur répond ERR NOM RESERVE sans fermer la connexion, et un suffixe de doublon ne produit jamais un tel nom. Le C64 affiche « NOM RESERVE AUX BOTS : CHOISIR UN AUTRE » et replace le curseur sur le champ NOM.
+- Noms réservés : BOT et BOT suivi de chiffres (noms des bots : BOT1 à BOT5, BOT12, BOT13… en v2.1). Le C64 les refuse avant de se connecter ; le serveur répond ERR NOM RESERVE sans fermer la connexion, et un suffixe de doublon ne produit jamais un tel nom. Le C64 affiche « NOM RESERVE AUX BOTS : CHOISIR UN AUTRE » et replace le curseur sur le champ NOM.
 
 - Inactivité (3 minutes par défaut, réglable par le chef avec F1) : la place est prise en charge par un bot. Il n’y a pas de spectateurs ; un utilisateur inactif libéré doit se reconnecter. Avant le lancement *(serveur v2.0)*, un humain qui n’envoie rien pendant 10 minutes (`--delai-attente`, en secondes) rend sa place de la même façon, avec les mêmes messages : une table d’attente ne peut plus être gardée par des connexions muettes. Chaque table le vérifie pour elle-même.
 
@@ -254,6 +254,8 @@ Les bots sont calculés par le serveur et n’agissent qu’après le lancement.
 - **Partenaire maître** : s’il joue en dernier, ou si la carte du partenaire ne peut plus être battue dans sa couleur, il le charge (son 10 ou son as hors atout) ; sinon il joue sa carte la plus faible.
 
 - **Cartes (PIMC)** *(v2.1)* : quand `--pimc N` est actif (2 par défaut), le bot choisit sa carte en simulant la fin de la donne : pour chaque carte jouable, 100 répartitions plausibles des cartes cachées (couleurs manquantes déduites des plis, retournée chez le preneur), terminées par la stratégie simple ci-dessus ; il garde la carte au meilleur écart de points moyen. Le calcul tourne dans N processus (la boucle du serveur reste libre) ; au-delà de 3 s ou en cas d'erreur, la stratégie simple joue. `--pimc 0` la rétablit seule. Mesuré (`tools/pimc.py`) : environ 56 % des points contre la stratégie simple. Les enchères PIMC n'apportent que 0,8 point de part (seuil 5) : non retenues.
+
+- **Styles** *(v2.1)* : chaque bot a un style, tiré au sort à chaque nouvelle partie et quand il remplace un humain, jamais deux fois le même nom à une table. Le style règle le seuil de prise et l'objectif du PIMC : attaquant (BOT1, seuil 26, vise les grosses manches), défenseur (BOT2, seuil 34, vise à gagner la manche), modéré (BOT3, seuil 32, écart de points), adaptatif (BOT4 : attaque s'il est mené de 150 points ou si l'adversaire approche de la cible, se défend s'il mène de 150 points), feinteur (BOT5, comme le modéré, mais joue parfois une carte presque aussi bonne que la meilleure et autre que celle qu'on attendrait, jamais quand son partenaire tient le pli). Variantes : BOTx pour la première, BOTx2 et BOTx3 pour les autres ; elles décalent les seuils de -2, 0 et +2 (15 noms en tout). Mesuré avec `tools/styles.py` : les styles sont à égalité en tables tirées au hasard (49 à 51 % de victoires). `--sans-styles` rétablit des bots tous nommés BOT, qui jouent comme le modéré.
 
 Ces choix sont mesurés avec `tools/duel_bots.py` (chaque donne jouée deux fois, équipes échangées) : 53,9 % des points contre les bots de la v1.8 sur 200 000 donnes. Plus prudents aux enchères, quatre bots passent tous dans 18 % des donnes (redistribuées). Chaque action d’un bot (enchère ou carte) est jouée après un délai fixe de **1 seconde** *(v4)*, pour que les joueurs puissent suivre.
 
@@ -396,7 +398,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 | Message | Audience | Sens / données |
 |---|---|---|
 | BIENVENUE NOM P *(v3)* | Client | Connexion acceptée : nom final (éventuellement modifié) et place P. |
-| SIEGE P T NOM *(v3)* | Tous | Occupant de la place P : T = H (humain) ou B (bot). Remplace TABLE P0 P1 P2 P3. Envoyé pour les 4 places à la connexion et à chaque changement. |
+| SIEGE P T NOM *(v3)* | Tous | Occupant de la place P : T = H (humain) ou B (bot). Remplace TABLE P0 P1 P2 P3. Envoyé pour les 4 places à la connexion et à chaque changement. Le NOM d’un bot est celui de son style (BOT1, BOT12… *(v2.1)*) ; un serveur v2.0 envoie BOT. |
 | CHEF P | Tous | Place du chef, 0..3 ; -1 si aucun. |
 | ETAT X | Tous | ATTENTE, LANCEE, EN COURS, FIN MANCHE ou FIN PARTIE. |
 | PARAM CIBLE N *(v3)* | Tous | Score cible actuel. |
@@ -449,7 +451,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 ```
 C64 -> srv : JOIN JEAN
 srv -> C64 : BIENVENUE JEAN 0
-srv -> tous: SIEGE 0 H JEAN / SIEGE 1 B BOT / SIEGE 2 B BOT / SIEGE 3 B BOT
+srv -> tous: SIEGE 0 H JEAN / SIEGE 1 B BOT12 / SIEGE 2 B BOT4 / SIEGE 3 B BOT3
 srv -> tous: CHEF 0 / ETAT ATTENTE / PARAM CIBLE 1000 / PARAM INACTIF 3
 chef-> srv : LANCER
 srv -> tous: ETAT LANCEE / SCORE 0 0
@@ -479,7 +481,7 @@ srv -> tous: ETAT EN COURS / DONNEUR 1 ...
 
 ### 8.1 Grille écran de référence *(v4)*
 
-Grille de 40 colonnes (0–39) et 25 lignes (L0–L24). Le tapis central est supprimé : la carte jouée par chaque joueur s’affiche sous son nom. Un bot est nommé par sa place réelle, BOT1 à BOT4 (P0 à P3), sur la table comme dans le journal : le même nom sur tous les écrans, quelle que soit la place de chacun. Les noms, points et cartes sont des exemples (le joueur est en P0). La table est symétrique *(v1.8)* : cartes de l’OUEST et de l’EST à quatre colonnes du bord (4 à 7, 32 à 35), noms alignés sur le bord extérieur de leur carte, noms du NORD et du SUD centrés sur la leur.
+Grille de 40 colonnes (0–39) et 25 lignes (L0–L24). Le tapis central est supprimé : la carte jouée par chaque joueur s’affiche sous son nom. Un bot porte le nom de son style (BOT1, BOT12… *(v2.1)*, voir 4.4), envoyé par le serveur, sur la table comme dans le journal : le même nom sur tous les écrans. Avec un serveur v2.0, qui appelle tous les bots BOT, le client les nomme BOT1 à BOT4 d’après leur place réelle (P0 à P3). Les noms, points et cartes sont des exemples (le joueur est en P0). La table est symétrique *(v1.8)* : cartes de l’OUEST et de l’EST à quatre colonnes du bord (4 à 7, 32 à 35), noms alignés sur le bord extérieur de leur carte, noms du NORD et du SUD centrés sur la leur.
 
 ```
     0         1         2         3
@@ -510,7 +512,7 @@ L23  1    2    3    4    5    6
 L24 1-8 CARTE F3 TCHAT F7 QUIT F8 AIDE
 ```
 
-**Zone de jeu (L2–L10)** : nom de chaque joueur à sa position relative (NORD = partenaire, EST = à droite, OUEST = à gauche, SUD = soi). Sous chaque nom, la carte qu’il a jouée dans le pli en cours, ou rien ; un pli terminé est ramassé vers son gagnant (8.1). Le tour se lit à la carte qui arrive et à la ligne d’état (plus d’astérisque devant le nom). Les mains adverses ne sont pas dessinées. Les humains sont désignés par leur nom (suivi de « (CHEF) » en attente), les bots par BOT1 à BOT4 selon leur place réelle (P0 à P3), identique pour tous les joueurs. Au centre (L5–L7) : pendant les enchères, la carte retournée sous « RETOURNEE » ; après la prise, la carte prise sous « PRISE », jusqu’à la première carte jouée.
+**Zone de jeu (L2–L10)** : nom de chaque joueur à sa position relative (NORD = partenaire, EST = à droite, OUEST = à gauche, SUD = soi). Sous chaque nom, la carte qu’il a jouée dans le pli en cours, ou rien ; un pli terminé est ramassé vers son gagnant (8.1). Le tour se lit à la carte qui arrive et à la ligne d’état (plus d’astérisque devant le nom). Les mains adverses ne sont pas dessinées. Les humains sont désignés par leur nom (suivi de « (CHEF) » en attente), les bots par le nom de leur style (BOT1, BOT12… *(v2.1)*), identique pour tous les joueurs. Au centre (L5–L7) : pendant les enchères, la carte retournée sous « RETOURNEE » ; après la prise, la carte prise sous « PRISE », jusqu’à la première carte jouée.
 
 **Journal (L12–L17)** : six lignes pour les enchères, belote-rebelote, plis, tchat et INFO ; un événement de joueur tient en 33 caractères après « NOM  : », un message du serveur prend toute la ligne (40) ; les nouveaux événements remplacent les plus anciens. **L18** sert à la saisie du tchat. De L12 à L19, entre les deux traits jaunes, le fond est un vert uni, sans les points du feutre *(v2.0)*.
 
@@ -572,7 +574,7 @@ Le lecteur (c64/son.s) tourne dans l’interruption du KERNAL, 60 fois par secon
 
 - Couleur du nom, sur la table et dans le journal : une couleur fixe par place, la même sur tous les écrans, en deux nuances par équipe : P0 bleu clair (14) et P2 bleu (6) pour l’équipe P0+P2 ; P1 rouge clair (10) et P3 rouge (2) pour l’équipe P1+P3. Le rouge clair, écarté en v1.3 car proche du vert en luminosité, est repris à la demande de Stéphan pour des équipes bleue et rouge. Le texte du message reste blanc ; INFO et messages du serveur en gris clair (15).
 
-- Les bots sont nommés BOT1 à BOT4 d’après leur place réelle (P0 à P3) : dans le tchat, « BOT2 » désigne le même bot pour tout le monde.
+- Chaque bot a un nom unique à la table (BOT1, BOT12… *(v2.1)*) : dans le tchat, « BOT2 » désigne le même bot pour tout le monde.
 
 ## 10. Conventions du code
 
@@ -671,7 +673,7 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 
 - **Joystick de l'écran de connexion (bogue)** — Il ne peut pas fonctionner : dans `touche_connexion` (c64/main.c), la touche déduite du joystick est écrasée par le nouvel appel `cbm_k_getin()` de la condition de boucle avant d'être testée (constaté sur le code assembleur de cc65). Présent depuis la v1.7. À corriger avec le chantier « Joystick partout » (sortir de la boucle dès qu'une touche du joystick est reconnue).
 
-- **Noms des bots et styles** — La R&D de l'étape 51 propose cinq styles de bots (BOT1 à BOT5 et variantes). Les clients nomment aujourd'hui les bots BOT1 à BOT4 d'après leur place : brancher les styles demande de changer le C64 et le client PC (affichage du nom envoyé par le serveur plutôt que dérivé de la place), donc d'attendre une version du client. En attente.
+- **Noms des bots et styles** — Fait en v2.1 (4.4, étape 56).
 
 - **Portage Oscar64** — Essayé (étape 52) puis abandonné : le compilateur actuel génère du code faux à tous les niveaux d'optimisation. À reprendre seulement si ces erreurs sont corrigées.
 
@@ -738,3 +740,4 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 53 | Adresse du serveur public par son nom de domaine, boombass.net, au lieu de l'IP (25 novembre 2026) : `SERVEUR_IP` de config.mk (champ SERVEUR prérempli du C64) et `SERVEUR_DEFAUT` du client PC. L'Ultimate résout le nom lui-même (vérifié sur le C64 Ultimate : connexion et partie lancée). Tests du serveur fiabilisés : deux tests d'inactivité échouaient au hasard (horloge fixe à 1000 s alors que `time.monotonic()` part du démarrage du PC, et arrondi flottant au seuil exact). | Clients seulement (serveur inchangé) ; à publier avec la v2.1. |
 | 54 | Sous-coupe (25 novembre 2026) : quand un adversaire a coupé et qu'on ne peut pas surcouper, on joue quand même un atout plus faible (« pisser »), comme le disent Wikipédia, Pagat et regles-du-jeu.net ; la v4 l'interdisait à tort (défausser une autre couleur). Remarqué par Stéphan en partie : son 7 d'atout restait en bas. Serveur (`coups_legaux`), C64 (`jouables`) et client PC corrigés ; la copie du C64 a été comparée au serveur sur 50 000 cas tirés au hasard (dont 424 sous-coupes), sans écart. Transition : le serveur accepte encore la défausse de l'ancienne règle (`coups_toleres`), sinon un client v2.0 resterait bloqué dans ce cas. Règles en 5 minutes (FR/EN) mises à jour. | Serveur et clients ; à publier avec la v2.1 (mise à jour du VPS). Retirer la tolérance quand les clients v2.0 auront disparu. |
 | 55 | Réserve visible (25 novembre 2026, demande de Stéphan) : tant qu'une réserve attend, l'en-tête affiche RES 81 à la place de BELOTE (C64) ou « Réserve 81 » après les scores (PC) ; le tableau de fin de manche affiche LITIGE : RES. 81, puis +81 DE RESERVE quand elle est remportée. Nouveau message `RESERVE N` (réserve en attente), aussi envoyé à qui arrive ; un client v2.1 sur un serveur v2.0 la déduit de LITIGE et INFO RESERVE. Scénarios VICE 9 (litige) et 10 (réserve remportée). | Serveur et clients ; à publier avec la v2.1. |
+| 56 | Bots à style dans le serveur (25 novembre 2026) : `server/belote/styles.py` (repris de `tools/styles.py`), 15 noms (BOT1 à BOT5, BOT12, BOT13…), tirés à chaque nouvelle partie et quand un bot remplace un humain, jamais deux fois le même nom à une table ; seuil de prise du style (`choisir_enchere(..., seuil)`), objectif du PIMC et feinte (`pimc.choisir(..., objectif, tolerance)`). Option `--sans-styles`. Clients C64 et PC : affichent le nom envoyé par le serveur ; avec un serveur v2.0 (tous « BOT »), BOT1 à BOT4 par place comme avant. Un client v2.0 sur un serveur v2.1 garde ses noms par place. | Serveur et clients ; à publier avec la v2.1. |

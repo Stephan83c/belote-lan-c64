@@ -15,7 +15,8 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 from . import pimc
-from .bots import choisir_carte, choisir_enchere
+from .bots import SEUIL_PRISE, choisir_carte, choisir_enchere
+from .styles import mode, nom_bot, tirer_numero
 from .moteur import CoupRefuse, Donne, PasTonTour, Phase, coups_legaux, couleur, equipe_gagnante
 
 ATTENTE = "ATTENTE"
@@ -26,7 +27,8 @@ FIN_PARTIE = "FIN PARTIE"
 
 NOM_BOT = "BOT"
 NOM_VALIDE = re.compile(r"[A-Z0-9]{1,6}")
-# Les clients nomment les bots BOT1 à BOT4 : ces noms (et BOT) sont refusés aux humains.
+# Les bots s'appellent BOT1 à BOT5, BOT12... selon leur style (styles.py) ; les clients v2.0
+# affichent BOT1 à BOT4 selon la place. Ces noms (et BOT) sont refusés aux humains.
 NOM_RESERVE = re.compile(r"BOT[0-9]*")
 TCHAT_MAX = 30
 # Anti-inondation du tchat : au plus TCHAT_RAFALE messages par joueur sur TCHAT_FENETRE
@@ -59,6 +61,7 @@ class Siege:
     humain: Client | None = None
     nom: str = NOM_BOT
     nom_reserve: str | None = None  # ancien occupant pouvant revenir (4.3)
+    numero: int | None = None       # style du bot (styles.py) ; None : humain ou bots sans style
     actif_a: float = 0.0
     tchat: list[float] = field(default_factory=list)  # instants des derniers messages
 
@@ -69,8 +72,10 @@ def _entier(texte: str) -> int | None:
 
 class Table:
     def __init__(self, rng: random.Random | None = None, delai_bot: float = DELAI_BOT,
-                 delai_manche: float = DELAI_MANCHE, delai_attente: float = DELAI_ATTENTE):
+                 delai_manche: float = DELAI_MANCHE, delai_attente: float = DELAI_ATTENTE,
+                 styles: bool = True):
         self.rng = rng or random.Random()
+        self.styles = styles           # bots à style (styles.py) ; sinon tous « BOT », stratégie modérée
         self.delai_bot = delai_bot
         self.delai_manche = delai_manche
         self.delai_attente = delai_attente
@@ -90,6 +95,29 @@ class Table:
         self._minuteur_manche: asyncio.TimerHandle | None = None
         self._fin_pause = 0.0
         self._attendu_depuis = time.monotonic()
+        for place in range(4):
+            self._donner_style(place)
+
+    # ---- Bots à style ----------------------------------------------------
+
+    def _donner_style(self, place: int) -> None:
+        """Tire un style pour le bot de `place`, jamais le même nom qu'un autre bot de la table."""
+        siege = self.sieges[place]
+        siege.numero = None
+        if not self.styles:
+            siege.nom = NOM_BOT
+            return
+        pris = {s.numero for s in self.sieges if s.numero is not None}
+        siege.numero = tirer_numero(pris, self.rng)
+        siege.nom = nom_bot(siege.numero)
+
+    def _mode_bot(self, place: int) -> tuple[str, int, float]:
+        """(objectif du PIMC, seuil de prise, tolérance de feinte) du bot de `place`."""
+        numero = self.sieges[place].numero
+        if numero is None:
+            return "ecart", SEUIL_PRISE, 0.0
+        camp = place % 2
+        return mode(numero, self.scores[camp], self.scores[1 - camp], self.cible)
 
     # ---- Diffusion -------------------------------------------------------
 
@@ -239,7 +267,7 @@ class Table:
             nom = final
 
         siege = self.sieges[place]
-        siege.humain, siege.nom, siege.nom_reserve = client, nom, None
+        siege.humain, siege.nom, siege.nom_reserve, siege.numero = client, nom, None, None
         siege.actif_a = time.monotonic()
         siege.tchat = []
 
@@ -327,7 +355,7 @@ class Table:
         siege = self.sieges[place]
         ancien_nom = siege.nom
         siege.humain = None
-        siege.nom = NOM_BOT
+        self._donner_style(place)
         # En attente il n'y a pas de main à retrouver : la place redevient neutre.
         siege.nom_reserve = ancien_nom if self.etat != ATTENTE else None
 
@@ -417,6 +445,13 @@ class Table:
         self.scores = [0, 0]
         self._vider_reserve()
         self.etat = LANCEE
+        if self.styles:                 # nouvelle partie : nouveaux styles pour les bots
+            bots = [p for p, s in enumerate(self.sieges) if s.humain is None]
+            for p in bots:
+                self.sieges[p].numero = None
+            for p in bots:
+                self._donner_style(p)
+                self._diffuser(self._ligne_siege(p))
         self._diffuser(f"ETAT {LANCEE}")
         self._diffuser("SCORE 0 0")
         self._nouvelle_donne()
@@ -551,7 +586,7 @@ class Table:
         d = self.donne
         place = d.joueur
         if d.phase is Phase.ENCHERES:
-            choix = choisir_enchere(d.mains[place], d.tour_encheres, d.retournee)
+            choix = choisir_enchere(d.mains[place], d.tour_encheres, d.retournee, self._mode_bot(place)[1])
             evenements = d.passer(place) if choix is None else d.prendre(place, choix)
         else:
             if self.executeur is not None and len(coups_legaux(d.mains[place], d.pli, d.atout, place)) > 1:
@@ -564,10 +599,12 @@ class Table:
         """Choisit la carte du bot par PIMC dans un autre processus (la boucle reste libre) ;
         au-delà de DELAI_PIMC secondes ou en cas d'erreur, stratégie simple."""
         main = list(d.mains[place])
+        objectif, _, tolerance = self._mode_bot(place)
         try:
             futur = self.executeur.submit(
                 pimc.choisir, main, list(d.pli), [list(p) for p in d.plis], list(d.jouees), d.atout,
-                place, d.preneur, d.retournee, list(d.points_cartes), list(d.plis_gagnes))
+                place, d.preneur, d.retournee, list(d.points_cartes), list(d.plis_gagnes),
+                objectif=objectif, tolerance=tolerance)
             c = await asyncio.wait_for(asyncio.wrap_future(futur), DELAI_PIMC)
         except Exception:                       # délai, pool cassé, arrêt du serveur...
             c = choisir_carte(main, d.pli, d.atout, place, d.jouees, d.preneur)

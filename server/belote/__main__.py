@@ -186,8 +186,10 @@ async def demarrer(table: Table | Salons, host: str | None, port: int,
 
 
 async def principal(host: str, port: int, delai_bot: float, delai_manche: float,
-                    delai_attente: float, limites: Limites, nb_salons: int, pimc: int = 0) -> None:
-    tables = [Table(delai_bot=delai_bot, delai_manche=delai_manche, delai_attente=delai_attente)
+                    delai_attente: float, limites: Limites, nb_salons: int, pimc: int = 0,
+                    styles: bool = True) -> None:
+    tables = [Table(delai_bot=delai_bot, delai_manche=delai_manche, delai_attente=delai_attente,
+                    styles=styles)
               for _ in range(nb_salons)]
     executeur = None
     if pimc > 0:
@@ -222,6 +224,8 @@ def main() -> None:
                         metavar="1-9", help="nombre de salons (tables de 4 places)")
     parser.add_argument("--pimc", type=int, default=2, metavar="N",
                         help="processus de calcul des bots PIMC (0 : stratégie simple seulement)")
+    parser.add_argument("--sans-styles", action="store_true",
+                        help="bots sans style, tous nommés BOT (comme en v2.0)")
     parser.add_argument("--max-connexions", type=int, default=MAX_CONNEXIONS,
                         help="connexions ouvertes au plus, en tout")
     parser.add_argument("--max-par-ip", type=int, default=MAX_PAR_IP,
@@ -231,7 +235,7 @@ def main() -> None:
     try:
         asyncio.run(principal(args.host, args.port, args.delai_bot, args.delai_manche,
                               args.delai_attente, Limites(args.max_connexions, args.max_par_ip),
-                              args.salons, args.pimc))
+                              args.salons, args.pimc, not args.sans_styles))
     except KeyboardInterrupt:
         pass
 

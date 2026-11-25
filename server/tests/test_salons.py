@@ -96,7 +96,7 @@ def test_deconnexion_libere_la_place_dans_son_salon():
     b = entrer(s, "JOIN B 2")
     s.deconnexion(a)
     assert s.tables[1].sieges[0].humain is None
-    assert "SIEGE 0 B BOT" in b.lignes and s.tables[1].chef == 1
+    assert any(l.startswith("SIEGE 0 B BOT") for l in b.lignes) and s.tables[1].chef == 1
     s.deconnexion(a)  # deux fois : sans effet
 
 

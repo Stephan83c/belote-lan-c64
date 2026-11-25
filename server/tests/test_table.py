@@ -52,7 +52,7 @@ MARGE = 0.01
 
 def table_ne_jouant_pas():
     """Table dont les bots n'agissent jamais sans qu'on les déclenche."""
-    return Table(rng=random.Random(1), delai_bot=3600)
+    return Table(rng=random.Random(1), delai_bot=3600, styles=False)
 
 
 # ---- Connexion ----------------------------------------------------------
@@ -690,7 +690,7 @@ def test_pause_apres_une_prise(monkeypatch):
         t.recevoir(a, "LANCER")
         d = t.donne
         assert t.sieges[d.joueur].humain is None
-        monkeypatch.setattr(module, "choisir_enchere", lambda main, tour, r: couleur(r))
+        monkeypatch.setattr(module, "choisir_enchere", lambda main, tour, r, seuil=32: couleur(r))
         boucle = asyncio.get_running_loop()
         t._action_bot()                        # le premier à parler prend
         assert d.phase is Phase.JEU

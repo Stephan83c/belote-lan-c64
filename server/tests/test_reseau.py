@@ -27,7 +27,7 @@ class Joueur:
     async def lire_jusqu_a(self, attendu):
         while True:
             ligne = await self.lire()
-            if ligne == attendu:
+            if ligne == attendu or (attendu.endswith(" BOT*") and ligne.startswith(attendu[:-1])):
                 return
 
 
@@ -116,7 +116,7 @@ def test_coupure_brutale_le_bot_reprend_la_place():
         await b.lire_jusqu_a("PARAM INACTIF 3")
         b.writer.close()
         await a.lire_jusqu_a("SIEGE 1 H B")
-        await a.lire_jusqu_a("SIEGE 1 B BOT")
+        await a.lire_jusqu_a("SIEGE 1 B BOT*")  # BOT1, BOT12... selon le style tiré
         assert table.sieges[1].humain is None
         a.writer.close()
         srv.close()

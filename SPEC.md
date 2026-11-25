@@ -235,7 +235,7 @@ Seats go round P0 → P1 → P2 → P3 → P0, that is SOUTH → EAST → NORTH 
 
 - Displayed name: 6 characters at most, letters A–Z and digits; unique among the players. On a duplicate, the last character is replaced by a numeric suffix (e.g. JEAN → JEA2), from 1 to 9; otherwise the connection is refused. The final name is sent back in BIENVENUE.
 
-- Reserved names: BOT and BOT followed by digits (BOT1 to BOT4 name the bots on screen). The C64 refuses them before connecting; the server answers ERR NOM RESERVE without closing the connection, and a duplicate suffix never produces such a name. The C64 shows "NAME RESERVED FOR BOTS: CHOOSE ANOTHER" and puts the cursor back on the NAME field.
+- Reserved names: BOT and BOT followed by digits (bot names: BOT1 to BOT5, BOT12, BOT13… in v2.1). The C64 refuses them before connecting; the server answers ERR NOM RESERVE without closing the connection, and a duplicate suffix never produces such a name. The C64 shows "NAME RESERVED FOR BOTS: CHOOSE ANOTHER" and puts the cursor back on the NAME field.
 
 - Idle player (3 minutes by default, set by the host with F1): a bot takes over the seat. There are no spectators; an idle user who was released must reconnect. Before the game starts *(server v2.0)*, a human who sends nothing for 10 minutes (`--delai-attente`, in seconds) gives up their seat the same way, with the same messages: a waiting table can no longer be held by silent connections. Each table checks this for itself.
 
@@ -256,6 +256,8 @@ Bots are computed by the server and only act after the start. They always play a
 - **Partner winning**: if it plays last, or if the partner's card can no longer be beaten in its suit, it loads the trick (its 10 or ace outside trumps); otherwise it plays its weakest card.
 
 - **Cards (PIMC)** *(v2.1)*: when `--pimc N` is active (2 by default), the bot picks its card by simulating the rest of the deal: for each playable card, 100 plausible distributions of the hidden cards (void suits deduced from the tricks, turned-up card with the taker), finished with the simple strategy above; it keeps the card with the best average point difference. The computation runs in N processes (the server loop stays free); after 3 s or on error, the simple strategy plays. `--pimc 0` restores it alone. Measured (`tools/pimc.py`): about 56% of the points against the simple strategy. PIMC bidding only gains 0.8 points of share (threshold 5): not kept.
+
+- **Styles** *(v2.1)*: each bot has a style, drawn at random at each new game and when it replaces a human, never the same name twice at a table. The style sets the taking threshold and the PIMC objective: attacker (BOT1, threshold 26, aims at big rounds), defender (BOT2, threshold 34, aims at winning the round), moderate (BOT3, threshold 32, point difference), adaptive (BOT4: attacks when 150 points behind or when the opponents near the target, defends when 150 points ahead), feinter (BOT5, like the moderate one, but sometimes plays a card almost as good as the best and other than the expected one, never while its partner holds the trick). Variants: BOTx for the first, BOTx2 and BOTx3 for the others; they shift the thresholds by -2, 0 and +2 (15 names in all). Measured with `tools/styles.py`: the styles are level at randomly drawn tables (49 to 51% of wins). `--sans-styles` brings back bots all named BOT, playing like the moderate one.
 
 These choices are measured with `tools/duel_bots.py` (each deal played twice, teams swapped): 53.9% of the points against the v1.8 bots over 200,000 deals. More careful when bidding, four bots all pass in 18% of deals (redealt). Each bot action (bid or card) is played after a fixed delay of **1 second** *(v4)*, so that players can follow.
 
@@ -398,7 +400,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 | Message | Audience | Meaning / data |
 |---|---|---|
 | BIENVENUE NAME P *(v3)* | Client | Connection accepted: final name (possibly changed) and seat P. |
-| SIEGE P T NAME *(v3)* | All | Occupant of seat P: T = H (human) or B (bot). Replaces TABLE P0 P1 P2 P3. Sent for the 4 seats on connection and on each change. |
+| SIEGE P T NAME *(v3)* | All | Occupant of seat P: T = H (human) or B (bot). Replaces TABLE P0 P1 P2 P3. Sent for the 4 seats on connection and on each change. A bot's NAME is that of its style (BOT1, BOT12… *(v2.1)*); a v2.0 server sends BOT. |
 | CHEF P | All | Host's seat, 0..3; -1 if none. |
 | ETAT X | All | ATTENTE, LANCEE, EN COURS, FIN MANCHE or FIN PARTIE. |
 | PARAM CIBLE N *(v3)* | All | Current target score. |
@@ -451,7 +453,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 ```
 C64 -> srv : JOIN JEAN
 srv -> C64 : BIENVENUE JEAN 0
-srv -> all : SIEGE 0 H JEAN / SIEGE 1 B BOT / SIEGE 2 B BOT / SIEGE 3 B BOT
+srv -> all : SIEGE 0 H JEAN / SIEGE 1 B BOT12 / SIEGE 2 B BOT4 / SIEGE 3 B BOT3
 srv -> all : CHEF 0 / ETAT ATTENTE / PARAM CIBLE 1000 / PARAM INACTIF 3
 host-> srv : LANCER
 srv -> all : ETAT LANCEE / SCORE 0 0
@@ -481,7 +483,7 @@ srv -> all : ETAT EN COURS / DONNEUR 1 ...
 
 ### 8.1 Reference screen grid *(v4)*
 
-Grid of 40 columns (0–39) and 25 lines (L0–L24). The central mat is removed: the card played by each player is shown under their name. A bot is named after its real seat, BOT1 to BOT4 (P0 to P3), on the table as in the log: the same name on every screen, whatever each player's seat. Names, points and cards are examples (the player is P0), with the English texts. The table is symmetrical *(v1.8)*: WEST and EAST cards four columns from the edge (4 to 7, 32 to 35), names aligned on the outer edge of their card, NORTH and SOUTH names centred on theirs.
+Grid of 40 columns (0–39) and 25 lines (L0–L24). The central mat is removed: the card played by each player is shown under their name. A bot bears the name of its style (BOT1, BOT12… *(v2.1)*, see 4.4), sent by the server, on the table as in the log: the same name on every screen. With a v2.0 server, which calls every bot BOT, the client names them BOT1 to BOT4 after their real seat (P0 to P3). Names, points and cards are examples (the player is P0), with the English texts. The table is symmetrical *(v1.8)*: WEST and EAST cards four columns from the edge (4 to 7, 32 to 35), names aligned on the outer edge of their card, NORTH and SOUTH names centred on theirs.
 
 ```
     0         1         2         3
@@ -512,7 +514,7 @@ L23  1    2    3    4    5    6
 L24 1-8 CARD F3 CHAT F7 QUIT F8 HELP
 ```
 
-**Play area (L2–L10)**: each player's name at their relative position (NORTH = partner, EAST = on the right, WEST = on the left, SOUTH = yourself). Under each name, the card they played in the current trick, or nothing; a finished trick is gathered towards its winner (8.1). The turn shows through the incoming card and the status line (no more asterisk before the name). Opposing hands are not drawn. Humans are shown by name (followed by "(HOST)" while waiting), bots as BOT1 to BOT4 after their real seat (P0 to P3), the same for all players. In the centre (L5–L7): during bidding, the turned-up card under "TURNED UP"; after the take, the card taken under "TAKEN", until the first card is played.
+**Play area (L2–L10)**: each player's name at their relative position (NORTH = partner, EAST = on the right, WEST = on the left, SOUTH = yourself). Under each name, the card they played in the current trick, or nothing; a finished trick is gathered towards its winner (8.1). The turn shows through the incoming card and the status line (no more asterisk before the name). Opposing hands are not drawn. Humans are shown by name (followed by "(HOST)" while waiting), bots by the name of their style (BOT1, BOT12… *(v2.1)*), the same for all players. In the centre (L5–L7): during bidding, the turned-up card under "TURNED UP"; after the take, the card taken under "TAKEN", until the first card is played.
 
 **Log (L12–L17)**: six lines for bids, belote-rebelote, tricks, chat and INFO; a player event fits in 33 characters after "NAME : ", a server message takes the whole line (40); new events replace the oldest ones. **L18** is used to type the chat. From L12 to L19, between the two yellow lines, the background is plain green, without the felt dots *(v2.0)*.
 
@@ -574,7 +576,7 @@ The player (c64/son.s) runs in the KERNAL interrupt, 60 times a second, so also 
 
 - Name colour, on the table and in the log: one fixed colour per seat, the same on every screen, in two shades per team: P0 light blue (14) and P2 blue (6) for team P0+P2; P1 light red (10) and P3 red (2) for team P1+P3. Light red, left out in v1.3 as too close to green in brightness, is taken back at Stéphan's request for a blue team and a red team. The message text stays white; INFO and server messages in light grey (15).
 
-- Bots are named BOT1 to BOT4 after their real seat (P0 to P3): in the chat, "BOT2" means the same bot for everyone.
+- Each bot has a unique name at the table (BOT1, BOT12… *(v2.1)*): in the chat, "BOT2" means the same bot for everyone.
 
 ## 10. Code conventions
 
@@ -673,7 +675,7 @@ These decisions override contradictory or older wording.
 
 - **Connection-screen joystick (bug)** — It cannot work: in `touche_connexion` (c64/main.c), the key derived from the joystick is overwritten by the new `cbm_k_getin()` call of the loop condition before being tested (seen in cc65's assembly output). Present since v1.7. To fix together with "Joystick everywhere" (leave the loop as soon as a joystick key is recognised).
 
-- **Bot names and styles** — The R&D of step 51 proposes five bot styles (BOT1 to BOT5 and variants). The clients currently name bots BOT1 to BOT4 from their seat: plugging in the styles means changing the C64 and the PC client (show the name sent by the server instead of deriving it from the seat), hence waiting for a client release. On hold.
+- **Bot names and styles** — Done in v2.1 (4.4, step 56).
 
 - **Oscar64 port** — Tried (step 52) then abandoned: the current compiler generates wrong code at every optimisation level. To be taken up again only if those errors are fixed.
 
@@ -740,3 +742,4 @@ These decisions override contradictory or older wording.
 | 53 | Public server addressed by its domain name, boombass.net, instead of the IP (25 November 2026): `SERVEUR_IP` in config.mk (pre-filled SERVER field on the C64) and `SERVEUR_DEFAUT` in the PC client. The Ultimate resolves the name itself (checked on the C64 Ultimate: connection and game started). Server tests made reliable: two idle tests failed at random (clock fixed at 1000 s while `time.monotonic()` starts at PC boot, and floating-point rounding at the exact threshold). | Clients only (server unchanged); to be released with v2.1. |
 | 54 | Under-trumping (25 November 2026): when an opponent has trumped and you cannot over-trump, you still play a lower trump (« pisser »), as Wikipedia, Pagat and regles-du-jeu.net say; v4 wrongly forbade it (discard another suit). Noticed by Stéphan during a game: his 7 of trumps stayed down. Server (`coups_legaux`), C64 (`jouables`) and PC client fixed; the C64 copy was compared with the server on 50,000 random cases (424 of them under-trumps), with no difference. Transition: the server still accepts the discard of the old rule (`coups_toleres`), otherwise a v2.0 client would be stuck in that case. Rules in 5 minutes (FR/EN) updated. | Server and clients; to be released with v2.1 (VPS update). Remove the tolerance once v2.0 clients are gone. |
 | 55 | Visible reserve (25 November 2026, requested by Stéphan): while a reserve is pending, the header shows RES 81 instead of BELOTE (C64) or “Reserve 81” after the scores (PC); the end-of-round board shows TIE: RESERVE 81, then +81 FROM RESERVE when it is won. New message `RESERVE N` (pending reserve), also sent to whoever arrives; a v2.1 client on a v2.0 server works it out from LITIGE and INFO RESERVE. VICE scenarios 9 (tie) and 10 (reserve won). | Server and clients; to be released with v2.1. |
+| 56 | Bot styles in the server (25 November 2026): `server/belote/styles.py` (taken from `tools/styles.py`), 15 names (BOT1 to BOT5, BOT12, BOT13…), drawn at each new game and when a bot replaces a human, never the same name twice at a table; style's taking threshold (`choisir_enchere(..., seuil)`), PIMC objective and feint (`pimc.choisir(..., objectif, tolerance)`). `--sans-styles` option. C64 and PC clients: show the name sent by the server; with a v2.0 server (all “BOT”), BOT1 to BOT4 by seat as before. A v2.0 client on a v2.1 server keeps its names by seat. | Server and clients; to be released with v2.1. |

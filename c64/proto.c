@@ -257,14 +257,15 @@ void journal_info(const char *texte)
     journal_ajouter("", 0, texte, GRIS_CLAIR);
 }
 
-/* Nom affiché d'une place : celui du joueur, ou BOT1 à BOT4 pour un bot (ils
- * s'appellent tous BOT pour le serveur), le même sur tous les écrans. */
+/* Nom affiché d'une place : celui envoyé par le serveur (joueur, ou bot à style BOT1,
+ * BOT12... en v2.1). Un serveur v2.0 appelle tous les bots BOT : on affiche alors BOT1 à
+ * BOT4 d'après la place, le même nom sur tous les écrans. */
 const char *nom_place(signed char p)
 {
     if (p < 0 || !noms[p][0]) {
         return "-";
     }
-    if (!humain[p]) {
+    if (!humain[p] && !strcmp(noms[p], "BOT")) {
         return noms_bots[p];
     }
     return noms[p];
