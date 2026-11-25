@@ -70,7 +70,7 @@ coup illégal.
 | On demande de l'atout et vous en avez | Jouer de l'atout, et **monter** (plus fort que le plus fort atout déjà posé) si vous le pouvez. Sinon, un atout plus faible. |
 | Vous n'avez pas la couleur, **votre partenaire est maître du pli** | Libre : défaussez ce que vous voulez, ou coupez. |
 | Vous n'avez pas la couleur, **un adversaire est maître** | **Couper** : jouer de l'atout. Si un adversaire a déjà coupé, **surcoupez** (plus fort) si vous le pouvez. |
-| Vous ne pouvez pas surcouper | Vous ne **sous-coupez** pas : défaussez une autre couleur (sauf si vous n'avez que de l'atout). |
+| Vous ne pouvez pas surcouper | Jouez quand même un atout plus faible : vous **sous-coupez** (on dit aussi « pisser »). |
 | Ni la couleur ni l'atout | Défaussez ce que vous voulez. |
 
 *Maître* veut dire : la carte qui gagne le pli pour l'instant.

@@ -81,6 +81,7 @@ enum {
     T_P_DEDANS,
     T_P_CAPOT,
     T_P_LITIGE,
+    T_P_RESERVE,
     T_P_TOTAL,
     T_V_SUITE,
     T_V_FIN_AUTRE,

@@ -68,7 +68,7 @@ only the playable cards stick out of the row. The server rejects an illegal play
 | Trump is led and you hold some | Play a trump, and **go higher** (than the highest trump already played) if you can. Otherwise, a lower trump. |
 | You lack the suit, **your partner is winning the trick** | Free: discard anything, or trump. |
 | You lack the suit, **an opponent is winning** | You must **trump** (play a trump). If an opponent has already trumped, **overtrump** (go higher) if you can. |
-| You cannot overtrump | You may not **undertrump**: discard another suit (unless you hold only trumps). |
+| You cannot overtrump | Play a lower trump anyway: you **undertrump** (« pisser » in French). |
 | Neither the suit nor any trump | Discard anything. |
 
 *Winning* means: the card that is currently taking the trick.

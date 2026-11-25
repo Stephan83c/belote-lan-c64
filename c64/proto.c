@@ -30,6 +30,8 @@ signed char entame = -1;
 int manche_pts[2];
 signed char capot_eq = -1;
 unsigned char litige_m;
+unsigned reserve, res_gagnee;
+signed char res_eq;
 unsigned char suite, suite_vue, manche_nous;
 static clock_t suite_fin;
 unsigned char sale;
@@ -120,6 +122,7 @@ static void manche_raz(void)
     entame = -1;
     capot_eq = -1;
     litige_m = 0;
+    res_gagnee = 0;
 }
 
 /* ---- Règles du jeu de la carte (copie de server/belote/moteur.py) --------
@@ -204,8 +207,8 @@ void jouables(unsigned char *ok)
         } else if (sur) {
             ok[i] = COUL(c) == atout && force(c) + 1 > pf;   /* couper, surcouper */
         } else {
-            /* sous-couper seulement s'il ne reste que de l'atout */
-            ok[i] = COUL(c) != atout || a == nmain;
+            /* impossible de surcouper : atout plus faible quand même (v2.1) */
+            ok[i] = COUL(c) == atout;
         }
     }
 }
@@ -218,6 +221,7 @@ void jeu_raz(void)
     cible = 1000;
     inactif = 3;
     scores[0] = scores[1] = 0;
+    reserve = 0;
     nmain = 0;
     for (i = 0; i < 4; ++i) {
         noms[i][0] = 0;
@@ -309,6 +313,10 @@ static void info(char *s)
             e = nombre();
             fmt(tampon, T(moi >= 0 && e == (moi & 1) ? T_I_RESERVE_NOUS : T_I_RESERVE_EUX), pts);
             journal_info(tampon);
+            res_gagnee = pts;
+            res_eq = (signed char)(e & 1);
+            reserve = 0;
+            sale |= D_ENTETE;
         } else {
             journal_info(s);
         }
@@ -566,10 +574,18 @@ void traiter_ligne(char *ligne)
         journal_info(T(moi >= 0 && n == (moi & 1) ? T_J_CAPOT_NOUS : T_J_CAPOT_EUX));
     } else if (!strcmp(mot, "LITIGE")) {
         litige_m = 1;
-        fmt(tampon, T(T_J_LITIGE), nombre());
+        n = nombre();
+        reserve += n;                           /* serveur v2.0 : pas de message RESERVE */
+        fmt(tampon, T(T_J_LITIGE), n);
         journal_info(tampon);
+        sale |= D_ENTETE;
+    } else if (!strcmp(mot, "RESERVE")) {
+        /* RESERVE N : réserve en attente (serveur v2.1) */
+        reserve = nombre();
+        sale |= D_ENTETE;
     } else if (!strcmp(mot, "GAGNANT")) {
         gagnant = (signed char)nombre();
+        reserve = 0;                            /* réserve non attribuée : perdue */
         if (gagnant >= 0 && moi >= 0) {
             son_musique(gagnant == (moi & 1) ? AIR_VICTOIRE : AIR_DEFAITE);
         }

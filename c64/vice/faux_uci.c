@@ -48,6 +48,19 @@ static const char *const lignes[] = {
  "BIENVENUE JEAN 1", "SIEGE 0 H MARC", "SIEGE 1 H JEAN", "SIEGE 2 B BOT", "SIEGE 3 B BOT",
  "CHEF 0", "ETAT EN COURS", "SCORE 432 518", "DONNEUR 0", "PREND 2 3",
  "PLI 3", "MANCHE 90 72", "SCORE 522 590", "ETAT FIN MANCHE", "SUITE 10", 0 };
+#elif SCENARIO == 9
+/* Litige : 81 points du preneur en réserve (en-tête « RES 81 », tableau « LITIGE : RES. 81 ») */
+static const char *const lignes[] = {
+ "BIENVENUE JEAN 1", "SIEGE 0 H MARC", "SIEGE 1 H JEAN", "SIEGE 2 B BOT", "SIEGE 3 B BOT",
+ "CHEF 0", "ETAT EN COURS", "SCORE 432 518", "DONNEUR 0", "PREND 2 3",
+ "PLI 3", "LITIGE 81", "RESERVE 81", "MANCHE 0 81", "SCORE 432 599", "ETAT FIN MANCHE", "SUITE 10", 0 };
+#elif SCENARIO == 10
+/* Réserve remportée par NOUS (tableau « +81 DE RESERVE ») */
+static const char *const lignes[] = {
+ "BIENVENUE JEAN 1", "SIEGE 0 H MARC", "SIEGE 1 H JEAN", "SIEGE 2 B BOT", "SIEGE 3 B BOT",
+ "CHEF 0", "ETAT EN COURS", "SCORE 432 599", "RESERVE 81", "DONNEUR 1", "PREND 3 2",
+ "PLI 1", "INFO RESERVE 81 POUR EQUIPE 1", "RESERVE 0", "MANCHE 60 183", "SCORE 492 782",
+ "ETAT FIN MANCHE", "SUITE 10", 0 };
 #elif SCENARIO == 8
 static const char *const lignes[] = {
  "SALONS 5", "SALON 1 3 EN COURS", "SALON 2 0 ATTENTE", "SALON 3 1 ATTENTE", "SALON 4 4 EN COURS",

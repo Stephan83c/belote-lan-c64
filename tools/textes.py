@@ -165,7 +165,10 @@ TEXTES = [
     ("P_REUSSI", 18, "CONTRAT REMPLI", "CONTRACT MADE", "VERTRAG ERFUELLT", "CONTRATO HECHO"),
     ("P_DEDANS", 18, "DEDANS !", "SET!", "DURCHGEFALLEN!", "FALLADO!"),
     ("P_CAPOT", 18, "CAPOT !", "CAPOT!", "CAPOT!", "CAPOT!"),
-    ("P_LITIGE", 18, "LITIGE", "TIE", "PATT", "EMPATE"),
+    # %u : réserve en attente après ce litige
+    ("P_LITIGE", 18, "LITIGE : RES. %u", "TIE: RESERVE %u", "PATT: RESERVE %u", "EMPATE: RES. %u"),
+    # %u : réserve remportée dans cette manche (comprise dans les points de la manche)
+    ("P_RESERVE", 18, "+%u DE RESERVE", "+%u FROM RESERVE", "+%u AUS RESERVE", "+%u DE RESERVA"),
     ("P_TOTAL", 18, "AU TOTAL", "OVERALL", "GESAMT", "EN TOTAL"),
     ("V_SUITE", 40, "MANCHE POUR %s - SUITE DANS %u S", "ROUND TO %s - NEXT ONE IN %u S",
      "RUNDE FUER %s - WEITER IN %u S", "MANO PARA %s - SIGUE EN %u S"),

@@ -73,7 +73,10 @@ Other cases:
 - After REDONNE (redeal), the server follows with `ETAT EN COURS` and `DONNEUR P`, as for any deal.
 - `MANCHE` includes the reserve won, so that `SCORE` stays the sum of the `MANCHE` lines; an
   `INFO RESERVE N POUR EQUIPE E` reports it.
-- Order at the end of a round: `PLI`, `CAPOT`, `LITIGE`, `INFO RESERVE`, `MANCHE`, `SCORE`, then
+- `RESERVE N` (v2.1 server) gives the pending reserve, 0 when there is none left: after `LITIGE`
+  or `INFO RESERVE`, at a new game, and when a player arrives (after `SCORE`). A client that does
+  not know it ignores it.
+- Order at the end of a round: `PLI`, `CAPOT`, `LITIGE`, `INFO RESERVE`, `RESERVE`, `MANCHE`, `SCORE`, then
   `GAGNANT` and `ETAT`. Each message is present only when it applies.
 - On reconnection during bidding, `ENCHERES T` follows `RETOURNE`, so that the client knows which
   round to show.

@@ -453,13 +453,26 @@ def test_litige_puis_reserve_attribuee_la_manche_suivante():
     t.recevoir(a, "LANCER")
     a.vider()
     fin_manche(t, lambda r: compter_manche(0, (81, 81), (4, 4), None, r))
-    assert a.lignes == ["LITIGE 81", "MANCHE 0 81", "SCORE 0 81", "ETAT FIN MANCHE", "SUITE 10"]
+    assert a.lignes == ["LITIGE 81", "RESERVE 81", "MANCHE 0 81", "SCORE 0 81", "ETAT FIN MANCHE", "SUITE 10"]
     assert t.reserve == 81
     a.vider()
     fin_manche(t, lambda r: compter_manche(0, (90, 72), (5, 3), None, r))
-    assert "MANCHE 171 72" in a.lignes
-    assert "SCORE 171 153" in a.lignes
+    i = a.lignes.index("INFO RESERVE 81 POUR EQUIPE 0")
+    assert a.lignes[i + 1:i + 4] == ["RESERVE 0", "MANCHE 171 72", "SCORE 171 153"]
     assert t.reserve == 0
+
+
+@dans_boucle
+def test_reserve_en_attente_envoyee_a_qui_arrive_et_videe_a_la_nouvelle_partie():
+    t = table_ne_jouant_pas()
+    a = rejoindre(t, "A")
+    t.recevoir(a, "LANCER")
+    fin_manche(t, lambda r: compter_manche(0, (81, 81), (4, 4), None, r))
+    b = rejoindre(t, "B")
+    assert "RESERVE 81" in b.lignes
+    a.vider()
+    assert t.raz()
+    assert a.lignes[:2] == ["RESERVE 0", "INFO PARTIE EFFACEE"] and t.reserve == 0
 
 
 @dans_boucle
@@ -608,7 +621,7 @@ def test_gagnant_et_nouvelle_partie_scores_et_reserve_remis_a_zero():
     assert t.etat == FIN_PARTIE
     a.vider()
     t.recevoir(a, "REJOUER")
-    assert a.lignes[:4] == ["ETAT LANCEE", "SCORE 0 0", "ETAT EN COURS", "DONNEUR 1"]
+    assert a.lignes[:5] == ["RESERVE 0", "ETAT LANCEE", "SCORE 0 0", "ETAT EN COURS", "DONNEUR 1"]
     assert t.scores == [0, 0] and t.reserve == 0
 
 
@@ -872,6 +885,7 @@ def test_reconnexion_retrouve_sa_place_et_sa_main():
         "PARAM CIBLE 1000",
         "PARAM INACTIF 3",
         "SCORE 0 0",
+        "RESERVE 0",
         "DONNEUR 0",
         f"PREND 1 {atout}",
         "MAIN " + " ".join(map(str, d.mains[1])),
@@ -936,7 +950,7 @@ def test_raz_efface_la_partie_et_arrete_les_bots():
         t.reserve = 81
         a.vider()
         assert t.raz() is True
-        assert a.lignes == ["INFO PARTIE EFFACEE", "SCORE 0 0", "ETAT ATTENTE"]
+        assert a.lignes == ["RESERVE 0", "INFO PARTIE EFFACEE", "SCORE 0 0", "ETAT ATTENTE"]
         assert t.donne is None and t.scores == [0, 0] and t.reserve == 0
         assert t.cible == 500
         a.vider()

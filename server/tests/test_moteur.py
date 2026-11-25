@@ -23,6 +23,7 @@ from belote.moteur import (
     Phase,
     carte,
     coups_legaux,
+    coups_toleres,
     couleur,
     force,
     gagnant_pli,
@@ -288,10 +289,31 @@ def test_partenaire_coupe_puis_adversaire_surcoupe_il_faut_surcouper():
     assert coups_legaux(main, pli, PIQUE, 0) == [P(VALET)]
 
 
-def test_sous_coupe_interdite_defausser_autre_couleur():
+def test_impossible_de_surcouper_il_faut_sous_couper():
+    # Règle classique (v2.1) : un adversaire a coupé, on ne peut monter : on « pisse » quand même.
     main = [P(SEPT), T(AS), K(SEPT)]
     pli = [(1, H(AS)), (2, H(SEPT)), (3, P(VALET))]
-    assert sorted(coups_legaux(main, pli, PIQUE, 0)) == sorted([T(AS), K(SEPT)])
+    assert coups_legaux(main, pli, PIQUE, 0) == [P(SEPT)]
+
+
+def test_defausse_de_l_ancienne_regle_encore_acceptee():
+    # Les clients v2.0 proposent la défausse (ancienne règle) : le serveur l'accepte encore.
+    main = [P(SEPT), T(AS), K(SEPT)]
+    pli = [(1, H(AS)), (2, H(SEPT)), (3, P(VALET))]
+    assert sorted(coups_toleres(main, pli, PIQUE, 0)) == sorted(main)
+
+
+def test_tolerance_limitee_a_la_sous_coupe():
+    # Partout ailleurs, les coups acceptés sont les coups légaux.
+    cas = [
+        ([P(SEPT), P(VALET), T(AS)], [(1, H(AS)), (2, P(DIX)), (3, P(AS))]),  # surcoupe possible
+        ([H(SEPT), P(SEPT), T(AS)], [(1, H(AS)), (2, H(DIX)), (3, P(VALET))]),  # fournir
+        ([P(SEPT), T(AS)], [(1, P(AS)), (2, P(DIX)), (3, P(VALET))]),  # atout demandé
+        ([P(SEPT), T(AS)], [(1, H(SEPT)), (2, H(AS))]),  # partenaire maître
+        ([T(AS), K(SEPT)], [(3, H(AS))]),  # ni couleur ni atout
+    ]
+    for main, pli in cas:
+        assert coups_toleres(main, pli, PIQUE, 0) == coups_legaux(main, pli, PIQUE, 0)
 
 
 def test_sous_coupe_permise_s_il_ne_reste_que_de_l_atout():

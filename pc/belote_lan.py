@@ -138,7 +138,9 @@ TEXTES = {
     "p_rempli": ("Contrat rempli", "Contract made", "Vertrag erfüllt", "Contrato hecho"),
     "p_dedans": ("Dedans !", "Set!", "Durchgefallen!", "¡Fallado!"),
     "p_capot": ("Capot !", "Capot!", "Capot!", "¡Capot!"),
-    "p_litige": ("Litige", "Tie", "Patt", "Empate"),
+    "p_litige": ("Litige : réserve {}", "Tie: reserve {}", "Patt: Reserve {}", "Empate: reserva {}"),
+    "p_reserve": ("+{} de réserve", "+{} from reserve", "+{} aus Reserve", "+{} de reserva"),
+    "en_reserve": ("Réserve {}", "Reserve {}", "Reserve {}", "Reserva {}"),
     "p_total": ("Au total", "Overall", "Gesamt", "En total"),
     "p_suite": ("Suite dans {} s (Entrée : maintenant)", "Next round in {} s (Enter: now)",
                 "Weiter in {} s (Eingabe: sofort)", "Sigue en {} s (Intro: ya)"),
@@ -407,7 +409,7 @@ def coups_legaux(main: list, pli: list, atout: int, place: int) -> list:
         return list(main)
     if surcoupes:
         return surcoupes
-    return [c for c in main if c // 8 != atout] or atouts
+    return atouts  # impossible de surcouper : atout plus faible quand même (v2.1)
 
 
 # ---------------------------------------------------------------------------
@@ -435,6 +437,7 @@ class Partie:
         self.cible = 1000
         self.inactif = 3
         self.scores = [0, 0]
+        self.en_reserve = 0         # réserve en attente (litiges), affichée dans le bandeau
         self.gagnant = None
         self.suite_fin = None       # instant (monotonic) de la manche suivante
         self.journal = []           # (clé, arguments) ou ("tchat", nom, texte, place)
@@ -574,7 +577,10 @@ class Partie:
             self._j("j_capot_nous" if n[0] == self.nous() else "j_capot_eux")
         elif mot == "LITIGE" and a:
             self.litige = n[0]
+            self.en_reserve += n[0]   # serveur v2.0 : pas de message RESERVE
             self._j("j_litige", n[0])
+        elif mot == "RESERVE" and a:
+            self.en_reserve = n[0]
         elif mot == "MANCHE" and len(a) == 2:
             self.manche = n
             self._j("j_manche", n[self.nous()], n[1 - self.nous()])
@@ -582,6 +588,7 @@ class Partie:
             self.scores = n
         elif mot == "GAGNANT" and a:
             self.gagnant = n[0]
+            self.en_reserve = 0       # réserve non attribuée : perdue
         elif mot == "SUITE" and a:
             self.suite_fin = time.monotonic() + max(n[0], 0)
         elif mot == "REDONNE":
@@ -656,6 +663,7 @@ class Partie:
         if texte.startswith("RESERVE ") and " POUR EQUIPE " in texte:
             pts, _, eq = texte[8:].partition(" POUR EQUIPE ")
             self.reserve = (_int(eq), _int(pts))
+            self.en_reserve = 0
             self._j("i_reserve_nous" if _int(eq) == self.nous() else "i_reserve_eux", pts)
             return
         for suffixe, cle in INFOS_NOM:
@@ -1465,6 +1473,8 @@ class App:
             x += len(tr(cle)) + 1
             e.ecrire(x, 0, "%04d" % p.scores[eq], S_BANDEAU)
             x += 7
+        if p.en_reserve:
+            e.ecrire(x, 0, tr("en_reserve", p.en_reserve), S_TOUCHE)
         droite = "%s %d   v%s" % (tr("cible"), p.cible, VERSION)
         e.ecrire(LARGEUR - len(droite) - 1, 0, droite, S_BANDEAU)
         # ligne 1 : donneur, atout
@@ -1596,7 +1606,9 @@ class App:
         if p.capot is not None:
             resultat = tr("p_capot")
         elif p.litige:
-            resultat = tr("p_litige")
+            resultat = tr("p_litige", p.en_reserve)
+        elif p.reserve:
+            resultat = tr("p_reserve", p.reserve[1])
         elif p.preneur is not None and p.manche:
             t = p.preneur % 2
             resultat = tr("p_rempli") if p.manche[t] > p.manche[1 - t] else tr("p_dedans")

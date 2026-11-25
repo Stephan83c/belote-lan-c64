@@ -37,7 +37,7 @@ francophones, anglais sous les noms principaux (README.md, SPEC.md, protocol.md,
   release (serveur sans dépendance, service, notes FR/EN de tools/paquet-serveur/)
 - `make vice` : le vrai client dans VICE (écran de connexion seulement : VICE n'émule pas
   la Command Interface)
-- `make vice-demo SCENARIO=1..8` : client avec réseau simulé (c64/vice/faux_uci.c) ;
+- `make vice-demo SCENARIO=1..10` : client avec réseau simulé (c64/vice/faux_uci.c) (9 et 10 : réserve) ;
   `make demo` compile sans lancer VICE
 - `python3 tools/musique.py` : régénère la musique et les bruitages (c64/son_donnees.s, versionné ;
   lecteur SID dans c64/son.s, branché sur l'IRQ du KERNAL, page zéro $FB-$FE)

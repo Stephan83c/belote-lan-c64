@@ -44,6 +44,8 @@ extern signed char entame;
 extern int manche_pts[2];
 extern signed char capot_eq;
 extern unsigned char litige_m;
+extern unsigned reserve, res_gagnee;   /* réserve en attente ; réserve remportée dans la manche */
+extern signed char res_eq;              /* équipe qui a remporté la réserve */
 /* Cartes de ma main que la règle permet de jouer maintenant (1 par case). */
 void jouables(unsigned char *ok);
 /* Place dont la carte vient d'être jouée, à faire glisser au prochain dessin ; -1 sinon. */

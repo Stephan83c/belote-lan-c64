@@ -106,7 +106,12 @@ static void entete(void)
     unsigned char nous = moi & 1, x;
     bandeau(0);
     ecrire(1, 0, T(T_V_ATOUT), GRIS_CLAIR, FOND_NOIR);
-    ecrire(1, 0, "BELOTE", JAUNE, FOND_NOIR);
+    if (reserve) {                              /* réserve en attente à la place du titre */
+        fmt(t, "RES%3u", reserve);
+        ecrire(1, 0, t, JAUNE, FOND_NOIR);
+    } else {
+        ecrire(1, 0, "BELOTE", JAUNE, FOND_NOIR);
+    }
     t[1] = 0;
     t[0] = atout >= 0 ? SYM(atout) : '?';
     ecrire(2 + strlen(T(T_V_ATOUT)), 0, t, BLANC, FOND_NOIR);
@@ -512,11 +517,17 @@ static void panneau_manche(void)
         coul = COUL_FONCE(capot_eq);
     } else if (litige_m) {
         id = T_P_LITIGE;
+    } else if (res_gagnee) {
+        id = T_P_RESERVE;
+        coul = COUL_FONCE(res_eq);
     } else if (pe >= 0) {
         id = manche_pts[pe] == 0 ? T_P_DEDANS : T_P_REUSSI;
         coul = COUL_FONCE(manche_pts[pe] == 0 ? pe + 1 : pe);
     }
-    if (id) {
+    if (id == T_P_LITIGE || id == T_P_RESERVE) {
+        fmt(t, T(id), id == T_P_LITIGE ? reserve : res_gagnee);
+        ligne_panneau(6, t, coul);
+    } else if (id) {
         ligne_panneau(6, T(id), coul);
     } else {
         ligne_panneau(6, "", NOIR);

@@ -292,6 +292,7 @@ class Table:
         if self.etat == ATTENTE:
             return
         client.envoyer(f"SCORE {self.scores[0]} {self.scores[1]}")
+        client.envoyer(f"RESERVE {self.reserve}")
         client.envoyer(f"DONNEUR {self.donneur}")
         if self.etat == FIN_MANCHE:
             if self._minuteur_manche is None:
@@ -401,7 +402,7 @@ class Table:
         self.etat = ATTENTE
         self.donne = None
         self.scores = [0, 0]
-        self.reserve = 0
+        self._vider_reserve()
         for siege in self.sieges:
             siege.nom_reserve = None
         self._diffuser("INFO PARTIE EFFACEE")
@@ -414,7 +415,7 @@ class Table:
 
     def _demarrer_partie(self) -> None:
         self.scores = [0, 0]
-        self.reserve = 0
+        self._vider_reserve()
         self.etat = LANCEE
         self._diffuser(f"ETAT {LANCEE}")
         self._diffuser("SCORE 0 0")
@@ -457,9 +458,15 @@ class Table:
                 self._diffuser(" ".join(map(str, evt)))
         self._apres_changement()
 
+    def _vider_reserve(self) -> None:
+        """Nouvelle partie ou partie effacée : la réserve en attente est perdue."""
+        if self.reserve:
+            self.reserve = 0
+            self._diffuser("RESERVE 0")
+
     def _fin_manche(self) -> None:
         res = self.donne.resultat(self.reserve)
-        self.reserve = res.reserve
+        avant, self.reserve = self.reserve, res.reserve
         self.scores[0] += res.points[0]
         self.scores[1] += res.points[1]
 
@@ -470,6 +477,8 @@ class Table:
         if res.reserve_gagnee:
             camp, points = res.reserve_gagnee
             self._diffuser(f"INFO RESERVE {points} POUR EQUIPE {camp}")
+        if self.reserve != avant:
+            self._diffuser(f"RESERVE {self.reserve}")
         self._diffuser(f"MANCHE {res.points[0]} {res.points[1]}")
         self._diffuser(f"SCORE {self.scores[0]} {self.scores[1]}")
 

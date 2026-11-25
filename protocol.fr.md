@@ -67,7 +67,10 @@ Autres cas :
 - Après REDONNE, le serveur enchaîne `ETAT EN COURS` et `DONNEUR P`, comme pour toute donne.
 - `MANCHE` inclut la réserve remportée, pour que `SCORE` reste la somme des `MANCHE` ; un
   `INFO RESERVE N POUR EQUIPE E` le signale.
-- Ordre en fin de manche : `PLI`, `CAPOT`, `LITIGE`, `INFO RESERVE`, `MANCHE`, `SCORE`, puis
+- `RESERVE N` (serveur v2.1) donne la réserve en attente, 0 quand il n'y en a plus : après `LITIGE`
+  ou `INFO RESERVE`, à la nouvelle partie, et à l'arrivée d'un joueur (après `SCORE`). Un client
+  qui ne le connaît pas l'ignore.
+- Ordre en fin de manche : `PLI`, `CAPOT`, `LITIGE`, `INFO RESERVE`, `RESERVE`, `MANCHE`, `SCORE`, puis
   `GAGNANT` et `ETAT`. Chaque message n'est présent que si le cas s'applique.
 - À la reconnexion pendant les enchères, `ENCHERES T` suit `RETOURNE`, pour que le client sache
   quel tour afficher.

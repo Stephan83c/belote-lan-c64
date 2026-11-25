@@ -112,8 +112,33 @@ def coups_legaux(main: list[int], pli: list[tuple[int, int]], atout: int, place:
         return list(main)
     if surcoupes:
         return surcoupes
-    # Impossible de surcouper : sous-couper seulement s'il ne reste que de l'atout.
-    return [c for c in main if couleur(c) != atout] or atouts
+    # Impossible de surcouper : on joue quand même un atout, plus faible (« pisser »), v2.1.
+    return atouts
+
+
+def coups_toleres(main: list[int], pli: list[tuple[int, int]], atout: int, place: int) -> list[int]:
+    """Cartes acceptées d'un joueur : `coups_legaux`, plus la défausse de l'ancienne règle.
+
+    Jusqu'à la v2.0, un adversaire coupait et l'on ne pouvait surcouper : la sous-coupe était
+    interdite, il fallait défausser. Les clients v2.0 ne proposent que ces défausses : le
+    serveur les accepte encore pour ne pas les bloquer (à retirer quand ils auront disparu).
+    """
+    legaux = coups_legaux(main, pli, atout, place)
+    if not pli:
+        return legaux
+    demandee = couleur(pli[0][1])
+    atouts = [c for c in main if couleur(c) == atout]
+    plus_fort_pose = max((force(c, atout) for _, c in pli if couleur(c) == atout), default=-1)
+    sous_coupe_forcee = (
+        demandee != atout
+        and not any(couleur(c) == demandee for c in main)
+        and gagnant_pli(pli, atout) != partenaire(place)
+        and atouts
+        and all(force(c, atout) <= plus_fort_pose for c in atouts)
+    )
+    if not sous_coupe_forcee:
+        return legaux
+    return legaux + [c for c in main if couleur(c) != atout]
 
 
 @dataclass(frozen=True)
@@ -284,7 +309,7 @@ class Donne:
 
     def jouer(self, place: int, c: int) -> list[tuple]:
         self._verifier_tour(place)
-        if self.phase is not Phase.JEU or c not in self.legaux(place):
+        if self.phase is not Phase.JEU or c not in coups_toleres(self.mains[place], self.pli, self.atout, place):
             raise CoupRefuse
 
         self.mains[place].remove(c)
