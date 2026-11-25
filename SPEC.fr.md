@@ -662,7 +662,7 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 
 - **Sons d’arrivée et de départ** — Faits en v2.1 (étape 59), avec un son de distribution.
 
-- **Son de changement de tour d’enchères** — Un son discret quand les deux tours d’enchères sont passés (tout le monde a passé) et que la donne repart vers une autre enchère, c’est-à-dire une nouvelle donne. À brancher sur le message du serveur qui annonce ce changement (tools/musique.py, c64/son.s ; cloche du terminal côté PC).
+- **Son de changement de tour d’enchères** — Couvert en v2.1 par le son de distribution (étape 59), joué aussi à chaque redonne.
 
 - **Joystick partout** — Le joystick ne sert pas encore : à la validation de l’écran de connexion (avec le choix de langue), à la sélection du salon, et pour lancer une nouvelle partie côté chef (F5). Prévoir le feu pour valider, haut/bas pour choisir le salon et la langue, et une façon de lancer la nouvelle partie sans clavier. Une analyse d’ensemble est à faire d’abord : recenser chaque écran et chaque touche (F1, F2, F5, F7…) pour rendre le jeu aussi complet que possible au joystick seul. Le joystick s’ajoute au clavier : toutes les fonctions existantes (pseudo, tchat, touches F) restent telles quelles. Le but est qu’un joueur qui ne tchate pas puisse, son nom saisi, tout faire au joystick sans retourner au clavier.
 

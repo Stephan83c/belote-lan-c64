@@ -664,7 +664,7 @@ These decisions override contradictory or older wording.
 
 - **Join and leave sounds** — Done in v2.1 (step 59), with a dealing sound.
 
-- **Bidding-round change sound** — A discreet sound when both bidding rounds are passed (everyone passed) and play moves on to another bid, i.e. a new deal. To be hooked to the server message announcing the change (tools/musique.py, c64/son.s; terminal bell on the PC).
+- **Bidding-round change sound** — Covered in v2.1 by the dealing sound (step 59), also played at each redeal.
 
 - **Joystick everywhere** — The joystick is not yet usable: to confirm the connection screen (with the language choice), to select the room, and to start a new game as host (F5). To do: fire to confirm, up/down to pick the room and the language, and a way to start the new game without the keyboard. An overall analysis comes first: list every screen and every key (F1, F2, F5, F7…) to make the game as fully playable as possible with the joystick alone. The joystick is added to the keyboard: all existing features (name, chat, F keys) stay as they are. The goal is that a player who does not chat can, once the name is typed, do everything with the joystick without going back to the keyboard.
 
