@@ -162,6 +162,16 @@ EFFETS = [  # dans l'ordre des numéros FX_ de c64/son.h
     # carte réunie au paquet (pli ramassé) : toc grave et feutré (triangle vers 150 Hz qui
     # descend, retombée rapide), bien plus discret que le claquement de la carte posée
     ("RAMASSE", 0x01, 0x00, images(TRI, [0x0A00, 0x0880, 0x0740, 0x0640], 1)),
+    # un humain s'assoit : deux notes qui montent (carillon d'entrée, triangle)
+    ("ARRIVEE", 0x0A, 0x00,
+     images(TRI, [frequence(note("C6"))] * 7 + [frequence(note("G6"))] * 14, 20)),
+    # un humain quitte la table : les mêmes notes qui descendent, plus graves
+    ("DEPART", 0x0A, 0x00,
+     images(TRI, [frequence(note("G5"))] * 7 + [frequence(note("C5"))] * 14, 20)),
+    # distribution : rafale de six petits claquements de bruit (cartes données une à une)
+    ("DONNE", 0x00, 0x00,
+     [(BRUIT | GATE, 0x3000 + 0x0400 * i) if j == 0 else (BRUIT, 0x3000 + 0x0400 * i)
+      for i in range(6) for j in range(2)]),
 ]
 
 

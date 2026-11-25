@@ -443,6 +443,8 @@ class Partie:
         self.journal = []           # (clé, arguments) ou ("tchat", nom, texte, place)
         self.erreur_join = None     # ERR reçu avant BIENVENUE
         self._rattrapage = False    # état complet envoyé après BIENVENUE, jusqu'au TOUR
+        self.cloche = False         # un humain arrive ou part : cloche du terminal au prochain dessin
+        self.sieges_vus = set()     # places déjà reçues depuis BIENVENUE
         self.nouvelle_donne()
 
     def nouvelle_donne(self) -> None:
@@ -515,8 +517,13 @@ class Partie:
             self.humains[n[1]] = True
             self.moi = n[1]
             self._rattrapage = True
+            self.sieges_vus = set()
             self._j("j_bienvenue", a[0])
         elif mot == "SIEGE" and len(a) >= 3 and 0 <= n[0] <= 3:
+            # Un humain arrive ou part (pas soi, pas l'état reçu à la connexion) : cloche.
+            if n[0] in self.sieges_vus and n[0] != self.moi and self.humains[n[0]] != (a[1] == "H"):
+                self.cloche = True
+            self.sieges_vus.add(n[0])
             self.humains[n[0]] = a[1] == "H"
             self.noms[n[0]] = a[2]
         elif mot == "CHEF" and a:
@@ -1321,6 +1328,10 @@ class App:
             self.taille = taille
             sys.stdout.write("\x1b[0m\x1b[2J")
             force = True
+        if self.partie.cloche:          # arrivée ou départ d'un humain (SPEC 6.4)
+            self.partie.cloche = False
+            sys.stdout.write("\a")
+            sys.stdout.flush()
         if not (self.sale or force):
             return
         self.sale = False

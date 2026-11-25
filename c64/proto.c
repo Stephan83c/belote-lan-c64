@@ -450,9 +450,11 @@ void traiter_ligne(char *ligne)
         }
         tampon[i] = 0;
         journal_place(preneur, tampon);
+        son_effet(FX_DONNE);                    /* fin de la distribution (3 cartes) */
         sale |= D_ENTETE | D_TABLE | D_ENCH | D_MAIN | D_BARRE;
     } else if (!strcmp(mot, "RETOURNE")) {
         retournee = (signed char)nombre();
+        son_effet(FX_DONNE);                    /* distribution des 5 premières cartes */
         sale |= D_TABLE | D_ENCH;
     } else if (!strcmp(mot, "ENCHERES")) {
         tour_ench = (unsigned char)nombre();
@@ -507,6 +509,11 @@ void traiter_ligne(char *ligne)
             ++reste;
         }
         if (p >= 0) {
+            /* Un humain arrive ou part (place déjà connue, pas la mienne) : un son.
+             * L'état envoyé à la connexion arrive sur des places vides : silence. */
+            if (noms[p][0] && p != moi && humain[p] != (*reste == 'H')) {
+                son_effet(*reste == 'H' ? FX_ARRIVEE : FX_DEPART);
+            }
             humain[p] = *reste == 'H';
             strncpy(noms[p], reste + 2, NOM_MAX);
             noms[p][NOM_MAX] = 0;
