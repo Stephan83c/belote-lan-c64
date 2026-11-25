@@ -656,7 +656,8 @@ static void valider(void)
         enchere(ench_sel + 1);
     } else if (a_moi_de_jouer()) {
         jouer(sel);
-    } else if (etat == E_FIN_MANCHE && (suite || suis_chef())) {
+    } else if ((etat == E_FIN_MANCHE && (suite || suis_chef()))
+               || (etat == E_FIN_PARTIE && suis_chef())) {   /* bouton = F5 */
         envoyer("REJOUER");
     }
 }

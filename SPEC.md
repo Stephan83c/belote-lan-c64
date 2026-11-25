@@ -142,22 +142,17 @@ The target score is 1000 by default and can be changed by the host in the server
 
 ```
 L0  BELOTE LAN C64               GAME OVER
-L2
-L3
-L4  US   : 1040
-L5  THEM :  870
-L6
-L7  WE WIN!
-L8
-L9
-L10
-L11 F5 = NEW GAME   (HOST ONLY)
-L12 F7 = QUIT
+L6                US   : 1040
+L8                THEM :  870
+L11                  WE WIN!
+L14          F5 OR BUTTON: NEW GAME
+L16          F7: QUIT
+L24             F5 NEW GAME F7 QUIT
 ```
 
 ## 3. Keys
 
-On the waiting table, F1 is reserved for the server settings. The game rules are shown with F8. F2 starts the game, F3 opens the chat, F5 moves to the next round straight away at the end of a round, without waiting for the pause to end (cumulative score kept, any player) and F7 quits. On the end-of-game screen, F5 starts a new game and resets the scores. During bidding, 1 to 4 choose an option; during play, 1 to 8 play the numbered cards of the hand; RETURN confirms the name on the connection screen. Since v1.7, the joystick in port 2 (or the cursor keys and RETURN / SPACE) does everything without the keyboard: see the last two lines of the table.
+On the waiting table, F1 is reserved for the server settings. The game rules are shown with F8. F2 starts the game, F3 opens the chat, F5 moves to the next round straight away at the end of a round, without waiting for the pause to end (cumulative score kept, any player) and F7 quits. On the end-of-game screen, F5 (or the joystick button, v2.1) starts a new game and resets the scores; only the host sees that line, the others read "THE HOST STARTS THE NEW GAME". During bidding, 1 to 4 choose an option; during play, 1 to 8 play the numbered cards of the hand; RETURN confirms the name on the connection screen. Since v1.7, the joystick in port 2 (or the cursor keys and RETURN / SPACE) does everything without the keyboard: see the last two lines of the table.
 
 | Key | C64 code | Action / availability |
 |---|---|---|
@@ -663,7 +658,7 @@ These decisions override contradictory or older wording.
 
 - **Bots** — Strengthened in v2.0 (4.4): bidding on the hand's value, trumps drawn by the taker, partner's trick loaded. Next ideas: count the fallen trumps to know when to ruff, the last-trick 10, play according to the taker's seat; to be measured with tools/duel_bots.py.
 
-- **End-of-game screen (C64)** — Scores, victory line, F5 and F7 are centred (v2.0 touched up). Still to do: align F5/F7 as one block, centre the bottom bar, shorten "F5 = NOUVELLE PARTIE (CHEF SEULEMENT)" in French.
+- **End-of-game screen (C64)** — Finished in v2.1 (step 58): F5/F7 block aligned, bar centred, joystick button for the host.
 
 - **Client type in the logs** — The server cannot tell whether a connection comes from a C64 or from the PC client: both send the same sequence (SALONS, JOIN). Proposal: a `CLIENT C64 2.0` or `CLIENT PC 2.0` line before SALONS, logged by the server, absence tolerated (old clients = "unknown"). Deploy the server before the clients (a v2.0 server answers ERR NOM, which clients must ignore). Touches salons.py, proto.c, pc/belote_lan.py, protocol, SPEC, tests.
 
@@ -744,3 +739,4 @@ These decisions override contradictory or older wording.
 | 55 | Visible reserve (25 November 2026, requested by Stéphan): while a reserve is pending, the header shows RES 81 instead of BELOTE (C64) or “Reserve 81” after the scores (PC); the end-of-round board shows TIE: RESERVE 81, then +81 FROM RESERVE when it is won. New message `RESERVE N` (pending reserve), also sent to whoever arrives; a v2.1 client on a v2.0 server works it out from LITIGE and INFO RESERVE. VICE scenarios 9 (tie) and 10 (reserve won). | Server and clients; to be released with v2.1. |
 | 56 | Bot styles in the server (25 November 2026): `server/belote/styles.py` (taken from `tools/styles.py`), 15 names (BOT1 to BOT5, BOT12, BOT13…), drawn at each new game, at each reset and when a bot replaces a human, never the same name twice at a table; style's taking threshold (`choisir_enchere(..., seuil)`), PIMC objective and feint (`pimc.choisir(..., objectif, tolerance)`). `--sans-styles` option. C64 and PC clients: show the name sent by the server; with a v2.0 server (all “BOT”), BOT1 to BOT4 by seat as before. A v2.0 client on a v2.1 server keeps its names by seat. | Server and clients; to be released with v2.1. |
 | 57 | Joystick on the connection and room screens (25 November 2026): the bug present since v1.7 is fixed, `touche_connexion` (c64/main.c) returns the key as soon as a joystick action is recognised instead of calling `cbm_k_getin()` again, which overwrote it. Right and left change the language, up and down move between fields or rooms, the button confirms. Checked on the C64 Ultimate. Bots also get new styles at each reset (RAZ, Stéphan's request). | C64 client and server; to be released with v2.1. |
+| 58 | End-of-game screen finished (25 November 2026): the joystick button starts the new game for the host (like F5); the host reads "F5 OR BUTTON: NEW GAME", the others "THE HOST STARTS THE NEW GAME", in a left-aligned block with "F7: QUIT", centred; bottom bar centred. Checked in VICE and on the C64 Ultimate. 276 bytes: ONCE segment ends at `$BC32`, about 970 bytes of margin. | C64 client; to be released with v2.1. |

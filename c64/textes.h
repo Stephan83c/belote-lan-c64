@@ -110,6 +110,7 @@ enum {
     T_F_VICT_NOUS,
     T_F_VICT_EUX,
     T_F_NOUVELLE,
+    T_F_ATTENTE,
     T_F_QUITTER,
     T_REGLES,                       /* 21 lignes */
     NB_TEXTES = T_REGLES + 21

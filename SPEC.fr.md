@@ -140,22 +140,17 @@ Le score cible est 1000 par défaut et peut être modifié par le chef dans les 
 
 ```
 L0  BELOTE LAN C64         PARTIE TERMINEE
-L2
-L3
-L4  NOUS : 1040
-L5  EUX  :  870
-L6
-L7  VICTOIRE DE NOUS !
-L8
-L9
-L10
-L11 F5 = NOUVELLE PARTIE   (CHEF SEULEMENT)
-L12 F7 = QUITTER
+L6                NOUS : 1040
+L8                EUX  :  870
+L11            VICTOIRE DE NOUS !
+L14     F5 OU BOUTON : NOUVELLE PARTIE
+L16     F7 : QUITTER
+L24          F5 NOUVELLE PARTIE F7 QUIT
 ```
 
 ## 3. Touches
 
-La table d’attente réserve F1 aux paramètres serveur. Les règles du jeu se consultent avec F8. F2 lance la partie, F3 ouvre le tchat, F5 passe tout de suite à la manche suivante en fin de manche, sans attendre la fin de la pause (score cumulé conservé, tout joueur) et F7 quitte. Sur l’écran de fin de partie, F5 démarre une nouvelle partie et remet les scores à zéro. Pendant les enchères, 1 à 4 choisissent une option ; pendant le jeu, 1 à 8 jouent les cartes numérotées de la main ; RETURN valide le nom à la connexion. Depuis la v1.7, le joystick en port 2 (ou les flèches et RETURN / ESPACE) permet de tout faire sans clavier : voir les deux dernières lignes du tableau.
+La table d’attente réserve F1 aux paramètres serveur. Les règles du jeu se consultent avec F8. F2 lance la partie, F3 ouvre le tchat, F5 passe tout de suite à la manche suivante en fin de manche, sans attendre la fin de la pause (score cumulé conservé, tout joueur) et F7 quitte. Sur l’écran de fin de partie, F5 (ou le bouton du joystick, v2.1) démarre une nouvelle partie et remet les scores à zéro ; le chef seul voit cette ligne, les autres lisent « LE CHEF LANCE LA NOUVELLE PARTIE ». Pendant les enchères, 1 à 4 choisissent une option ; pendant le jeu, 1 à 8 jouent les cartes numérotées de la main ; RETURN valide le nom à la connexion. Depuis la v1.7, le joystick en port 2 (ou les flèches et RETURN / ESPACE) permet de tout faire sans clavier : voir les deux dernières lignes du tableau.
 
 | Touche | Code C64 | Action / disponibilité |
 |---|---|---|
@@ -661,7 +656,7 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 
 - **Bots** — Renforcés en v2.0 (4.4) : enchères à la valeur de la main, atouts tirés par le preneur, partenaire chargé. Pistes suivantes : compter les atouts tombés pour savoir quand couper, le 10 de der, jouer selon la place du preneur ; à mesurer avec tools/duel_bots.py.
 
-- **Écran de fin de partie (C64)** — Scores, victoire, F5 et F7 sont centrés (v2.0 retouchée). Reste à finir : aligner F5/F7 en un bloc, centrer la barre du bas, raccourcir « F5 = NOUVELLE PARTIE (CHEF SEULEMENT) » en français.
+- **Écran de fin de partie (C64)** — Fini en v2.1 (étape 58) : bloc F5/F7 aligné, barre centrée, bouton du joystick pour le chef.
 
 - **Type de client dans les logs** — Le serveur ne sait pas si une connexion vient d’un C64 ou du client PC : les deux envoient la même séquence (SALONS, JOIN). Proposition : une ligne `CLIENT C64 2.0` ou `CLIENT PC 2.0` avant SALONS, loguée par le serveur, absence tolérée (anciens clients = « inconnu »). Déployer le serveur avant les clients (un serveur v2.0 répond ERR NOM, que les clients doivent ignorer). Touche salons.py, proto.c, pc/belote_lan.py, protocol, SPEC, tests.
 
@@ -742,3 +737,4 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 55 | Réserve visible (25 novembre 2026, demande de Stéphan) : tant qu'une réserve attend, l'en-tête affiche RES 81 à la place de BELOTE (C64) ou « Réserve 81 » après les scores (PC) ; le tableau de fin de manche affiche LITIGE : RES. 81, puis +81 DE RESERVE quand elle est remportée. Nouveau message `RESERVE N` (réserve en attente), aussi envoyé à qui arrive ; un client v2.1 sur un serveur v2.0 la déduit de LITIGE et INFO RESERVE. Scénarios VICE 9 (litige) et 10 (réserve remportée). | Serveur et clients ; à publier avec la v2.1. |
 | 56 | Bots à style dans le serveur (25 novembre 2026) : `server/belote/styles.py` (repris de `tools/styles.py`), 15 noms (BOT1 à BOT5, BOT12, BOT13…), tirés à chaque nouvelle partie, à chaque RAZ et quand un bot remplace un humain, jamais deux fois le même nom à une table ; seuil de prise du style (`choisir_enchere(..., seuil)`), objectif du PIMC et feinte (`pimc.choisir(..., objectif, tolerance)`). Option `--sans-styles`. Clients C64 et PC : affichent le nom envoyé par le serveur ; avec un serveur v2.0 (tous « BOT »), BOT1 à BOT4 par place comme avant. Un client v2.0 sur un serveur v2.1 garde ses noms par place. | Serveur et clients ; à publier avec la v2.1. |
 | 57 | Joystick de l'écran de connexion et des salons (25 novembre 2026) : le bogue présent depuis la v1.7 est corrigé, `touche_connexion` (c64/main.c) renvoie la touche dès qu'une action du joystick est reconnue au lieu de rappeler `cbm_k_getin()`, qui l'écrasait. Droite et gauche changent la langue, haut et bas passent d'un champ ou d'un salon à l'autre, le bouton valide. Vérifié sur le C64 Ultimate. Les bots reçoivent aussi de nouveaux styles à chaque RAZ (demande de Stéphan). | Client C64 et serveur ; à publier avec la v2.1. |
+| 58 | Écran de fin de partie fini (25 novembre 2026) : le bouton du joystick lance la nouvelle partie pour le chef (comme F5) ; le chef lit « F5 OU BOUTON : NOUVELLE PARTIE », les autres « LE CHEF LANCE LA NOUVELLE PARTIE », en un bloc aligné à gauche avec « F7 : QUITTER », centré ; barre du bas centrée. Vérifié dans VICE et sur le C64 Ultimate. 276 octets : fin du segment ONCE en `$BC32`, environ 970 octets de marge. | Client C64 ; à publier avec la v2.1. |

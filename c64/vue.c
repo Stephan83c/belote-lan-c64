@@ -44,9 +44,9 @@ unsigned char vue_courante(void)
 
 /* Barre de touches sur le bandeau noir du bas : les touches (F1 à F8, 1-8, 1-4)
  * en jaune, le reste en gris clair. */
-void barre(const char *s)
+static void barre_a(unsigned char x, const char *s)
 {
-    unsigned char x = 1, n = 0;
+    unsigned char n = 0;
     char c[2];
     bandeau(24);
     c[1] = 0;
@@ -61,6 +61,11 @@ void barre(const char *s)
             --n;
         }
     }
+}
+
+void barre(const char *s)
+{
+    barre_a(1, s);
 }
 
 static void barre_table(void)
@@ -642,9 +647,15 @@ static void vue_fin(void)
     if (gagnant >= 0) {
         centrer(11, T(gagnant == (moi & 1) ? T_F_VICT_NOUS : T_F_VICT_EUX), JAUNE);
     }
-    centrer(14, T(T_F_NOUVELLE), BLANC);
-    centrer(16, T(T_F_QUITTER), BLANC);
-    barre(T(suis_chef() ? T_B_FIN_CHEF : T_B_FIN));
+    {
+        /* F5 (ou l'attente du chef) et F7 en un bloc aligné à gauche, centré */
+        const char *l1 = T(suis_chef() ? T_F_NOUVELLE : T_F_ATTENTE), *l2 = T(T_F_QUITTER);
+        unsigned char n = strlen(l1) > strlen(l2) ? strlen(l1) : strlen(l2), x = (40 - n) / 2;
+        ecrire(x, 14, l1, BLANC, FOND_VERT);
+        ecrire(x, 16, l2, BLANC, FOND_VERT);
+        l1 = T(suis_chef() ? T_B_FIN_CHEF : T_B_FIN);
+        barre_a((40 - strlen(l1)) / 2, l1);
+    }
 }
 
 static unsigned char derniere = 0xFF;
