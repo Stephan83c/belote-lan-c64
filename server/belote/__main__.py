@@ -78,6 +78,7 @@ async def gerer_client(table: Table | Salons, reader: asyncio.StreamReader, writ
     premiere = None
     derniere = None
     a_ete_assis = False
+    type_client = "inconnu"       # CLIENT C64 2.1, CLIENT PC 2.1 ; absent avant la v2.1
 
     minuteur = None
 
@@ -106,6 +107,11 @@ async def gerer_client(table: Table | Salons, reader: asyncio.StreamReader, writ
                     break
                 if ligne is TROP_LONG:
                     client.envoyer("ERR TROP LONG")
+                elif ligne.startswith("CLIENT ") and not table.est_assis(client):
+                    # Type de client, pour les logs ; réponse attendue par les clients v2.1.
+                    type_client = "".join(c for c in ligne[7:27] if " " <= c <= "~")
+                    log.info("client %s : %s", pair, type_client)
+                    client.envoyer("CLIENT OK")
                 else:
                     table.recevoir(client, ligne)
                     a_ete_assis = a_ete_assis or table.est_assis(client)
@@ -117,8 +123,8 @@ async def gerer_client(table: Table | Salons, reader: asyncio.StreamReader, writ
         assis = a_ete_assis or table.est_assis(client)
         table.deconnexion(client)
         client.fermer()
-        log.info("deconnexion %s apres %.1f s, %d octets recus, %s, 1re ligne : %s, derniere : %s", pair,
-                 time.monotonic() - debut, octets, "assis" if assis else "jamais assis",
+        log.info("deconnexion %s (%s) apres %.1f s, %d octets recus, %s, 1re ligne : %s, derniere : %s",
+                 pair, type_client, time.monotonic() - debut, octets, "assis" if assis else "jamais assis",
                  ascii(premiere[:40]) if premiere is not None else "aucune",
                  ascii(derniere[:40]) if derniere is not None else "aucune")
 

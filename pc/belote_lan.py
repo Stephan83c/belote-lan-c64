@@ -930,6 +930,7 @@ class App:
         # Salons : liste reçue [(humains, en jeu)], None hors de l'écran des salons
         self.salons = None
         self.attente_salons = False   # SALONS envoyé, liste pas encore complète
+        self.attend_client = False    # CLIENT envoyé, sa réponse (CLIENT OK ou ERR) est à jeter
         self.salons_recus = []
         self.nb_salons = 0
         self.sal_sel = 0
@@ -1085,6 +1086,8 @@ class App:
         self.sel = self.ench_sel = 0
         self.tchat = self.question = self.regl = None
         self.aide = self.voir_dernier = False
+        self.reseau.envoyer("CLIENT PC " + VERSION)   # type de client, pour les logs du serveur
+        self.attend_client = True
         self.demander_salons()
 
     # -- salons
@@ -1154,6 +1157,12 @@ class App:
         p = self.partie
         if p is None:
             return
+        if self.attend_client:
+            # Première réponse après CLIENT : CLIENT OK (serveur v2.1) ou ERR (plus ancien), à
+            # jeter : un ERR pris pour la réponse à SALONS ferait croire à un serveur sans salons.
+            self.attend_client = False
+            if ligne.split(" ", 1)[0] in ("CLIENT", "ERR"):
+                return
         if self.attente_salons and self.ligne_salons(ligne):
             return
         avant_tour = p.tour

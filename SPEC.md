@@ -428,6 +428,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 
 | Message | Trigger | Meaning / server check |
 |---|---|---|
+| CLIENT TYPE VERSION *(v2.1)* | First line after connecting | Client type (C64 or PC) and version, written to the server logs. Answer CLIENT OK; an older server answers ERR NOM. The client drops this first reply, whatever it is. |
 | SALONS *(v2.0)* | After connecting | Room list: SALONS N, then SALON I H STATE per room (4.5). |
 | JOIN NAME [I] | RETURN after typing the name (and choosing the room) | Join; name of 6 characters at most, uniqueness enforced by the server; I: room (1 if no number). |
 | LANCER | F2 | Host only, in ATTENTE; otherwise ERR CHEF SEUL or ERR DEJA LANCEE. |
@@ -660,7 +661,7 @@ These decisions override contradictory or older wording.
 
 - **End-of-game screen (C64)** — Finished in v2.1 (step 58): F5/F7 block aligned, bar centred, joystick button for the host.
 
-- **Client type in the logs** — The server cannot tell whether a connection comes from a C64 or from the PC client: both send the same sequence (SALONS, JOIN). Proposal: a `CLIENT C64 2.0` or `CLIENT PC 2.0` line before SALONS, logged by the server, absence tolerated (old clients = "unknown"). Deploy the server before the clients (a v2.0 server answers ERR NOM, which clients must ignore). Touches salons.py, proto.c, pc/belote_lan.py, protocol, SPEC, tests.
+- **Client type in the logs** — Done in v2.1 (step 60): CLIENT line, CLIENT OK answer.
 
 - **Join and leave sounds** — Done in v2.1 (step 59), with a dealing sound.
 
@@ -741,3 +742,4 @@ These decisions override contradictory or older wording.
 | 57 | Joystick on the connection and room screens (25 November 2026): the bug present since v1.7 is fixed, `touche_connexion` (c64/main.c) returns the key as soon as a joystick action is recognised instead of calling `cbm_k_getin()` again, which overwrote it. Right and left change the language, up and down move between fields or rooms, the button confirms. Checked on the C64 Ultimate. Bots also get new styles at each reset (RAZ, Stéphan's request). | C64 client and server; to be released with v2.1. |
 | 58 | End-of-game screen finished (25 November 2026): the joystick button starts the new game for the host (like F5); the host reads "F5 OR BUTTON: NEW GAME", the others "THE HOST STARTS THE NEW GAME", in a left-aligned block with "F7: QUIT", centred; bottom bar centred. Checked in VICE and on the C64 Ultimate. 276 bytes: ONCE segment ends at `$BC32`, about 970 bytes of margin. | C64 client; to be released with v2.1. |
 | 59 | Sounds (25 November 2026, Stéphan's request): a human arrives at the table (two rising notes), leaves (two falling notes, also when a bot replaces an idle player), never for oneself, for the state received on connection or for a renamed bot; card dealing (six small clicks) at the turned-up card and after the take. PC client: terminal bell on arrival and departure. tools/musique.py (FX_ARRIVEE, FX_DEPART, FX_DONNE). 304 bytes: ONCE segment ends at `$BD62`, about 670 bytes of margin. Checked on the C64 Ultimate. | Clients only; to be released with v2.1. |
+| 60 | Client type in the logs (25 November 2026): v2.1 clients send `CLIENT C64 2.1` or `CLIENT PC 2.1` as their first line; the server answers `CLIENT OK` and logs the type ("client …: C64 2.1", and in the disconnection line, "inconnu" for an older client). A v2.0 server answers `ERR NOM`: the client drops the first reply whatever it is, otherwise it would take that ERR for the answer to SALONS (server without rooms). 92 bytes on the C64: ONCE segment ends at `$BDBE`, about 580 bytes of margin. | Server and clients; to be released with v2.1. |

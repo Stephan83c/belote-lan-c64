@@ -426,6 +426,7 @@ POINTS(E), SCORE(E), RESERVE ; E=0 : P0+P2, E=1 : P1+P3
 
 | Message | Déclencheur | Sens / contrôle serveur |
 |---|---|---|
+| CLIENT TYPE VERSION *(v2.1)* | Première ligne après la connexion | Type de client (C64 ou PC) et version, notés dans les logs du serveur. Réponse CLIENT OK ; un serveur plus ancien répond ERR NOM. Le client jette cette première réponse, quelle qu’elle soit. |
 | SALONS *(v2.0)* | Après la connexion | Liste des salons : SALONS N, puis SALON I H ETAT par salon (4.5). |
 | JOIN NOM [I] | RETURN après saisie du nom (et choix du salon) | Rejoindre ; nom de 6 caractères maximum, unicité appliquée côté serveur ; I : salon (1 sans numéro). |
 | LANCER | F2 | Chef seulement, en ATTENTE ; sinon ERR CHEF SEUL ou ERR DEJA LANCEE. |
@@ -658,7 +659,7 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 
 - **Écran de fin de partie (C64)** — Fini en v2.1 (étape 58) : bloc F5/F7 aligné, barre centrée, bouton du joystick pour le chef.
 
-- **Type de client dans les logs** — Le serveur ne sait pas si une connexion vient d’un C64 ou du client PC : les deux envoient la même séquence (SALONS, JOIN). Proposition : une ligne `CLIENT C64 2.0` ou `CLIENT PC 2.0` avant SALONS, loguée par le serveur, absence tolérée (anciens clients = « inconnu »). Déployer le serveur avant les clients (un serveur v2.0 répond ERR NOM, que les clients doivent ignorer). Touche salons.py, proto.c, pc/belote_lan.py, protocol, SPEC, tests.
+- **Type de client dans les logs** — Fait en v2.1 (étape 60) : ligne CLIENT, réponse CLIENT OK.
 
 - **Sons d’arrivée et de départ** — Faits en v2.1 (étape 59), avec un son de distribution.
 
@@ -739,3 +740,4 @@ Ces décisions priment sur les formulations contradictoires ou plus anciennes.
 | 57 | Joystick de l'écran de connexion et des salons (25 novembre 2026) : le bogue présent depuis la v1.7 est corrigé, `touche_connexion` (c64/main.c) renvoie la touche dès qu'une action du joystick est reconnue au lieu de rappeler `cbm_k_getin()`, qui l'écrasait. Droite et gauche changent la langue, haut et bas passent d'un champ ou d'un salon à l'autre, le bouton valide. Vérifié sur le C64 Ultimate. Les bots reçoivent aussi de nouveaux styles à chaque RAZ (demande de Stéphan). | Client C64 et serveur ; à publier avec la v2.1. |
 | 58 | Écran de fin de partie fini (25 novembre 2026) : le bouton du joystick lance la nouvelle partie pour le chef (comme F5) ; le chef lit « F5 OU BOUTON : NOUVELLE PARTIE », les autres « LE CHEF LANCE LA NOUVELLE PARTIE », en un bloc aligné à gauche avec « F7 : QUITTER », centré ; barre du bas centrée. Vérifié dans VICE et sur le C64 Ultimate. 276 octets : fin du segment ONCE en `$BC32`, environ 970 octets de marge. | Client C64 ; à publier avec la v2.1. |
 | 59 | Sons (25 novembre 2026, demande de Stéphan) : arrivée d'un humain à la table (deux notes qui montent), départ (deux notes qui descendent, aussi quand un bot remplace un inactif), jamais pour soi ni pour l'état reçu à la connexion ni pour un bot renommé ; distribution des cartes (six petits claquements) à la retournée et après la prise. Client PC : cloche du terminal à l'arrivée et au départ. tools/musique.py (FX_ARRIVEE, FX_DEPART, FX_DONNE). 304 octets : fin du segment ONCE en `$BD62`, environ 670 octets de marge. Vérifié sur le C64 Ultimate. | Clients seulement ; à publier avec la v2.1. |
+| 60 | Type de client dans les logs (25 novembre 2026) : les clients v2.1 envoient `CLIENT C64 2.1` ou `CLIENT PC 2.1` en première ligne ; le serveur répond `CLIENT OK` et note le type (« client … : C64 2.1 », et dans la ligne de déconnexion, « inconnu » pour un ancien client). Un serveur v2.0 répond `ERR NOM` : le client jette la première réponse quelle qu'elle soit, sinon il prendrait cet ERR pour la réponse à SALONS (serveur sans salons). 92 octets sur le C64 : fin du segment ONCE en `$BDBE`, environ 580 octets de marge. | Serveur et clients ; à publier avec la v2.1. |

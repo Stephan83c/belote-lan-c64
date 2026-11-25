@@ -30,6 +30,7 @@ signed char entame = -1;
 int manche_pts[2];
 signed char capot_eq = -1;
 unsigned char litige_m;
+unsigned char attend_client;
 unsigned reserve, res_gagnee;
 signed char res_eq;
 unsigned char suite, suite_vue, manche_nous;
@@ -350,6 +351,15 @@ void traiter_ligne(char *ligne)
         *reste++ = 0;
     } else {
         reste = ligne + strlen(ligne);
+    }
+
+    /* Première réponse après CLIENT : CLIENT OK (serveur v2.1) ou ERR (plus ancien), à jeter :
+     * un ERR pris pour la réponse à SALONS ferait croire à un serveur sans salons. */
+    if (attend_client) {
+        attend_client = 0;
+        if (!strcmp(mot, "CLIENT") || !strcmp(mot, "ERR")) {
+            return;
+        }
     }
 
     if (!strcmp(mot, "TOUR")) {

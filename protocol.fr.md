@@ -11,6 +11,7 @@ que la spec laisse ouvert.
     make server            # dans un terminal
     nc localhost 6464      # dans un autre
 
+    CLIENT PC 2.1          type de client, noté dans les logs (serveur v2.1 : CLIENT OK)
     SALONS                 liste des salons (SALONS N, puis SALON I H ETAT), avant JOIN
     JOIN JEAN 3            rejoindre le salon 3 (sans numéro : salon 1) ; place P0 et chef si
                            la table est vide
@@ -55,7 +56,10 @@ Erreurs ajoutées au format `ERR TEXTE` :
 
 Autres cas :
 
-- Toute commande avant JOIN (sauf SALONS et LEAVE), ou un second JOIN, reçoit `ERR NOM`.
+- Toute commande avant JOIN (sauf CLIENT, SALONS et LEAVE), ou un second JOIN, reçoit `ERR NOM`.
+- `CLIENT TYPE VERSION` (clients v2.1, première ligne envoyée) reçoit `CLIENT OK` ; un serveur plus
+  ancien répond `ERR NOM`. Le client jette cette première réponse quelle qu'elle soit, pour qu'un `ERR`
+  ne soit jamais pris pour la réponse à `SALONS`.
 - `JOIN NOM I` avec un salon plein reçoit `ERR TABLE PLEINE` sans fermeture (en choisir un autre) ;
   numéro hors de 1 à N : `ERR SALON` (v2.0).
 - Table pleine, ou trop de connexions ouvertes (64 en tout, 8 depuis une même IP, serveur v2.0) :

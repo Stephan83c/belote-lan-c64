@@ -262,3 +262,22 @@ def test_liste_des_salons_laisse_le_temps_de_choisir():
         lecteur.writer.close()
         srv.close()
     asyncio.run(corps())
+
+
+def test_client_annonce_son_type_et_recoit_client_ok(caplog):
+    # v2.1 : CLIENT C64 2.1 avant SALONS ; réponse CLIENT OK, type noté dans les logs.
+    async def corps():
+        table, srv, port = await serveur()
+        j = await connecter(port)
+        await j.envoyer("CLIENT C64 2.1")
+        assert await j.lire() == "CLIENT OK"
+        await j.envoyer("JOIN JEAN")
+        await j.lire_jusqu_a("PARAM INACTIF 3")
+        j.writer.close()
+        await asyncio.sleep(0.1)
+        srv.close()
+        await srv.wait_closed()
+
+    with caplog.at_level("INFO"):
+        asyncio.run(corps())
+    assert "C64 2.1" in caplog.text

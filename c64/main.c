@@ -456,6 +456,8 @@ static void connexion(void)
         lg = deborde = 0;
         perdu = 0;
         msg = 0;
+        envoyer("CLIENT C64 " VERSION);         /* type de client, pour les logs du serveur */
+        attend_client = 1;
         for (;;) {
             s = choisir_salon(msg);
             if (s == K_F7) {

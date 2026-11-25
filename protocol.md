@@ -17,6 +17,7 @@ MANCHE round score, LITIGE tie, GAGNANT winner, CIBLE target score, INACTIF idle
     make server            # in one terminal
     nc localhost 6464      # in another
 
+    CLIENT PC 2.1          client type, written to the logs (v2.1 server: CLIENT OK)
     SALONS                 room list (SALONS N, then SALON I H STATE), before JOIN
     JOIN JEAN 3            join room 3 (no number: room 1); seat P0 and host if the table
                            is empty
@@ -61,7 +62,10 @@ Errors added, in the form `ERR TEXT`:
 
 Other cases:
 
-- Any command before JOIN (except SALONS and LEAVE), or a second JOIN, gets `ERR NOM`.
+- Any command before JOIN (except CLIENT, SALONS and LEAVE), or a second JOIN, gets `ERR NOM`.
+- `CLIENT TYPE VERSION` (v2.1 clients, first line sent) gets `CLIENT OK`; an older server answers
+  `ERR NOM`. The client drops this first reply whatever it is, so an `ERR` is never taken for the
+  answer to `SALONS`.
 - `JOIN NAME I` on a full room gets `ERR TABLE PLEINE` without closing (choose another);
   a number outside 1 to N: `ERR SALON` (v2.0).
 - Table full, or too many open connections (64 in all, 8 from one IP, server v2.0):
