@@ -119,3 +119,16 @@ def test_feinteur_ne_trompe_pas_son_partenaire_maitre():
     avec = pimc.choisir(main, pli, [], [c for _, c in pli], COEUR, 0, 1, H(NEUF), [0, 0], [0, 0],
                         tirages=20, rng=random.Random(5), tolerance=1000.0)
     assert avec == sans
+
+
+@dans_boucle
+def test_raz_retire_les_styles_des_bots():
+    t = Table(rng=random.Random(3), delai_bot=3600)
+    a = rejoindre(t, "A")
+    t.recevoir(a, "LANCER")
+    a.vider()
+    assert t.raz()
+    sieges = [l for l in a.lignes if l.startswith("SIEGE")]
+    assert [l.split()[1] for l in sieges] == ["1", "2", "3"]
+    assert a.lignes.index(sieges[-1]) < a.lignes.index("ETAT ATTENTE")
+    assert len(set(noms_bots(t))) == 3

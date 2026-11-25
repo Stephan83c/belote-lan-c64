@@ -950,7 +950,7 @@ def test_raz_efface_la_partie_et_arrete_les_bots():
         t.reserve = 81
         a.vider()
         assert t.raz() is True
-        assert a.lignes == ["RESERVE 0", "INFO PARTIE EFFACEE", "SCORE 0 0", "ETAT ATTENTE"]
+        assert [l for l in a.lignes if not l.startswith("SIEGE")] == ["RESERVE 0", "INFO PARTIE EFFACEE", "SCORE 0 0", "ETAT ATTENTE"]
         assert t.donne is None and t.scores == [0, 0] and t.reserve == 0
         assert t.cible == 500
         a.vider()

@@ -111,6 +111,17 @@ class Table:
         siege.numero = tirer_numero(pris, self.rng)
         siege.nom = nom_bot(siege.numero)
 
+    def _nouveaux_styles(self) -> None:
+        """Nouvelle partie ou RAZ : nouveaux styles pour tous les bots, annoncés aux joueurs."""
+        if not self.styles:
+            return
+        bots = [p for p, s in enumerate(self.sieges) if s.humain is None]
+        for p in bots:
+            self.sieges[p].numero = None
+        for p in bots:
+            self._donner_style(p)
+            self._diffuser(self._ligne_siege(p))
+
     def _mode_bot(self, place: int) -> tuple[str, int, float]:
         """(objectif du PIMC, seuil de prise, tolérance de feinte) du bot de `place`."""
         numero = self.sieges[place].numero
@@ -435,6 +446,7 @@ class Table:
             siege.nom_reserve = None
         self._diffuser("INFO PARTIE EFFACEE")
         self._diffuser("SCORE 0 0")
+        self._nouveaux_styles()
         self._diffuser(f"ETAT {ATTENTE}")
         self._apres_changement()
         return True
@@ -445,13 +457,7 @@ class Table:
         self.scores = [0, 0]
         self._vider_reserve()
         self.etat = LANCEE
-        if self.styles:                 # nouvelle partie : nouveaux styles pour les bots
-            bots = [p for p, s in enumerate(self.sieges) if s.humain is None]
-            for p in bots:
-                self.sieges[p].numero = None
-            for p in bots:
-                self._donner_style(p)
-                self._diffuser(self._ligne_siege(p))
+        self._nouveaux_styles()
         self._diffuser(f"ETAT {LANCEE}")
         self._diffuser("SCORE 0 0")
         self._nouvelle_donne()

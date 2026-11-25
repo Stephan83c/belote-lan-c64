@@ -143,7 +143,12 @@ static unsigned char touche_connexion(void)
 {
     unsigned char c, j, nv;
 
-    while (!(c = cbm_k_getin())) {
+    /* Sortir dès qu'une action est reconnue : avant la v2.1, la boucle rappelait
+     * cbm_k_getin() et écrasait la touche du joystick (bogue présent depuis la v1.7). */
+    for (;;) {
+        if ((c = cbm_k_getin()) != 0) {
+            return c;
+        }
         reseau();
         if (perdu) {
             return K_F7;
@@ -152,18 +157,17 @@ static unsigned char touche_connexion(void)
         nv = j & ~joy_avant;
         joy_avant = j;
         if (JOY_BTN_1(nv)) {
-            c = K_RETURN;
+            return K_RETURN;
         } else if (JOY_RIGHT(nv)) {
-            c = K_F1;
+            return K_F1;
         } else if (JOY_LEFT(nv)) {
-            c = K_LANGUE_PREC;
+            return K_LANGUE_PREC;
         } else if (JOY_UP(nv)) {
-            c = K_HAUT;
+            return K_HAUT;
         } else if (JOY_DOWN(nv)) {
-            c = K_BAS;
+            return K_BAS;
         }
     }
-    return c;
 }
 
 /* Saisie bloquante d'un champ ; renvoie la touche qui la termine. */
