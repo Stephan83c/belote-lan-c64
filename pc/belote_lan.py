@@ -27,7 +27,7 @@ import unicodedata
 from pathlib import Path
 
 VERSION = "2.0"
-SERVEUR_DEFAUT = "51.38.50.79"
+SERVEUR_DEFAUT = "boombass.net"
 PORT_DEFAUT = 6464
 LARGEUR, HAUTEUR = 80, 24
 NOM_MAX = 6

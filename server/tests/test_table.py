@@ -2,6 +2,7 @@
 
 import asyncio
 import random
+import time
 
 import pytest
 
@@ -42,6 +43,11 @@ def rejoindre(table, nom="JEAN"):
     client = FauxClient()
     table.recevoir(client, f"JOIN {nom}")
     return client
+
+
+# Marge des tests au seuil d'inactivité : (t + 60) - t peut valoir 59,99999999999989 en flottant
+# quand t (time.monotonic) est grand, et le test échouait au hasard (une fois sur quatre vers 1000 s).
+MARGE = 0.01
 
 
 def table_ne_jouant_pas():
@@ -753,7 +759,7 @@ def test_inactif_a_son_tour_remplace_par_un_bot():
     a.vider()
     t.verifier_inactivite(t._attendu_depuis + 179)
     assert not b.ferme
-    t.verifier_inactivite(t._attendu_depuis + 180)
+    t.verifier_inactivite(t._attendu_depuis + 180 + MARGE)
     assert b.ferme
     assert "SIEGE 1 B BOT" in a.lignes
 
@@ -765,7 +771,7 @@ def test_inactivite_reglable():
     b = rejoindre(t, "B")
     t.recevoir(a, "PARAM INACTIF 1")
     t.recevoir(a, "LANCER")
-    t.verifier_inactivite(t._attendu_depuis + 60)
+    t.verifier_inactivite(t._attendu_depuis + 60 + MARGE)
     assert b.ferme
 
 
@@ -786,15 +792,18 @@ def test_muet_avant_le_lancement_rend_sa_place():
     t = table_ne_jouant_pas()
     a = rejoindre(t, "A")
     b = rejoindre(t, "B")
-    t.sieges[0].actif_a = t.sieges[1].actif_a = 1000.0
+    # Base prise sur l'horloge réelle : le tchat date B de time.monotonic(), qui compte depuis le
+    # démarrage du PC (une base fixe de 1000 s échouait sur un PC allumé depuis moins de 1000 s).
+    base = time.monotonic() - 1
+    t.sieges[0].actif_a = t.sieges[1].actif_a = base
     t.recevoir(b, "TCHAT ON ATTEND")  # B parle : il reste
     b_actif = t.sieges[1].actif_a
-    t.verifier_inactivite(1000.0 + t.delai_attente - 1)
+    t.verifier_inactivite(base + t.delai_attente - 1)
     assert not a.ferme
-    t.verifier_inactivite(1000.0 + t.delai_attente)
+    t.verifier_inactivite(base + t.delai_attente + MARGE)
     assert a.ferme and "INFO INACTIF : PLACE RENDUE AU BOT" in a.lignes
     assert "INFO A INACTIF REMPLACE PAR UN BOT" in b.lignes
-    assert not b.ferme and b_actif > 1000.0
+    assert not b.ferme and b_actif > base
     assert t.chef == 1 and t.sieges[0].humain is None and t.sieges[0].nom_reserve is None
 
 
@@ -832,7 +841,7 @@ def test_chef_inactif_en_fin_de_partie_passe_la_main():
     t.scores = [450, 100]
     fin_manche(t, lambda r: compter_manche(0, (90, 72), (5, 3), None, r))
     assert t.etat == FIN_PARTIE
-    t.verifier_inactivite(t._attendu_depuis + 180)
+    t.verifier_inactivite(t._attendu_depuis + 180 + MARGE)
     assert a.ferme and not b.ferme
     assert t.chef == 1
 
